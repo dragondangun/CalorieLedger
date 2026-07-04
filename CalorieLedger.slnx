@@ -1,9 +1,10 @@
-﻿<Solution>
+<Solution>
   <Project Path="CalorieLedger.Android/CalorieLedger.Android.csproj">
     <Deploy />
   </Project>
   <Project Path="CalorieLedger.Browser/CalorieLedger.Browser.csproj" />
   <Project Path="CalorieLedger.Desktop/CalorieLedger.Desktop.csproj" />
+  <Project Path="CalorieLedger.Domain/CalorieLedger.Domain.csproj" />
   <Project Path="CalorieLedger.iOS/CalorieLedger.iOS.csproj">
     <Deploy />
   </Project>
