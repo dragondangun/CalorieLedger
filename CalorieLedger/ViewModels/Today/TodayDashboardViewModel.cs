@@ -1,17 +1,19 @@
-﻿using System.Collections.ObjectModel;
-using CalorieLedger.Domain.Common;
+﻿using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 
 namespace CalorieLedger.ViewModels.Today;
 
 public sealed partial class TodayDashboardViewModel:ObservableObject {
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(RemainingCaloriesKcal))]
-    [NotifyPropertyChangedFor(nameof(CaloriesSummary))]
-    [NotifyPropertyChangedFor(nameof(RemainingCaloriesSummary))]
-    private decimal targetCaloriesKcal = 2200m;
+    public decimal TargetCaloriesKcal => target.CaloriesKcal;
+
+    public decimal? TargetProteinG => target.ProteinG;
+
+    public decimal? TargetFatG => target.FatG;
+
+    public decimal? TargetCarbsG => target.CarbsG;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RemainingCaloriesKcal))]
@@ -44,7 +46,15 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             : $"Превышение {-RemainingCaloriesKcal:0} ккал";
 
     public string MacrosSummary =>
-        $"Б: {ProteinG:0.#} г · Ж: {FatG:0.#} г · У: {CarbsG:0.#} г";
+        $"Б: {ProteinG:0.#}/{FormatTarget(TargetProteinG)} г · " +
+        $"Ж: {FatG:0.#}/{FormatTarget(TargetFatG)} г · " +
+        $"У: {CarbsG:0.#}/{FormatTarget(TargetCarbsG)} г";
+
+    private readonly DailyNutritionTarget target = new(
+        CaloriesKcal: 2200m,
+        ProteinG: 140m,
+        FatG: 70m,
+        CarbsG: 250m);
 
     [RelayCommand]
     private void AddSampleFood() {
@@ -83,5 +93,9 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             CaloriesSummary: $"+{estimatedCalories:0} ккал",
             MacrosSummary: "Б/Ж/У неизвестны",
             IsApproximate: true));
+    }
+
+    private static string FormatTarget(decimal? value) {
+        return value is null ? "—" : $"{value.Value:0.#}";
     }
 }
