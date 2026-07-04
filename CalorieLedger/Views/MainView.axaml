@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:CalorieLedger.ViewModels"
+    xmlns:todayVm="using:CalorieLedger.ViewModels.Today"
     x:DataType="vm:MainViewModel">
 
   <ScrollViewer>
@@ -58,6 +59,45 @@
       <Button
           Content="Обожрался"
           HorizontalAlignment="Stretch" />
+
+      <Border
+          Padding="16"
+          CornerRadius="16"
+          BorderThickness="1">
+              <StackPanel Spacing="12">
+                <TextBlock
+                    Text="Съедено сегодня"
+                    FontSize="18"
+                    FontWeight="SemiBold" />
+
+                <ItemsControl ItemsSource="{Binding Today.FoodItems}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="todayVm:TodayFoodLogItemViewModel">
+                      <Border
+                          Padding="10"
+                          Margin="0,0,0,8"
+                          BorderThickness="1"
+                          CornerRadius="10">
+                        <StackPanel Spacing="4">
+                          <TextBlock
+                              Text="{Binding Name}"
+                              FontWeight="SemiBold" />
+
+                          <TextBlock
+                              Text="{Binding QuantitySummary}" />
+
+                          <TextBlock
+                              Text="{Binding CaloriesSummary}" />
+
+                          <TextBlock
+                              Text="{Binding MacrosSummary}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
 
     </StackPanel>
   </ScrollViewer>

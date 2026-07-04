@@ -1,4 +1,5 @@
-﻿using CalorieLedger.Domain.Common;
+﻿using System.Collections.ObjectModel;
+using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -30,6 +31,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     [NotifyPropertyChangedFor(nameof(MacrosSummary))]
     private decimal carbsG = 145m;
 
+    public ObservableCollection<TodayFoodLogItemViewModel> FoodItems { get; } = [];
+
     public decimal RemainingCaloriesKcal => TargetCaloriesKcal - ConsumedCaloriesKcal;
 
     public string CaloriesSummary =>
@@ -60,5 +63,11 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         ProteinG += total.ProteinG ?? 0m;
         FatG += total.FatG ?? 0m;
         CarbsG += total.CarbsG ?? 0m;
+
+        FoodItems.Add(new TodayFoodLogItemViewModel(
+            Name: "Творог тестовый",
+            QuantitySummary: "250 г",
+            CaloriesSummary: $"{total.CaloriesKcal ?? 0m:0} ккал",
+            MacrosSummary: $"Б: {total.ProteinG ?? 0m:0.#} г · Ж: {total.FatG ?? 0m:0.#} г · У: {total.CarbsG ?? 0m:0.#} г"));
     }
 }
