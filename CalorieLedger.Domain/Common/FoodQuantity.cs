@@ -1,5 +1,6 @@
 ﻿namespace CalorieLedger.Domain.Common;
 
+// количество + единица
 public sealed record FoodQuantity(
     decimal Value,
     FoodUnit Unit) {

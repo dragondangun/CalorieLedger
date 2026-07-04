@@ -1,5 +1,6 @@
 ﻿namespace CalorieLedger.Domain.Meals;
 
+// роль приёма пищи
 public enum MealGroupRole {
     Breakfast = 1,
     Lunch = 2,

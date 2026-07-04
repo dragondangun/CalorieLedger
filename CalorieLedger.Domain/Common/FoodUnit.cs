@@ -1,5 +1,6 @@
 ﻿namespace CalorieLedger.Domain.Common;
 
+// ед. измерения
 public enum FoodUnit {
     Gram = 1,
     Milliliter = 2,

@@ -3,13 +3,14 @@ using CalorieLedger.Domain.Nutrition;
 
 namespace CalorieLedger.Domain.Meals;
 
+// конкретная съеденная позиция
 public sealed record FoodLogEntry(
     Guid Id,
-    Guid MealEntryId,
-    string Name,
-    FoodQuantity Quantity,
-    NutritionFacts Nutrition,
-    FoodLogSource Source,
-    Guid? SourceId = null,
-    bool IsApproximate = false,
-    string? Note = null);
+    Guid MealEntryId, // к какому приёму пищи относится запись
+    string Name, // что съели
+    FoodQuantity Quantity, // сколько съели
+    NutritionFacts Nutrition, // КБЖУ
+    FoodLogSource Source, // откуда запись
+    Guid? SourceId = null, // id продукта/холодильника/блюда
+    bool IsApproximate = false, // запись приблизительная
+    string? Note = null); // комментарий

@@ -2,6 +2,7 @@
 
 namespace CalorieLedger.Domain.Products;
 
+// запись в базе продуктов
 public sealed record ProductCatalogItem(
     Guid Id,
     string Name,

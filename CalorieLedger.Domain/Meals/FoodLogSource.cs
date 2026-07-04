@@ -1,5 +1,6 @@
 ﻿namespace CalorieLedger.Domain.Meals;
 
+// откуда взялась съеденная еда
 public enum FoodLogSource {
     Manual = 1,
     CatalogProduct = 2,
