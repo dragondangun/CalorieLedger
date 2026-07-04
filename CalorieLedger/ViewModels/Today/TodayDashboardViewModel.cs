@@ -1,7 +1,9 @@
 ﻿using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Profile;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.ObjectModel;
 
 namespace CalorieLedger.ViewModels.Today;
@@ -50,11 +52,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         $"Ж: {FatG:0.#}/{FormatTarget(TargetFatG)} г · " +
         $"У: {CarbsG:0.#}/{FormatTarget(TargetCarbsG)} г";
 
-    private readonly DailyNutritionTarget target = new(
-        CaloriesKcal: 2200m,
-        ProteinG: 140m,
-        FatG: 70m,
-        CarbsG: 250m);
+    private readonly DailyNutritionTarget target = NutritionTargetCalculator.Calculate(CreateSampleProfile());
 
     [RelayCommand]
     private void AddSampleFood() {
@@ -97,5 +95,21 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private static string FormatTarget(decimal? value) {
         return value is null ? "—" : $"{value.Value:0.#}";
+    }
+
+    private static UserNutritionProfile CreateSampleProfile() {
+        return new UserNutritionProfile(
+            Id: Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            DisplayName: "Test user",
+            Body: new BodyProfile(
+                Sex: BiologicalSex.Male,
+                AgeYears: 30,
+                HeightCm: 180m,
+                WeightKg: 80m,
+                BodyFatPercent: null,
+                BoneMassKg: null),
+            LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+            Goal: new NutritionGoal(
+                GoalType: WeightGoalType.Maintain));
     }
 }
