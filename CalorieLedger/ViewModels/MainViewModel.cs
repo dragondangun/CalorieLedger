@@ -1,9 +1,7 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CalorieLedger.ViewModels.Today;
 
 namespace CalorieLedger.ViewModels;
 
-public partial class MainViewModel : ViewModelBase
-{
-    [ObservableProperty]
-    private string _greeting = "Welcome to Avalonia!";
+public partial class MainViewModel:ViewModelBase {
+    public TodayDashboardViewModel Today { get; } = new();
 }
