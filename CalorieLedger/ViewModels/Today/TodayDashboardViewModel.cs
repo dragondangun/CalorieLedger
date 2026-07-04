@@ -70,4 +70,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             CaloriesSummary: $"{total.CaloriesKcal ?? 0m:0} ккал",
             MacrosSummary: $"Б: {total.ProteinG ?? 0m:0.#} г · Ж: {total.FatG ?? 0m:0.#} г · У: {total.CarbsG ?? 0m:0.#} г"));
     }
+
+    [RelayCommand]
+    private void MarkOvereating() {
+        const decimal estimatedCalories = 1500m;
+
+        ConsumedCaloriesKcal += estimatedCalories;
+
+        FoodItems.Add(new TodayFoodLogItemViewModel(
+            Name: "Праздник / переедание",
+            QuantitySummary: "количество неизвестно",
+            CaloriesSummary: $"+{estimatedCalories:0} ккал",
+            MacrosSummary: "Б/Ж/У неизвестны",
+            IsApproximate: true));
+    }
 }

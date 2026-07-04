@@ -5,4 +5,7 @@ public sealed record TodayFoodLogItemViewModel(
     string QuantitySummary,
     string CaloriesSummary,
     string MacrosSummary,
-    bool IsApproximate = false);
+    bool IsApproximate = false) {
+    public string AccuracySummary =>
+        IsApproximate ? "примерная оценка" : "точная запись";
+}

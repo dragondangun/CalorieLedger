@@ -58,6 +58,7 @@
 
       <Button
           Content="Обожрался"
+          Command="{Binding Today.MarkOvereatingCommand}"
           HorizontalAlignment="Stretch" />
 
       <Border
@@ -91,6 +92,12 @@
 
                           <TextBlock
                               Text="{Binding MacrosSummary}" />
+
+                          <TextBlock
+                              Text="{Binding AccuracySummary}"
+                              FontStyle="Italic"
+                              Opacity="0.75" />
+                          
                         </StackPanel>
                       </Border>
                     </DataTemplate>
