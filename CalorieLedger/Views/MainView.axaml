@@ -52,6 +52,7 @@
 
       <Button
           Content="Добавить еду"
+          Command="{Binding Today.AddSampleFoodCommand}"
           HorizontalAlignment="Stretch" />
 
       <Button

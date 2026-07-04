@@ -20,4 +20,8 @@
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CalorieLedger.Domain\CalorieLedger.Domain.csproj" />
+  </ItemGroup>
 </Project>
