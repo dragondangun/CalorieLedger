@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace CalorieLedger.ViewModels.Today;
 
@@ -35,7 +36,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     [NotifyPropertyChangedFor(nameof(MacrosSummary))]
     private decimal carbsG;
 
-    public ObservableCollection<TodayFoodLogItemViewModel> FoodItems { get; } = [];
+    public ObservableCollection<TodayMealGroupViewModel> MealGroups { get; } = [];
 
     public decimal RemainingCaloriesKcal => TargetCaloriesKcal - ConsumedCaloriesKcal;
 
@@ -62,16 +63,11 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         FatG = snapshot.ConsumedTotals.FatG ?? 0m;
         CarbsG = snapshot.ConsumedTotals.CarbsG ?? 0m;
 
-        foreach(var item in snapshot.FoodItems) {
-            FoodItems.Add(new TodayFoodLogItemViewModel(
-                Name: item.Name,
-                QuantitySummary: FormatQuantity(item.Quantity),
-                CaloriesSummary: $"{item.Totals.CaloriesKcal ?? 0m:0} ккал",
-                MacrosSummary:
-                    $"Б: {item.Totals.ProteinG ?? 0m:0.#} г · " +
-                    $"Ж: {item.Totals.FatG ?? 0m:0.#} г · " +
-                    $"У: {item.Totals.CarbsG ?? 0m:0.#} г",
-                IsApproximate: item.IsApproximate));
+        foreach(var meal in snapshot.Meals) {
+            MealGroups.Add(new TodayMealGroupViewModel(
+               name: meal.Name,
+               timeSummary: FormatTime(meal.EatenAt),
+               foodItems: meal.FoodItems.Select(ToFoodLogItemViewModel)));
         }
     }
 
@@ -93,7 +89,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         FatG += total.FatG ?? 0m;
         CarbsG += total.CarbsG ?? 0m;
 
-        FoodItems.Add(new TodayFoodLogItemViewModel(
+        var snackGroup = MealGroups.FirstOrDefault(x => x.Name == "Перекусы");
+
+        if(snackGroup is null) {
+            snackGroup = new TodayMealGroupViewModel(
+                name: "Перекусы",
+                timeSummary: "",
+                foodItems: []);
+
+            MealGroups.Add(snackGroup);
+        }
+
+        snackGroup.FoodItems.Add(new TodayFoodLogItemViewModel(
             Name: "Творог тестовый",
             QuantitySummary: "250 г",
             CaloriesSummary: $"{total.CaloriesKcal ?? 0m:0} ккал",
@@ -106,7 +113,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
         ConsumedCaloriesKcal += estimatedCalories;
 
-        FoodItems.Add(new TodayFoodLogItemViewModel(
+        var specialGroup = MealGroups.FirstOrDefault(x => x.Name == "Особые события");
+
+        if(specialGroup is null) {
+            specialGroup = new TodayMealGroupViewModel(
+                name: "Особые события",
+                timeSummary: "",
+                foodItems: []);
+
+            MealGroups.Add(specialGroup);
+        }
+
+        specialGroup.FoodItems.Add(new TodayFoodLogItemViewModel(
             Name: "Праздник / переедание",
             QuantitySummary: "количество неизвестно",
             CaloriesSummary: $"+{estimatedCalories:0} ккал",
@@ -129,5 +147,22 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         };
 
         return $"{quantity.Value:0.##} {unit}";
+    }
+
+    private static TodayFoodLogItemViewModel ToFoodLogItemViewModel(
+    TodayFoodLogSnapshotItem item) {
+        return new TodayFoodLogItemViewModel(
+            Name: item.Name,
+            QuantitySummary: FormatQuantity(item.Quantity),
+            CaloriesSummary: $"{item.Totals.CaloriesKcal ?? 0m:0} ккал",
+            MacrosSummary:
+                $"Б: {item.Totals.ProteinG ?? 0m:0.#} г · " +
+                $"Ж: {item.Totals.FatG ?? 0m:0.#} г · " +
+                $"У: {item.Totals.CarbsG ?? 0m:0.#} г",
+            IsApproximate: item.IsApproximate);
+    }
+
+    private static string FormatTime(TimeOnly? time) {
+        return time is null ? "" : time.Value.ToString("HH:mm");
     }
 }

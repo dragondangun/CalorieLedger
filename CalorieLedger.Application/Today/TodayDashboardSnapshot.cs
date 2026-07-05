@@ -5,4 +5,4 @@ namespace CalorieLedger.Application.Today;
 public sealed record TodayDashboardSnapshot(
     DailyNutritionTarget Target,
     NutritionTotals ConsumedTotals,
-    IReadOnlyList<TodayFoodLogSnapshotItem> FoodItems);
+    IReadOnlyList<TodayMealSnapshot> Meals);
