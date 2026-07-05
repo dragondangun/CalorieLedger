@@ -1,5 +1,5 @@
 ﻿using CalorieLedger.Application.Profiles;
-using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Application.Today;
 using CalorieLedger.ViewModels.Today;
 
 namespace CalorieLedger.ViewModels;
@@ -11,9 +11,11 @@ public partial class MainViewModel:ViewModelBase {
         IUserNutritionProfileProvider profileProvider =
             new SampleUserNutritionProfileProvider();
 
-        var profile = profileProvider.GetCurrentProfile();
-        var target = NutritionTargetCalculator.Calculate(profile);
+        ITodayDashboardSnapshotProvider todayProvider =
+            new SampleTodayDashboardSnapshotProvider(profileProvider);
 
-        Today = new TodayDashboardViewModel(target);
+        var today = todayProvider.GetToday();
+
+        Today = new TodayDashboardViewModel(today);
     }
 }

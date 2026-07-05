@@ -1,4 +1,5 @@
-﻿using CalorieLedger.Domain.Common;
+﻿using CalorieLedger.Application.Today;
+using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,19 +21,19 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     [NotifyPropertyChangedFor(nameof(RemainingCaloriesKcal))]
     [NotifyPropertyChangedFor(nameof(CaloriesSummary))]
     [NotifyPropertyChangedFor(nameof(RemainingCaloriesSummary))]
-    private decimal consumedCaloriesKcal = 1350m;
+    private decimal consumedCaloriesKcal;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MacrosSummary))]
-    private decimal proteinG = 82m;
+    private decimal proteinG;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MacrosSummary))]
-    private decimal fatG = 48m;
+    private decimal fatG;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MacrosSummary))]
-    private decimal carbsG = 145m;
+    private decimal carbsG;
 
     public ObservableCollection<TodayFoodLogItemViewModel> FoodItems { get; } = [];
 
@@ -53,8 +54,13 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private readonly DailyNutritionTarget target;
 
-    public TodayDashboardViewModel(DailyNutritionTarget target) {
-        this.target = target;
+    public TodayDashboardViewModel(TodayDashboardSnapshot snapshot) {
+        target = snapshot.Target;
+
+        ConsumedCaloriesKcal = snapshot.ConsumedTotals.CaloriesKcal ?? 0m;
+        ProteinG = snapshot.ConsumedTotals.ProteinG ?? 0m;
+        FatG = snapshot.ConsumedTotals.FatG ?? 0m;
+        CarbsG = snapshot.ConsumedTotals.CarbsG ?? 0m;
     }
 
     [RelayCommand]
