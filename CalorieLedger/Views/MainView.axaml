@@ -80,15 +80,29 @@
                           BorderThickness="1"
                           CornerRadius="10">
                         <StackPanel Spacing="8">
-                          <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock
-                                Text="{Binding Name}"
-                                FontWeight="SemiBold" />
+                          <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock
+                                    Text="{Binding Name}"
+                                    FontWeight="SemiBold" />
 
-                            <TextBlock
-                                Text="{Binding TimeSummary}"
-                                Opacity="0.7" />
-                          </StackPanel>
+                                <TextBlock
+                                    Text="{Binding TimeSummary}"
+                                    Opacity="0.7" />
+
+                                <TextBlock
+                                    Text="·"
+                                    Opacity="0.7" />
+
+                                <TextBlock
+                                    Text="{Binding CaloriesSummary}"
+                                    Opacity="0.85" />
+                              </StackPanel>
+
+                              <TextBlock
+                                  Text="{Binding MacrosSummary}"
+                                  Opacity="0.85" />
+                            </StackPanel>
 
                           <ItemsControl ItemsSource="{Binding FoodItems}">
                             <ItemsControl.ItemTemplate>

@@ -100,11 +100,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             MealGroups.Add(snackGroup);
         }
 
-        snackGroup.FoodItems.Add(new TodayFoodLogItemViewModel(
+        snackGroup.AddFoodItem(new TodayFoodLogItemViewModel(
             Name: "Творог тестовый",
             QuantitySummary: "250 г",
             CaloriesSummary: $"{total.CaloriesKcal ?? 0m:0} ккал",
-            MacrosSummary: $"Б: {total.ProteinG ?? 0m:0.#} г · Ж: {total.FatG ?? 0m:0.#} г · У: {total.CarbsG ?? 0m:0.#} г"));
+            MacrosSummary:
+                $"Б: {total.ProteinG ?? 0m:0.#} г · " +
+                $"Ж: {total.FatG ?? 0m:0.#} г · " +
+                $"У: {total.CarbsG ?? 0m:0.#} г",
+            CaloriesKcal: total.CaloriesKcal,
+            ProteinG: total.ProteinG,
+            FatG: total.FatG,
+            CarbsG: total.CarbsG));
     }
 
     [RelayCommand]
@@ -124,12 +131,16 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             MealGroups.Add(specialGroup);
         }
 
-        specialGroup.FoodItems.Add(new TodayFoodLogItemViewModel(
+        specialGroup.AddFoodItem(new TodayFoodLogItemViewModel(
             Name: "Праздник / переедание",
             QuantitySummary: "количество неизвестно",
             CaloriesSummary: $"+{estimatedCalories:0} ккал",
             MacrosSummary: "Б/Ж/У неизвестны",
-            IsApproximate: true));
+            IsApproximate: true,
+            CaloriesKcal: estimatedCalories,
+            ProteinG: null,
+            FatG: null,
+            CarbsG: null));
     }
 
     private static string FormatTarget(decimal? value) {
@@ -159,7 +170,11 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
                 $"Б: {item.Totals.ProteinG ?? 0m:0.#} г · " +
                 $"Ж: {item.Totals.FatG ?? 0m:0.#} г · " +
                 $"У: {item.Totals.CarbsG ?? 0m:0.#} г",
-            IsApproximate: item.IsApproximate);
+            IsApproximate: item.IsApproximate,
+            CaloriesKcal: item.Totals.CaloriesKcal,
+            ProteinG: item.Totals.ProteinG,
+            FatG: item.Totals.FatG,
+            CarbsG: item.Totals.CarbsG);
     }
 
     private static string FormatTime(TimeOnly? time) {
