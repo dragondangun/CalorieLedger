@@ -61,6 +61,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         ProteinG = snapshot.ConsumedTotals.ProteinG ?? 0m;
         FatG = snapshot.ConsumedTotals.FatG ?? 0m;
         CarbsG = snapshot.ConsumedTotals.CarbsG ?? 0m;
+
+        foreach(var item in snapshot.FoodItems) {
+            FoodItems.Add(new TodayFoodLogItemViewModel(
+                Name: item.Name,
+                QuantitySummary: FormatQuantity(item.Quantity),
+                CaloriesSummary: $"{item.Totals.CaloriesKcal ?? 0m:0} ккал",
+                MacrosSummary:
+                    $"Б: {item.Totals.ProteinG ?? 0m:0.#} г · " +
+                    $"Ж: {item.Totals.FatG ?? 0m:0.#} г · " +
+                    $"У: {item.Totals.CarbsG ?? 0m:0.#} г",
+                IsApproximate: item.IsApproximate));
+        }
     }
 
     [RelayCommand]
@@ -104,5 +116,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private static string FormatTarget(decimal? value) {
         return value is null ? "—" : $"{value.Value:0.#}";
+    }
+
+    private static string FormatQuantity(FoodQuantity quantity) {
+        var unit = quantity.Unit switch
+        {
+            FoodUnit.Gram => "г",
+            FoodUnit.Milliliter => "мл",
+            FoodUnit.Piece => "шт",
+            FoodUnit.Portion => "порц.",
+            _ => quantity.Unit.ToString()
+        };
+
+        return $"{quantity.Value:0.##} {unit}";
     }
 }
