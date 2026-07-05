@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\CalorieLedger.Application\CalorieLedger.Application.csproj" />
     <ProjectReference Include="..\CalorieLedger.Domain\CalorieLedger.Domain.csproj" />
   </ItemGroup>
 </Project>
