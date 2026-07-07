@@ -51,6 +51,31 @@
         </StackPanel>
       </Border>
 
+      <Border
+          Padding="16"
+          CornerRadius="16"
+          BorderThickness="1">
+          <StackPanel Spacing="8">
+              <TextBlock
+                  Text="Среднее за 7 дней"
+                  FontSize="18"
+                  FontWeight="SemiBold" />
+
+              <TextBlock
+                  Text="{Binding Today.WeeklyCaloriesAverageSummary}"
+                  FontSize="18"
+                  FontWeight="Bold" />
+
+              <TextBlock
+                  Text="{Binding Today.WeeklyMacrosAverageSummary}" />
+
+              <TextBlock
+                  Text="{Binding Today.WeeklyBalanceSummary}"
+                  FontStyle="Italic"
+                  Opacity="0.85" />
+          </StackPanel>
+      </Border>
+
       <Button
           Content="Добавить еду"
           Command="{Binding Today.AddSampleFoodCommand}"

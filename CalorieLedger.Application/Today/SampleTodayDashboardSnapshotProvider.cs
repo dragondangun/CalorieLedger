@@ -59,9 +59,41 @@ public sealed class SampleTodayDashboardSnapshotProvider(
             FatG: meals.SelectMany(x => x.FoodItems).Sum(x => x.Totals.FatG ?? 0m),
             CarbsG: meals.SelectMany(x => x.FoodItems).Sum(x => x.Totals.CarbsG ?? 0m));
 
+        var weeklySummary = new WeeklyNutritionSummarySnapshot(
+            [
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today.AddDays(-6)),
+                    new NutritionTotals(2050m, 125m, 70m, 230m)),
+
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today.AddDays(-5)),
+                    new NutritionTotals(2180m, 132m, 74m, 245m)),
+
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today.AddDays(-4)),
+                    new NutritionTotals(2350m, 140m, 82m, 260m)),
+
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today.AddDays(-3)),
+                    new NutritionTotals(1980m, 118m, 65m, 220m)),
+
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today.AddDays(-2)),
+                    new NutritionTotals(2250m, 136m, 76m, 250m)),
+
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today.AddDays(-1)),
+                    new NutritionTotals(2100m, 128m, 72m, 235m)),
+
+                new DailyNutritionSummarySnapshot(
+                    DateOnly.FromDateTime(DateTime.Today),
+                    consumedTotals)
+            ]);
+
         return new TodayDashboardSnapshot(
             Target: target,
             ConsumedTotals: consumedTotals,
-            Meals: meals);
+            Meals: meals,
+            WeeklySummary: weeklySummary);
     }
 }

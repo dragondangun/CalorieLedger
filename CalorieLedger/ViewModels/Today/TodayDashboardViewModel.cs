@@ -55,8 +55,11 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private readonly DailyNutritionTarget target;
 
+    private readonly WeeklyNutritionSummarySnapshot weeklySummary;
+
     public TodayDashboardViewModel(TodayDashboardSnapshot snapshot) {
         target = snapshot.Target;
+        weeklySummary = snapshot.WeeklySummary;
 
         ConsumedCaloriesKcal = snapshot.ConsumedTotals.CaloriesKcal ?? 0m;
         ProteinG = snapshot.ConsumedTotals.ProteinG ?? 0m;
@@ -179,5 +182,26 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private static string FormatTime(TimeOnly? time) {
         return time is null ? "" : time.Value.ToString("HH:mm");
+    }
+
+    public string WeeklyCaloriesAverageSummary =>
+    $"{weeklySummary.AverageCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал в среднем за 7 дней";
+
+    public string WeeklyMacrosAverageSummary =>
+        $"Б: {weeklySummary.AverageProteinG:0.#} г · " +
+        $"Ж: {weeklySummary.AverageFatG:0.#} г · " +
+        $"У: {weeklySummary.AverageCarbsG:0.#} г";
+
+    public string WeeklyBalanceSummary {
+        get {
+            var balance = weeklySummary.AverageCaloriesKcal - TargetCaloriesKcal;
+
+            return balance switch
+            {
+                > 100m => $"Средний профицит: +{balance:0} ккал/день",
+                < -100m => $"Средний дефицит: {balance:0} ккал/день",
+                _ => "В среднем около цели"
+            };
+        }
     }
 }
