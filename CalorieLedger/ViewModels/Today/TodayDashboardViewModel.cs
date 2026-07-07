@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 
 namespace CalorieLedger.ViewModels.Today;
@@ -57,6 +58,16 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private readonly WeeklyNutritionSummarySnapshot weeklySummary;
 
+    public ObservableCollection<TodayActivityItemViewModel> Activities { get; } = [];
+
+    public decimal ActivityBurnedCaloriesKcal =>
+    Activities.Sum(x => x.BurnedCaloriesKcal);
+
+    public string ActivitySummary =>
+        ActivityBurnedCaloriesKcal > 0m
+            ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
+            : "Дополнительная активность не указана";
+
     public TodayDashboardViewModel(TodayDashboardSnapshot snapshot) {
         target = snapshot.Target;
         weeklySummary = snapshot.WeeklySummary;
@@ -71,6 +82,14 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
                name: meal.Name,
                timeSummary: FormatTime(meal.EatenAt),
                foodItems: meal.FoodItems.Select(ToFoodLogItemViewModel)));
+        }
+
+        foreach(var activity in snapshot.Activities) {
+            Activities.Add(new TodayActivityItemViewModel(
+                Name: activity.Name,
+                BurnedCaloriesKcal: activity.BurnedCaloriesKcal,
+                TimeSummary: FormatTime(activity.StartedAt),
+                DurationSummary: FormatDuration(activity.Duration)));
         }
     }
 
@@ -203,5 +222,17 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
                 _ => "В среднем около цели"
             };
         }
+    }
+
+    private static string FormatDuration(TimeSpan? duration) {
+        if(duration is null) {
+            return "";
+        }
+
+        if(duration.Value.TotalHours >= 1) {
+            return $"{duration.Value.TotalHours:0.#} ч";
+        }
+
+        return $"{duration.Value.TotalMinutes:0} мин";
     }
 }

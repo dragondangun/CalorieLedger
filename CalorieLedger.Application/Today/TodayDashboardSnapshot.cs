@@ -6,4 +6,5 @@ public sealed record TodayDashboardSnapshot(
     DailyNutritionTarget Target,
     NutritionTotals ConsumedTotals,
     IReadOnlyList<TodayMealSnapshot> Meals,
-    WeeklyNutritionSummarySnapshot WeeklySummary);
+    WeeklyNutritionSummarySnapshot WeeklySummary,
+    IReadOnlyList<TodayActivitySnapshotItem> Activities);

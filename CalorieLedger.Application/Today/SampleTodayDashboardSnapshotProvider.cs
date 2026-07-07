@@ -90,10 +90,26 @@ public sealed class SampleTodayDashboardSnapshotProvider(
                     consumedTotals)
             ]);
 
+        var activities = new[]
+        {
+            new TodayActivitySnapshotItem(
+                Name: "Силовая тренировка",
+                BurnedCaloriesKcal: 320m,
+                StartedAt: new TimeOnly(18, 30),
+                Duration: TimeSpan.FromMinutes(70)),
+
+            new TodayActivitySnapshotItem(
+                Name: "Прогулка",
+                BurnedCaloriesKcal: 140m,
+                StartedAt: new TimeOnly(12, 10),
+                Duration: TimeSpan.FromMinutes(45))
+        };
+
         return new TodayDashboardSnapshot(
             Target: target,
             ConsumedTotals: consumedTotals,
             Meals: meals,
-            WeeklySummary: weeklySummary);
+            WeeklySummary: weeklySummary,
+            Activities: activities);
     }
 }
