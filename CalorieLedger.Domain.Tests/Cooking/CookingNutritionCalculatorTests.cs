@@ -1,6 +1,7 @@
 ﻿using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Cooking;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Domain.Tests.Cooking;
 
@@ -114,5 +115,74 @@ public sealed class CookingNutritionCalculatorTests {
 
         Assert.Throws<ArgumentException>(() =>
             CookingNutritionCalculator.Calculate(draft));
+    }
+
+    [Fact]
+    public void Calculate_GainWeightWithEnergyBalancePercent_ReturnsFivePercentSurplus() {
+        var body = new BodyProfile(
+        Sex: BiologicalSex.Male,
+        AgeYears: 30,
+        HeightCm: 180m,
+        WeightKg: 80m,
+        BodyFatPercent: null,
+        BoneMassKg: null);
+
+        var maintenanceProfile = new UserNutritionProfile(
+        Id: Guid.NewGuid(),
+        DisplayName: "Maintenance user",
+        Body: body,
+        LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+        Goal: new NutritionGoal(
+            GoalType: WeightGoalType.Maintain));
+
+        var gainingProfile = maintenanceProfile with
+        {
+            Goal = new NutritionGoal(
+            GoalType: WeightGoalType.GainWeight,
+            EnergyBalancePercent: 5m,
+            StopAtBodyFatPercent: 18m,
+            MassGainIntent: MassGainIntent.LeanMassPriority)
+        };
+
+        var maintenanceTarget = NutritionTargetCalculator.Calculate(maintenanceProfile);
+        var gainingTarget = NutritionTargetCalculator.Calculate(gainingProfile);
+
+        Assert.Equal(
+            Math.Round(maintenanceTarget.CaloriesKcal * 1.05m, 0),
+            gainingTarget.CaloriesKcal);
+    }
+
+    [Fact]
+    public void Calculate_LoseWeightWithEnergyBalancePercent_ReturnsFifteenPercentDeficit() {
+        var body = new BodyProfile(
+        Sex: BiologicalSex.Female,
+        AgeYears: 30,
+        HeightCm: 165m,
+        WeightKg: 70m,
+        BodyFatPercent: null,
+        BoneMassKg: null);
+
+        var maintenanceProfile = new UserNutritionProfile(
+        Id: Guid.NewGuid(),
+        DisplayName: "Maintenance user",
+        Body: body,
+        LifestyleActivityLevel: LifestyleActivityLevel.LightlyActive,
+        Goal: new NutritionGoal(
+            GoalType: WeightGoalType.Maintain));
+
+        var losingProfile = maintenanceProfile with
+        {
+            Goal = new NutritionGoal(
+            GoalType: WeightGoalType.LoseWeight,
+            TargetBodyFatPercent: 20m,
+            EnergyBalancePercent: -15m)
+        };
+
+        var maintenanceTarget = NutritionTargetCalculator.Calculate(maintenanceProfile);
+        var losingTarget = NutritionTargetCalculator.Calculate(losingProfile);
+
+        Assert.Equal(
+            Math.Round(maintenanceTarget.CaloriesKcal * 0.85m, 0),
+            losingTarget.CaloriesKcal);
     }
 }

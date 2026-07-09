@@ -6,4 +6,6 @@ public sealed record BodyProfile(
     decimal HeightCm,
     decimal WeightKg,
     decimal? BodyFatPercent = null,
-    decimal? BoneMassKg = null);
+    decimal? BoneMassKg = null,
+    decimal? MuscleMassKg = null,
+    decimal? MusclePercent = null);

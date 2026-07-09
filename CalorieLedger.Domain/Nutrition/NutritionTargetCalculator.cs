@@ -9,7 +9,9 @@ public static class NutritionTargetCalculator {
         var bmr = CalculateBmr(profile.Body);
         var activityMultiplier = GetActivityMultiplier(profile.LifestyleActivityLevel);
         var maintenanceCalories = bmr * activityMultiplier;
-        var goalAdjustment = CalculateGoalAdjustment(profile.Goal);
+        var goalAdjustment = CalculateGoalAdjustment(
+            profile.Goal,
+            maintenanceCalories);
 
         var targetCalories = Math.Round(maintenanceCalories + goalAdjustment, 0);
 
@@ -60,7 +62,13 @@ public static class NutritionTargetCalculator {
         };
     }
 
-    private static decimal CalculateGoalAdjustment(NutritionGoal goal) {
+    private static decimal CalculateGoalAdjustment(
+        NutritionGoal goal,
+        decimal maintenanceCalories) {
+        if(goal.EnergyBalancePercent is not null) {
+            return maintenanceCalories * goal.EnergyBalancePercent.Value / 100m;
+        }
+
         if(goal.GoalType == WeightGoalType.Maintain) {
             return 0m;
         }
