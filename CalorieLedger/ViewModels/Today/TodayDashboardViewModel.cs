@@ -7,6 +7,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.ViewModels.Today;
 
@@ -18,6 +19,12 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     public decimal? TargetFatG => target.FatG;
 
     public decimal? TargetCarbsG => target.CarbsG;
+
+    public string GoalStatusSummary { get; }
+
+    public string GoalDetailsSummary { get; }
+
+    public ObservableCollection<TodayGoalActionViewModel> GoalActions { get; } = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RemainingCaloriesKcal))]
@@ -91,6 +98,18 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
                 TimeSummary: FormatTime(activity.StartedAt),
                 DurationSummary: FormatDuration(activity.Duration)));
         }
+
+        GoalStatusSummary =
+            FormatGoalDecisionStatus(snapshot.GoalDecision.Status);
+
+                GoalDetailsSummary =
+                    FormatGoalDecisionDetails(snapshot.GoalDecision);
+
+                foreach(var action in snapshot.GoalDecision.AvailableActions) {
+                    GoalActions.Add(new TodayGoalActionViewModel(
+                        Action: action,
+                        Title: FormatGoalAction(action)));
+                }
     }
 
     [RelayCommand]
@@ -234,5 +253,104 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         }
 
         return $"{duration.Value.TotalMinutes:0} мин";
+    }
+
+    private static string FormatGoalDecisionStatus(
+    NutritionGoalDecisionStatus status) {
+        return status switch
+        {
+            NutritionGoalDecisionStatus.NotConfigured =>
+                "Цель не настроена",
+
+            NutritionGoalDecisionStatus.MeasurementMissing =>
+                "Не хватает измерений",
+
+            NutritionGoalDecisionStatus.InProgress =>
+                "Цель выполняется",
+
+            NutritionGoalDecisionStatus.PartiallyReached =>
+                "Часть цели достигнута",
+
+            NutritionGoalDecisionStatus.GoalReached =>
+                "Цель достигнута",
+
+            NutritionGoalDecisionStatus.StopLimitReached =>
+                "Достигнут предел текущей фазы",
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(status),
+                status,
+                null)
+        };
+    }
+
+    private static string FormatGoalDecisionDetails(
+        NutritionGoalDecision decision) {
+        return decision.Status switch
+        {
+            NutritionGoalDecisionStatus.NotConfigured =>
+                "Задайте желаемый вес, процент жира или мышечные показатели.",
+
+            NutritionGoalDecisionStatus.MeasurementMissing =>
+                "Для оценки цели нужно обновить измерения тела.",
+
+            NutritionGoalDecisionStatus.InProgress =>
+                "Заданные целевые показатели пока не достигнуты.",
+
+            NutritionGoalDecisionStatus.PartiallyReached =>
+                "Некоторые показатели уже достигнуты. Можно продолжить текущую цель или изменить стратегию.",
+
+            NutritionGoalDecisionStatus.GoalReached =>
+                "Все заданные целевые показатели достигнуты. Выберите дальнейший режим питания.",
+
+            NutritionGoalDecisionStatus.StopLimitReached =>
+                FormatStopLimitDetails(decision.StopCondition),
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(decision.Status),
+                decision.Status,
+                null)
+        };
+    }
+
+    private static string FormatStopLimitDetails(
+        GoalStopEvaluation stopCondition) {
+        if(stopCondition.StopAtBodyFatPercent is null) {
+            return "Текущую фазу набора массы следует пересмотреть.";
+        }
+
+        return
+            $"Процент жира достиг установленного предела " +
+            $"{stopCondition.StopAtBodyFatPercent.Value:0.#}%. " +
+            "Выберите дальнейший режим.";
+    }
+
+    private static string FormatGoalAction(
+        GoalNextAction action) {
+        return action switch
+        {
+            GoalNextAction.ContinueCurrentGoal =>
+                "Продолжить текущую цель",
+
+            GoalNextAction.SwitchToMaintenance =>
+                "Перейти на поддержание",
+
+            GoalNextAction.StartWeightLoss =>
+                "Начать снижение веса",
+
+            GoalNextAction.StartWeightGain =>
+                "Начать набор массы",
+
+            GoalNextAction.SetNewGoal =>
+                "Задать новую цель",
+
+            GoalNextAction.RepeatMeasurements =>
+                "Повторить измерения",
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(action),
+                action,
+                null)
+        };
     }
 }

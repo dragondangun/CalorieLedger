@@ -52,6 +52,49 @@
       </Border>
 
       <Border
+    Padding="16"
+    CornerRadius="16"
+    BorderThickness="1">
+        <StackPanel Spacing="8">
+          <TextBlock
+              Text="Текущая цель"
+              FontSize="18"
+              FontWeight="SemiBold" />
+
+          <TextBlock
+              Text="{Binding Today.GoalStatusSummary}"
+              FontSize="18"
+              FontWeight="Bold" />
+
+          <TextBlock
+              Text="{Binding Today.GoalDetailsSummary}"
+              TextWrapping="Wrap"
+              Opacity="0.85" />
+
+          <TextBlock
+              Text="Доступные действия"
+              Margin="0,6,0,0"
+              FontWeight="SemiBold" />
+
+          <ItemsControl ItemsSource="{Binding Today.GoalActions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
+                <Border
+                    Padding="10,6"
+                    Margin="0,0,0,6"
+                    CornerRadius="8"
+                    BorderThickness="1">
+                  <TextBlock
+                      Text="{Binding Title}"
+                      TextWrapping="Wrap" />
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border
           Padding="16"
           CornerRadius="16"
           BorderThickness="1">

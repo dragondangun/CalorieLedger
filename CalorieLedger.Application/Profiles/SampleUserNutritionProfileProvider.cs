@@ -12,10 +12,17 @@ public sealed class SampleUserNutritionProfileProvider:IUserNutritionProfileProv
                 AgeYears: 30,
                 HeightCm: 180m,
                 WeightKg: 80m,
-                BodyFatPercent: null,
-                BoneMassKg: null),
+                BodyFatPercent: 20m,
+                BoneMassKg: null,
+                MuscleMassKg: null,
+                MusclePercent: null),
+
             LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+
             Goal: new NutritionGoal(
-                GoalType: WeightGoalType.Maintain));
+                GoalType: WeightGoalType.LoseWeight,
+                TargetWeightKg: 75m,
+                TargetBodyFatPercent: 15m,
+                EnergyBalancePercent: -15m));
     }
 }

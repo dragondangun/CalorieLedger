@@ -2,6 +2,7 @@
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Today;
 
@@ -11,6 +12,10 @@ public sealed class SampleTodayDashboardSnapshotProvider(
     public TodayDashboardSnapshot GetToday() {
         var profile = profileProvider.GetCurrentProfile();
         var target = NutritionTargetCalculator.Calculate(profile);
+        var goalDecision =
+            NutritionGoalDecisionEvaluator.Evaluate(
+                profile.Body,
+                profile.Goal);
 
         var meals = new[]
         {
@@ -110,6 +115,7 @@ public sealed class SampleTodayDashboardSnapshotProvider(
             ConsumedTotals: consumedTotals,
             Meals: meals,
             WeeklySummary: weeklySummary,
-            Activities: activities);
+            Activities: activities,
+            GoalDecision: goalDecision);
     }
 }
