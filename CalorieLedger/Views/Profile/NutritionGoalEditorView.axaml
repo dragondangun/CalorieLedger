@@ -1,0 +1,233 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Profile.NutritionGoalEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
+    x:DataType="profileVm:NutritionGoalEditorViewModel">
+
+  <ScrollViewer>
+    <StackPanel
+        Margin="24"
+        Spacing="14"
+        MaxWidth="640"
+        HorizontalAlignment="Center">
+
+      <TextBlock
+          Text="Настройка цели"
+          FontSize="26"
+          FontWeight="Bold" />
+
+      <TextBlock
+          Text="Тип цели"
+          FontWeight="SemiBold" />
+
+      <ComboBox
+          ItemsSource="{Binding GoalTypes}"
+          SelectedItem="{Binding GoalType, Mode=TwoWay}"
+          HorizontalAlignment="Stretch" />
+
+      <TextBlock
+          Text="Целевые показатели"
+          Margin="0,8,0,0"
+          FontSize="18"
+          FontWeight="SemiBold" />
+
+      <Grid
+          ColumnDefinitions="*,*"
+          RowDefinitions="Auto,Auto,Auto,Auto"
+          ColumnSpacing="12"
+          RowSpacing="8">
+
+        <TextBlock
+            Grid.Row="0"
+            Grid.Column="0"
+            Text="Целевой вес, кг"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="0"
+            Grid.Column="1"
+            Value="{Binding TargetWeightKg, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="500"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="1"
+            Grid.Column="0"
+            Text="Целевой жир, %"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="1"
+            Grid.Column="1"
+            Value="{Binding TargetBodyFatPercent, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="99.9"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="2"
+            Grid.Column="0"
+            Text="Целевая мышечная масса, кг"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="2"
+            Grid.Column="1"
+            Value="{Binding TargetMuscleMassKg, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="300"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="3"
+            Grid.Column="0"
+            Text="Целевой процент мышц, %"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="3"
+            Grid.Column="1"
+            Value="{Binding TargetMusclePercent, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="99.9"
+            Increment="0.1"
+            FormatString="0.0" />
+      </Grid>
+
+      <StackPanel
+          Spacing="10"
+          Margin="0,8,0,0"
+          IsVisible="{Binding CanEditEnergyStrategy}">
+
+        <TextBlock
+            Text="Энергетическая стратегия"
+            FontSize="18"
+            FontWeight="SemiBold" />
+
+        <TextBlock
+            Text="Укажите только один вариант: процент баланса или изменение веса в неделю."
+            TextWrapping="Wrap"
+            Opacity="0.75" />
+
+        <Grid
+            ColumnDefinitions="*,*"
+            RowDefinitions="Auto,Auto"
+            ColumnSpacing="12"
+            RowSpacing="8">
+
+          <TextBlock
+              Grid.Row="0"
+              Grid.Column="0"
+              Text="Дефицит / профицит, %"
+              VerticalAlignment="Center" />
+
+          <NumericUpDown
+              Grid.Row="0"
+              Grid.Column="1"
+              Value="{Binding EnergyBalancePercent, Mode=TwoWay}"
+              Minimum="-99"
+              Maximum="100"
+              Increment="0.5"
+              FormatString="0.0" />
+
+          <TextBlock
+              Grid.Row="1"
+              Grid.Column="0"
+              Text="Изменение веса, кг/нед."
+              VerticalAlignment="Center" />
+
+          <NumericUpDown
+              Grid.Row="1"
+              Grid.Column="1"
+              Value="{Binding DesiredWeightChangeKgPerWeek, Mode=TwoWay}"
+              Minimum="0.01"
+              Maximum="5"
+              Increment="0.05"
+              FormatString="0.00" />
+        </Grid>
+      </StackPanel>
+
+      <StackPanel
+          Spacing="10"
+          Margin="0,8,0,0"
+          IsVisible="{Binding CanEditMassGainOptions}">
+
+        <TextBlock
+            Text="Параметры набора массы"
+            FontSize="18"
+            FontWeight="SemiBold" />
+
+        <TextBlock
+            Text="Тип набора"
+            FontWeight="SemiBold" />
+
+        <ComboBox
+            ItemsSource="{Binding MassGainIntents}"
+            SelectedItem="{Binding MassGainIntent, Mode=TwoWay}"
+            HorizontalAlignment="Stretch" />
+
+        <Grid
+            ColumnDefinitions="*,*"
+            ColumnSpacing="12">
+
+          <TextBlock
+              Grid.Column="0"
+              Text="Остановить набор при жире, %"
+              VerticalAlignment="Center"
+              TextWrapping="Wrap" />
+
+          <NumericUpDown
+              Grid.Column="1"
+              Value="{Binding StopAtBodyFatPercent, Mode=TwoWay}"
+              Minimum="0.1"
+              Maximum="99.9"
+              Increment="0.1"
+              FormatString="0.0" />
+        </Grid>
+      </StackPanel>
+
+      <Border
+          Padding="12"
+          Margin="0,8,0,0"
+          CornerRadius="8"
+          BorderThickness="1"
+          IsVisible="{Binding HasValidationErrors}">
+
+        <StackPanel Spacing="6">
+          <TextBlock
+              Text="Ошибки"
+              FontWeight="Bold" />
+
+          <ListBox
+              ItemsSource="{Binding ValidationMessages}"
+              IsHitTestVisible="False" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock
+          Text="{Binding StatusSummary}"
+          TextWrapping="Wrap"
+          FontStyle="Italic" />
+
+      <StackPanel
+          Orientation="Horizontal"
+          HorizontalAlignment="Right"
+          Spacing="8"
+          Margin="0,8,0,0">
+
+        <Button
+            Content="Отмена"
+            Command="{Binding CancelCommand}" />
+
+        <Button
+            Content="Сохранить"
+            Command="{Binding SaveCommand}" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
