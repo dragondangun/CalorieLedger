@@ -14,5 +14,6 @@
   <Project Path="CalorieLedger.iOS/CalorieLedger.iOS.csproj">
     <Deploy />
   </Project>
+  <Project Path="CalorieLedger.Tests/CalorieLedger.Tests.csproj" Id="7c5a0be6-e427-4852-be65-d5e3fba02815" />
   <Project Path="CalorieLedger/CalorieLedger.csproj" />
 </Solution>
