@@ -3,19 +3,27 @@
 namespace CalorieLedger.Domain.Nutrition;
 
 public static class NutritionTargetCalculator {
-    private const decimal KcalPerKgBodyWeight = 7700m;
-
     public static DailyNutritionTarget Calculate(UserNutritionProfile profile) {
-        var bmr = CalculateBmr(profile.Body);
-        var activityMultiplier = GetActivityMultiplier(profile.LifestyleActivityLevel);
-        var maintenanceCalories = bmr * activityMultiplier;
+        ArgumentNullException.ThrowIfNull(profile);
+
+        var maintenanceCalories = CalculateMaintenanceCalories(profile);
+
         var goalAdjustment = CalculateGoalAdjustment(
             profile.Goal,
             maintenanceCalories);
 
-        var targetCalories = Math.Round(maintenanceCalories + goalAdjustment, 0);
+        var targetCalories = Math.Round(
+            maintenanceCalories + goalAdjustment,
+            0);
 
-        var proteinTarget = CalculateProteinTarget(profile.Body, profile.Goal);
+        if(targetCalories <= 0m) {
+            throw new InvalidOperationException(
+                "The selected energy strategy produces a non-positive calorie target.");
+        }
+
+        var proteinTarget = CalculateProteinTarget(
+            profile.Body,
+            profile.Goal);
         var fatTarget = CalculateFatTarget(targetCalories);
         var carbsTarget = CalculateCarbsTarget(
             targetCalories,
@@ -65,36 +73,19 @@ public static class NutritionTargetCalculator {
     private static decimal CalculateGoalAdjustment(
         NutritionGoal goal,
         decimal maintenanceCalories) {
-        if(goal.Strategy is not null) {
-            var calculation = EnergyStrategyCalculator.Calculate(
-                strategy: goal.Strategy,
-                goalType: goal.GoalType,
-                maintenanceCaloriesKcal: maintenanceCalories);
-
-            return calculation.DailyEnergyAdjustmentKcal;
+        if(goal.Strategy is null) {
+            throw new InvalidOperationException(
+                "Nutrition goal must have an energy strategy.");
         }
 
-        if(goal.EnergyBalancePercent is not null) {
-            return maintenanceCalories * goal.EnergyBalancePercent.Value / 100m;
-        }
+        var calculation =
+        EnergyStrategyCalculator.Calculate(
+            strategy: goal.Strategy,
+            goalType: goal.GoalType,
+            maintenanceCaloriesKcal:
+                maintenanceCalories);
 
-        if(goal.GoalType == WeightGoalType.Maintain) {
-            return 0m;
-        }
-
-        if(goal.DesiredWeightChangeKgPerWeek is null or <= 0m) {
-            return 0m;
-        }
-
-        var dailyAdjustment = goal.DesiredWeightChangeKgPerWeek.Value * KcalPerKgBodyWeight / 7m;
-
-        return goal.GoalType switch
-        {
-            WeightGoalType.LoseWeight => -dailyAdjustment,
-            WeightGoalType.GainWeight => dailyAdjustment,
-            WeightGoalType.Maintain => 0m,
-            _ => throw new ArgumentOutOfRangeException(nameof(goal.GoalType), goal.GoalType, null)
-        };
+        return calculation.DailyEnergyAdjustmentKcal;
     }
 
     private static decimal CalculateProteinTarget(
@@ -127,5 +118,15 @@ public static class NutritionTargetCalculator {
         return carbsCalories <= 0m
             ? 0m
             : carbsCalories / 4m;
+    }
+
+    public static decimal CalculateMaintenanceCalories(UserNutritionProfile profile) {
+        var bmr = CalculateBmr(profile.Body);
+
+        var activityMultiplier =
+        GetActivityMultiplier(
+            profile.LifestyleActivityLevel);
+
+        return bmr * activityMultiplier;
     }
 }

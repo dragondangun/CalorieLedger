@@ -6,17 +6,17 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
     [Fact]
     public void Evaluate_WeightLossGoalReached_ReturnsCompletionActions() {
         var body = CreateBodyProfile(
-            weightKg: 74.8m,
-            bodyFatPercent: 14.8m);
+        weightKg: 74.8m,
+        bodyFatPercent: 14.8m);
 
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.LoseWeight,
             TargetWeightKg: 75m,
             TargetBodyFatPercent: 15m,
-            EnergyBalancePercent: -15m);
+            Strategy: EnergyStrategy.FromBalancePercent(15m));
 
         var result =
-            NutritionGoalDecisionEvaluator.Evaluate(body, goal);
+        NutritionGoalDecisionEvaluator.Evaluate(body, goal);
 
         Assert.Equal(
             NutritionGoalDecisionStatus.GoalReached,
@@ -50,7 +50,8 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.LoseWeight,
             TargetWeightKg: 75m,
-            TargetBodyFatPercent: 15m);
+            TargetBodyFatPercent: 15m,
+            Strategy: EnergyStrategy.FromBalancePercent(15m));
 
         var result =
             NutritionGoalDecisionEvaluator.Evaluate(body, goal);
@@ -78,12 +79,13 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.GainWeight,
             TargetMuscleMassKg: 42m,
-            EnergyBalancePercent: 5m,
+            Strategy: EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: 18m,
             MassGainIntent: MassGainIntent.LeanMassPriority);
 
-        var result =
-            NutritionGoalDecisionEvaluator.Evaluate(body, goal);
+        var result = NutritionGoalDecisionEvaluator.Evaluate(
+            body,
+            goal);
 
         Assert.Equal(
             NutritionGoalDecisionStatus.StopLimitReached,
@@ -110,7 +112,8 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.LoseWeight,
             TargetWeightKg: 75m,
-            TargetBodyFatPercent: 15m);
+            TargetBodyFatPercent: 15m,
+            Strategy: EnergyStrategy.FromBalancePercent(15m));
 
         var result =
             NutritionGoalDecisionEvaluator.Evaluate(body, goal);
@@ -135,7 +138,8 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.LoseWeight,
             TargetWeightKg: 75m,
-            TargetBodyFatPercent: 15m);
+            TargetBodyFatPercent: 15m,
+            Strategy: EnergyStrategy.FromBalancePercent(15m));
 
         var result =
             NutritionGoalDecisionEvaluator.Evaluate(body, goal);
@@ -159,10 +163,13 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
 
         var goal = new NutritionGoal(
         GoalType: WeightGoalType.Maintain,
-        EnergyBalancePercent: 0m);
+        Strategy:
+            EnergyStrategy.FromBalancePercent(0m));
 
         var result =
-        NutritionGoalDecisionEvaluator.Evaluate(body, goal);
+        NutritionGoalDecisionEvaluator.Evaluate(
+            body,
+            goal);
 
         Assert.Equal(
             NutritionGoalDecisionStatus.InProgress,
@@ -185,7 +192,8 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
 
         var goal = new NutritionGoal(
         GoalType: WeightGoalType.GainWeight,
-        EnergyBalancePercent: 5m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(5m),
         StopAtBodyFatPercent: 18m,
         MassGainIntent:
             MassGainIntent.LeanMassPriority);
@@ -208,6 +216,31 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
             result.AvailableActions);
     }
 
+    [Fact]
+    public void Evaluate_WeightLossWithoutTargets_ReturnsNotConfigured() {
+        var body = CreateBodyProfile(
+        weightKg: 80m,
+        bodyFatPercent: 18m);
+
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        Strategy: EnergyStrategy.FromBalancePercent(10m));
+
+        var result = NutritionGoalDecisionEvaluator.Evaluate(
+            body,
+            goal);
+
+        Assert.Equal(
+            NutritionGoalDecisionStatus.NotConfigured,
+            result.Status);
+
+        Assert.Single(result.AvailableActions);
+
+        Assert.Contains(
+            GoalNextAction.SetNewGoal,
+            result.AvailableActions);
+    }
+
     private static BodyProfile CreateBodyProfile(
         decimal weightKg,
         decimal? bodyFatPercent,
@@ -222,29 +255,5 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
             BoneMassKg: null,
             MuscleMassKg: muscleMassKg,
             MusclePercent: musclePercent);
-    }
-
-    [Fact]
-    public void Evaluate_WeightLossWithoutTargets_ReturnsNotConfigured() {
-        var body = CreateBodyProfile(
-        weightKg: 80m,
-        bodyFatPercent: 18m);
-
-        var goal = new NutritionGoal(
-        GoalType: WeightGoalType.LoseWeight,
-        EnergyBalancePercent: -10m);
-
-        var result =
-        NutritionGoalDecisionEvaluator.Evaluate(body, goal);
-
-        Assert.Equal(
-            NutritionGoalDecisionStatus.NotConfigured,
-            result.Status);
-
-        Assert.Single(result.AvailableActions);
-
-        Assert.Contains(
-            GoalNextAction.SetNewGoal,
-            result.AvailableActions);
     }
 }

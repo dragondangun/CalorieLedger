@@ -8,7 +8,7 @@ public sealed record NutritionGoalDraft(
     decimal? TargetBodyFatPercent = null,
     decimal? TargetMuscleMassKg = null,
     decimal? TargetMusclePercent = null,
-    decimal? DesiredWeightChangeKgPerWeek = null,
-    decimal? EnergyBalancePercent = null,
+    EnergyStrategyMode StrategyMode = EnergyStrategyMode.BalancePercent,
+    decimal? StrategyValue = null,
     decimal? StopAtBodyFatPercent = null,
     MassGainIntent? MassGainIntent = null);

@@ -29,10 +29,13 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
     private decimal? targetMusclePercent;
 
     [ObservableProperty]
-    private decimal? desiredWeightChangeKgPerWeek;
+    private EnergyStrategyMode strategyMode;
 
     [ObservableProperty]
-    private decimal? energyBalancePercent;
+    private decimal? strategyValue;
+
+    [ObservableProperty]
+    private string strategyPreviewSummary = string.Empty;
 
     [ObservableProperty]
     private decimal? stopAtBodyFatPercent;
@@ -42,6 +45,71 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
 
     [ObservableProperty]
     private string statusSummary = string.Empty;
+
+    public IReadOnlyList<EnergyStrategyMode> StrategyModes { get; } = Enum.GetValues<EnergyStrategyMode>();
+
+    public decimal StrategyValueMaximum => StrategyMode switch
+    {
+        EnergyStrategyMode.BalancePercent => 99.9m,
+        EnergyStrategyMode.WeightChangePerWeek => 5m,
+
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(StrategyMode),
+            StrategyMode,
+            null)
+    };
+
+    public decimal StrategyValueIncrement => StrategyMode switch
+    {
+        EnergyStrategyMode.BalancePercent => 0.5m,
+        EnergyStrategyMode.WeightChangePerWeek => 0.05m,
+
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(StrategyMode),
+            StrategyMode,
+            null)
+    };
+
+    public string StrategyValueLabel => GoalType switch
+    {
+        WeightGoalType.Maintain =>
+            "Энергетический баланс, %",
+
+        WeightGoalType.LoseWeight =>
+            StrategyMode switch
+            {
+                EnergyStrategyMode.BalancePercent =>
+                    "Величина дефицита, %",
+
+                EnergyStrategyMode.WeightChangePerWeek =>
+                    "Снижение веса, кг/нед.",
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(StrategyMode),
+                    StrategyMode,
+                    null)
+            },
+
+        WeightGoalType.GainWeight =>
+            StrategyMode switch
+            {
+                EnergyStrategyMode.BalancePercent =>
+                    "Величина профицита, %",
+
+                EnergyStrategyMode.WeightChangePerWeek =>
+                    "Набор веса, кг/нед.",
+
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(StrategyMode),
+                    StrategyMode,
+                    null)
+            },
+
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(GoalType),
+            GoalType,
+            null)
+    };
 
     public NutritionGoalEditorViewModel(
         NutritionGoalEditorService editorService,
@@ -57,11 +125,29 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
         TargetBodyFatPercent = draft.TargetBodyFatPercent;
         TargetMuscleMassKg = draft.TargetMuscleMassKg;
         TargetMusclePercent = draft.TargetMusclePercent;
-        DesiredWeightChangeKgPerWeek =
-            draft.DesiredWeightChangeKgPerWeek;
-        EnergyBalancePercent = draft.EnergyBalancePercent;
+        StrategyMode = draft.StrategyMode;
+        StrategyValue = draft.StrategyValue;
         StopAtBodyFatPercent = draft.StopAtBodyFatPercent;
         MassGainIntent = draft.MassGainIntent;
+        UpdateStrategyPreview();
+    }
+
+    partial void OnStrategyModeChanged(
+    EnergyStrategyMode value) {
+        OnPropertyChanged(
+            nameof(StrategyValueLabel));
+
+        OnPropertyChanged(
+            nameof(StrategyValueMaximum));
+
+        OnPropertyChanged(
+            nameof(StrategyValueIncrement));
+
+        UpdateStrategyPreview();
+    }
+
+    partial void OnStrategyValueChanged(decimal? value) {
+        UpdateStrategyPreview();
     }
 
     public IReadOnlyList<WeightGoalType> GoalTypes { get; } =
@@ -120,53 +206,91 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
         onCancelled();
     }
 
-    partial void OnGoalTypeChanged(
-        WeightGoalType value) {
+    partial void OnGoalTypeChanged(WeightGoalType value) {
         OnPropertyChanged(nameof(IsMaintenance));
         OnPropertyChanged(nameof(IsWeightLoss));
         OnPropertyChanged(nameof(IsWeightGain));
         OnPropertyChanged(nameof(CanEditEnergyStrategy));
         OnPropertyChanged(nameof(CanEditMassGainOptions));
+        OnPropertyChanged(nameof(StrategyValueLabel));
+
+        if(value == WeightGoalType.Maintain) {
+            StrategyMode =
+                EnergyStrategyMode.BalancePercent;
+
+            StrategyValue = 0m;
+        }
+        else if(StrategyValue == 0m) {
+            StrategyValue = null;
+        }
+
+        UpdateStrategyPreview();
     }
 
     private NutritionGoalDraft CreateDraft() {
-        var normalizedEnergyBalancePercent =
-            GoalType == WeightGoalType.Maintain
-                ? 0m
-                : EnergyBalancePercent;
+        var normalizedStrategyMode =
+        GoalType == WeightGoalType.Maintain
+            ? EnergyStrategyMode.BalancePercent
+            : StrategyMode;
 
-        var normalizedWeightChange =
-            GoalType == WeightGoalType.Maintain
-                ? null
-                : DesiredWeightChangeKgPerWeek;
+        var normalizedStrategyValue =
+        GoalType == WeightGoalType.Maintain
+            ? 0m
+            : StrategyValue;
 
         var normalizedStopAtBodyFat =
-            GoalType == WeightGoalType.GainWeight
-                ? StopAtBodyFatPercent
-                : null;
+        GoalType == WeightGoalType.GainWeight
+            ? StopAtBodyFatPercent
+            : null;
 
         var normalizedMassGainIntent =
-            GoalType == WeightGoalType.GainWeight
-                ? MassGainIntent
-                : null;
+        GoalType == WeightGoalType.GainWeight
+            ? MassGainIntent
+            : null;
 
         return new NutritionGoalDraft(
             GoalType: GoalType,
             TargetWeightKg: TargetWeightKg,
-            TargetBodyFatPercent:
-                TargetBodyFatPercent,
-            TargetMuscleMassKg:
-                TargetMuscleMassKg,
-            TargetMusclePercent:
-                TargetMusclePercent,
-            DesiredWeightChangeKgPerWeek:
-                normalizedWeightChange,
-            EnergyBalancePercent:
-                normalizedEnergyBalancePercent,
-            StopAtBodyFatPercent:
-                normalizedStopAtBodyFat,
-            MassGainIntent:
-                normalizedMassGainIntent);
+            TargetBodyFatPercent: TargetBodyFatPercent,
+            TargetMuscleMassKg: TargetMuscleMassKg,
+            TargetMusclePercent: TargetMusclePercent,
+            StrategyMode: normalizedStrategyMode,
+            StrategyValue: normalizedStrategyValue,
+            StopAtBodyFatPercent: normalizedStopAtBodyFat,
+            MassGainIntent: normalizedMassGainIntent);
+    }
+
+    private void UpdateStrategyPreview() {
+        var preview = editorService.CalculateStrategyPreview(
+            CreateDraft());
+
+        if(preview is null) {
+            StrategyPreviewSummary = GoalType == WeightGoalType.Maintain
+                ? "Поддержание: калорийность без дефицита или профицита."
+                : StrategyMode == EnergyStrategyMode.BalancePercent
+                    ? "Введите процент больше 0 и меньше 100."
+                    : "Введите изменение веса больше 0 кг/нед.";
+
+            return;
+        }
+
+        StrategyPreviewSummary =
+            $"Поддержание: " +
+            $"{preview.MaintenanceCaloriesKcal:0} ккал/день. " +
+            $"Целевая калорийность: " +
+            $"{preview.TargetCaloriesKcal:0} ккал/день. " +
+            $"Баланс: " +
+            $"{FormatSigned(preview.EnergyBalancePercent)}%. " +
+            $"Расчётное изменение веса: " +
+            $"{FormatSigned(preview.PredictedWeightChangeKgPerWeek)} " +
+            "кг/нед.";
+    }
+
+    private static string FormatSigned(
+        decimal value) {
+        return value > 0m
+            ? $"+{value:0.##}"
+            : $"{value:0.##}";
     }
 
     private void ClearValidationMessages() {
@@ -177,7 +301,7 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
     }
 
     private static string FormatValidationError(
-        NutritionGoalValidationError error) {
+    NutritionGoalValidationError error) {
         return error switch
         {
             NutritionGoalValidationError.InvalidTargetWeight =>
@@ -192,29 +316,11 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             NutritionGoalValidationError.InvalidTargetMusclePercent =>
                 "Целевой процент мышц должен находиться между 0 и 100%.",
 
-            NutritionGoalValidationError.InvalidDesiredWeightChange =>
-                "Желаемое изменение веса должно быть больше нуля.",
-
-            NutritionGoalValidationError.InvalidEnergyBalancePercent =>
-                "Некорректный процент дефицита или профицита.",
-
             NutritionGoalValidationError.MissingEnergyStrategy =>
-                "Укажите процент дефицита/профицита либо изменение веса в неделю.",
-
-            NutritionGoalValidationError.ConflictingEnergyStrategies =>
-                "Нельзя одновременно указывать процент баланса и изменение веса в неделю.",
-
-            NutritionGoalValidationError.WeightLossRequiresDeficit =>
-                "Для снижения веса требуется отрицательный процент энергетического баланса.",
-
-            NutritionGoalValidationError.WeightGainRequiresSurplus =>
-                "Для набора массы требуется положительный процент энергетического баланса.",
+                "Укажите величину энергетической стратегии.",
 
             NutritionGoalValidationError.MaintenanceRequiresNeutralEnergyBalance =>
-                "Для поддержания энергетический баланс должен быть равен 0%.",
-
-            NutritionGoalValidationError.WeightChangeNotAllowedForMaintenance =>
-                "Для поддержания нельзя задавать изменение веса в неделю.",
+                "Для поддержания величина энергетической стратегии должна быть равна нулю.",
 
             NutritionGoalValidationError.InvalidStopBodyFatPercent =>
                 "Предел процента жира должен находиться между 0 и 100%.",
@@ -225,13 +331,11 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             NutritionGoalValidationError.MassGainIntentOnlyForWeightGain =>
                 "Тип набора массы применяется только к цели набора веса.",
 
-            NutritionGoalValidationError.ConflictingLegacyAndUnifiedEnergyStrategies =>
-                "Нельзя одновременно использовать старые поля и новую энергетическую стратегию.",
-
             NutritionGoalValidationError.InvalidEnergyStrategyValue =>
-                "Некорректная величина энергетической стратегии.",
+                "Величина энергетической стратегии некорректна.",
 
-            _ => $"Неизвестная ошибка проверки: {error}."
+            _ =>
+                $"Неизвестная ошибка проверки: {error}."
         };
     }
 }

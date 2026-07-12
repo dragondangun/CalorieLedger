@@ -9,6 +9,8 @@ public static class EnergyStrategyCalculator {
         EnergyStrategy strategy,
         WeightGoalType goalType,
         decimal maintenanceCaloriesKcal) {
+        ArgumentNullException.ThrowIfNull(strategy);
+
         if(maintenanceCaloriesKcal <= 0m) {
             throw new ArgumentOutOfRangeException(
                 nameof(maintenanceCaloriesKcal),
@@ -21,6 +23,21 @@ public static class EnergyStrategyCalculator {
                 nameof(strategy),
                 strategy.Value,
                 "Energy strategy value cannot be negative.");
+        }
+
+        if(goalType != WeightGoalType.Maintain
+            && strategy.Value == 0m) {
+            throw new ArgumentException(
+                "Weight loss and weight gain strategies must be greater than zero.",
+                nameof(strategy));
+        }
+
+        if(strategy.Mode == EnergyStrategyMode.BalancePercent
+            && strategy.Value >= 100m) {
+            throw new ArgumentOutOfRangeException(
+                nameof(strategy),
+                strategy.Value,
+                "Energy balance percentage must be less than 100.");
         }
 
         if(goalType == WeightGoalType.Maintain
@@ -72,14 +89,10 @@ public static class EnergyStrategyCalculator {
             / KcalPerKgBodyWeight;
 
         return new EnergyStrategyCalculation(
-            MaintenanceCaloriesKcal:
-                maintenanceCaloriesKcal,
-            DailyEnergyAdjustmentKcal:
-                dailyEnergyAdjustment,
-            EnergyBalancePercent:
-                signedBalancePercent,
-            PredictedWeightChangeKgPerWeek:
-                predictedWeightChange);
+            MaintenanceCaloriesKcal: maintenanceCaloriesKcal,
+            DailyEnergyAdjustmentKcal: dailyEnergyAdjustment,
+            EnergyBalancePercent: signedBalancePercent,
+            PredictedWeightChangeKgPerWeek: predictedWeightChange);
     }
 
     private static EnergyStrategyCalculation
@@ -102,14 +115,10 @@ public static class EnergyStrategyCalculator {
             * 100m;
 
         return new EnergyStrategyCalculation(
-            MaintenanceCaloriesKcal:
-                maintenanceCaloriesKcal,
-            DailyEnergyAdjustmentKcal:
-                dailyEnergyAdjustment,
-            EnergyBalancePercent:
-                energyBalancePercent,
-            PredictedWeightChangeKgPerWeek:
-                signedWeightChange);
+            MaintenanceCaloriesKcal: maintenanceCaloriesKcal,
+            DailyEnergyAdjustmentKcal: dailyEnergyAdjustment,
+            EnergyBalancePercent: energyBalancePercent,
+            PredictedWeightChangeKgPerWeek: signedWeightChange);
     }
 
     private static decimal GetDirection(

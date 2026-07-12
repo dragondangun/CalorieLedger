@@ -14,10 +14,10 @@ public sealed class NutritionGoalEditorViewModelTests {
             GoalType: WeightGoalType.GainWeight,
             TargetWeightKg: 85m,
             TargetMuscleMassKg: 42m,
-            EnergyBalancePercent: 5m,
+            StrategyMode: EnergyStrategyMode.BalancePercent,
+            StrategyValue: 5m,
             StopAtBodyFatPercent: 18m,
-            MassGainIntent:
-                MassGainIntent.LeanMassPriority);
+            MassGainIntent: MassGainIntent.LeanMassPriority);
 
         var viewModel = new NutritionGoalEditorViewModel(
             editorService: editorService,
@@ -38,8 +38,12 @@ public sealed class NutritionGoalEditorViewModelTests {
             viewModel.TargetMuscleMassKg);
 
         Assert.Equal(
+            EnergyStrategyMode.BalancePercent,
+            viewModel.StrategyMode);
+
+        Assert.Equal(
             5m,
-            viewModel.EnergyBalancePercent);
+            viewModel.StrategyValue);
 
         Assert.Equal(
             18m,
@@ -60,8 +64,7 @@ public sealed class NutritionGoalEditorViewModelTests {
 
         var callbackInvoked = false;
 
-        var draft =
-            editorService.CreateNewGoal(
+        var draft = editorService.CreateNewGoal(
                 WeightGoalType.LoseWeight);
 
         var viewModel = new NutritionGoalEditorViewModel(
@@ -72,7 +75,8 @@ public sealed class NutritionGoalEditorViewModelTests {
 
         viewModel.TargetWeightKg = 75m;
         viewModel.TargetBodyFatPercent = 15m;
-        viewModel.EnergyBalancePercent = -15m;
+        viewModel.StrategyMode = EnergyStrategyMode.BalancePercent;
+        viewModel.StrategyValue = 15m;
 
         viewModel.SaveCommand.Execute(null);
 
@@ -95,23 +99,27 @@ public sealed class NutritionGoalEditorViewModelTests {
             15m,
             savedGoal.TargetBodyFatPercent);
 
+        Assert.NotNull(savedGoal.Strategy);
+
         Assert.Equal(
-            -15m,
-            savedGoal.EnergyBalancePercent);
+            EnergyStrategyMode.BalancePercent,
+            savedGoal.Strategy.Mode);
+
+        Assert.Equal(
+            15m,
+            savedGoal.Strategy.Value);
     }
 
     [Fact]
     public void SaveCommand_InvalidGoal_ShowsErrorsAndDoesNotInvokeCallback() {
         var store = new TestUserNutritionProfileStore();
-        var originalGoal =
-            store.GetCurrentProfile().Goal;
+        var originalGoal = store.GetCurrentProfile().Goal;
 
         var editorService = CreateEditorService(store);
         var callbackInvoked = false;
 
-        var draft =
-            editorService.CreateNewGoal(
-                WeightGoalType.LoseWeight);
+        var draft = editorService.CreateNewGoal(
+            WeightGoalType.LoseWeight);
 
         var viewModel = new NutritionGoalEditorViewModel(
             editorService: editorService,
@@ -120,7 +128,8 @@ public sealed class NutritionGoalEditorViewModelTests {
             onCancelled: () => { });
 
         viewModel.TargetWeightKg = 75m;
-        viewModel.EnergyBalancePercent = 5m;
+        viewModel.StrategyMode = EnergyStrategyMode.BalancePercent;
+        viewModel.StrategyValue = 0m;
 
         viewModel.SaveCommand.Execute(null);
 
@@ -141,10 +150,10 @@ public sealed class NutritionGoalEditorViewModelTests {
         var draft = new NutritionGoalDraft(
             GoalType: WeightGoalType.GainWeight,
             TargetWeightKg: 85m,
-            EnergyBalancePercent: 5m,
+            StrategyMode: EnergyStrategyMode.BalancePercent,
+            StrategyValue: 5m,
             StopAtBodyFatPercent: 18m,
-            MassGainIntent:
-                MassGainIntent.LeanMassPriority);
+            MassGainIntent: MassGainIntent.LeanMassPriority);
 
         var viewModel = new NutritionGoalEditorViewModel(
             editorService: editorService,
@@ -156,12 +165,12 @@ public sealed class NutritionGoalEditorViewModelTests {
             WeightGoalType.LoseWeight;
 
         viewModel.TargetWeightKg = 75m;
-        viewModel.EnergyBalancePercent = -15m;
+        viewModel.StrategyMode = EnergyStrategyMode.BalancePercent;
+        viewModel.StrategyValue = 15m;
 
         viewModel.SaveCommand.Execute(null);
 
-        var savedGoal =
-            store.GetCurrentProfile().Goal;
+        var savedGoal = store.GetCurrentProfile().Goal;
 
         Assert.Equal(
             WeightGoalType.LoseWeight,
@@ -181,8 +190,7 @@ public sealed class NutritionGoalEditorViewModelTests {
 
         var callbackInvoked = false;
 
-        var draft =
-            editorService.LoadCurrentGoal();
+        var draft = editorService.LoadCurrentGoal();
 
         var viewModel = new NutritionGoalEditorViewModel(
             editorService: editorService,
@@ -195,19 +203,63 @@ public sealed class NutritionGoalEditorViewModelTests {
         Assert.True(callbackInvoked);
     }
 
-    private static NutritionGoalEditorService
-        CreateEditorService(
-            IUserNutritionProfileStore store) {
-        var updateService =
-            new NutritionGoalUpdateService(store);
+    [Fact]
+    public void GoalTypeChanged_ToMaintenance_SetsNeutralStrategy() {
+        var store = new TestUserNutritionProfileStore();
+        var editorService = CreateEditorService(store);
+
+        var draft = editorService.CreateNewGoal(WeightGoalType.LoseWeight);
+
+        var viewModel = new NutritionGoalEditorViewModel(
+            editorService,
+            draft,
+            onSaved: () => { },
+            onCancelled: () => { });
+
+        viewModel.StrategyValue = 15m;
+
+        viewModel.GoalType = WeightGoalType.Maintain;
+
+        Assert.Equal(
+            EnergyStrategyMode.BalancePercent,
+            viewModel.StrategyMode);
+
+        Assert.Equal(
+            0m,
+            viewModel.StrategyValue);
+
+        Assert.False(
+            viewModel.CanEditEnergyStrategy);
+    }
+
+    [Fact]
+    public void GoalTypeChanged_FromMaintenance_ClearsZeroStrategy() {
+        var store = new TestUserNutritionProfileStore();
+        var editorService = CreateEditorService(store);
+
+        var draft = editorService.CreateNewGoal(WeightGoalType.Maintain);
+
+        var viewModel = new NutritionGoalEditorViewModel(
+            editorService,
+            draft,
+            onSaved: () => { },
+            onCancelled: () => { });
+
+        viewModel.GoalType = WeightGoalType.LoseWeight;
+
+        Assert.Null(viewModel.StrategyValue);
+    }
+
+    private static NutritionGoalEditorService CreateEditorService(
+        IUserNutritionProfileStore store) {
+        var updateService = new NutritionGoalUpdateService(store);
 
         return new NutritionGoalEditorService(
             profileProvider: store,
             goalUpdateService: updateService);
     }
 
-    private sealed class TestUserNutritionProfileStore
-        :IUserNutritionProfileStore {
+    private sealed class TestUserNutritionProfileStore:IUserNutritionProfileStore {
         private UserNutritionProfile currentProfile =
             new(
                 Id: Guid.NewGuid(),
@@ -221,11 +273,10 @@ public sealed class NutritionGoalEditorViewModelTests {
                     BoneMassKg: null,
                     MuscleMassKg: null,
                     MusclePercent: null),
-                LifestyleActivityLevel:
-                    LifestyleActivityLevel.Sedentary,
+                LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
                 Goal: new NutritionGoal(
                     GoalType: WeightGoalType.Maintain,
-                    EnergyBalancePercent: 0m));
+                    Strategy: EnergyStrategy.FromBalancePercent(0m)));
 
         public UserNutritionProfile GetCurrentProfile() {
             return currentProfile;

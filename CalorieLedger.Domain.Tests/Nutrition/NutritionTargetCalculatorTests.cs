@@ -18,7 +18,8 @@ public sealed class NutritionTargetCalculatorTests {
                 BoneMassKg: null),
             LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
             Goal: new NutritionGoal(
-                GoalType: WeightGoalType.Maintain));
+                GoalType: WeightGoalType.Maintain,
+                Strategy: EnergyStrategy.FromBalancePercent(0m)));
 
         var target = NutritionTargetCalculator.Calculate(profile);
 
@@ -44,13 +45,14 @@ public sealed class NutritionTargetCalculatorTests {
             Body: body,
             LifestyleActivityLevel: LifestyleActivityLevel.LightlyActive,
             Goal: new NutritionGoal(
-                GoalType: WeightGoalType.Maintain));
+                GoalType: WeightGoalType.Maintain,
+                Strategy: EnergyStrategy.FromBalancePercent(0m)));
 
         var losingProfile = maintenanceProfile with
         {
             Goal = new NutritionGoal(
                 GoalType: WeightGoalType.LoseWeight,
-                DesiredWeightChangeKgPerWeek: 0.5m)
+                Strategy: EnergyStrategy.FromWeightChangePerWeek(0.5m))
         };
 
         var maintenanceTarget = NutritionTargetCalculator.Calculate(maintenanceProfile);
@@ -75,13 +77,14 @@ public sealed class NutritionTargetCalculatorTests {
             Body: body,
             LifestyleActivityLevel: LifestyleActivityLevel.ModeratelyActive,
             Goal: new NutritionGoal(
-                GoalType: WeightGoalType.Maintain));
+                GoalType: WeightGoalType.Maintain,
+                Strategy: EnergyStrategy.FromBalancePercent(0m)));
 
         var gainingProfile = maintenanceProfile with
         {
             Goal = new NutritionGoal(
                 GoalType: WeightGoalType.GainWeight,
-                DesiredWeightChangeKgPerWeek: 0.25m)
+                Strategy: EnergyStrategy.FromWeightChangePerWeek(0.25m))
         };
 
         var maintenanceTarget = NutritionTargetCalculator.Calculate(maintenanceProfile);
@@ -91,16 +94,14 @@ public sealed class NutritionTargetCalculatorTests {
     }
 
     [Fact]
-    public void Calculate_WeightLossWithUnifiedStrategy_AppliesPercentageDeficit() {
+    public void Calculate_GainWeightWithBalancePercentStrategy_ReturnsFivePercentSurplus() {
         var body = new BodyProfile(
         Sex: BiologicalSex.Male,
         AgeYears: 30,
         HeightCm: 180m,
         WeightKg: 80m,
         BodyFatPercent: null,
-        BoneMassKg: null,
-        MuscleMassKg: null,
-        MusclePercent: null);
+        BoneMassKg: null);
 
         var maintenanceProfile =
         new UserNutritionProfile(
@@ -110,36 +111,97 @@ public sealed class NutritionTargetCalculatorTests {
             LifestyleActivityLevel:
                 LifestyleActivityLevel.Sedentary,
             Goal: new NutritionGoal(
-                GoalType:
-                    WeightGoalType.Maintain,
-                Strategy:
-                    EnergyStrategy
-                        .FromBalancePercent(0m)));
+                GoalType: WeightGoalType.Maintain,
+                Strategy: EnergyStrategy.FromBalancePercent(0m)));
 
-        var losingProfile =
+        var gainingProfile =
         maintenanceProfile with
         {
             Goal = new NutritionGoal(
-                GoalType:
-                    WeightGoalType.LoseWeight,
-                TargetWeightKg: 75m,
+                GoalType: WeightGoalType.GainWeight,
                 Strategy:
-                    EnergyStrategy
-                        .FromBalancePercent(15m))
+                    EnergyStrategy.FromBalancePercent(5m),
+                StopAtBodyFatPercent: 18m,
+                MassGainIntent:
+                    MassGainIntent.LeanMassPriority)
         };
 
-        var maintenance =
+        var maintenanceTarget =
         NutritionTargetCalculator.Calculate(
             maintenanceProfile);
 
-        var losing =
+        var gainingTarget =
         NutritionTargetCalculator.Calculate(
+            gainingProfile);
+
+        Assert.Equal(
+            Math.Round(
+                maintenanceTarget.CaloriesKcal * 1.05m,
+                0),
+            gainingTarget.CaloriesKcal);
+    }
+
+    [Fact]
+    public void Calculate_LoseWeightWithBalancePercentStrategy_ReturnsFifteenPercentDeficit() {
+        var body = new BodyProfile(
+        Sex: BiologicalSex.Female,
+        AgeYears: 30,
+        HeightCm: 165m,
+        WeightKg: 70m,
+        BodyFatPercent: null,
+        BoneMassKg: null);
+
+        var maintenanceProfile =
+        new UserNutritionProfile(
+            Id: Guid.NewGuid(),
+            DisplayName: "Maintenance user",
+            Body: body,
+            LifestyleActivityLevel:
+                LifestyleActivityLevel.LightlyActive,
+            Goal: new NutritionGoal(
+                GoalType: WeightGoalType.Maintain,
+                Strategy: EnergyStrategy.FromBalancePercent(0m)));
+
+        var losingProfile = maintenanceProfile with
+        {
+            Goal = new NutritionGoal(
+                GoalType: WeightGoalType.LoseWeight,
+                TargetBodyFatPercent: 20m,
+                Strategy: EnergyStrategy.FromBalancePercent(15m))
+        };
+
+        var maintenanceTarget = NutritionTargetCalculator.Calculate(
+            maintenanceProfile);
+
+        var losingTarget = NutritionTargetCalculator.Calculate(
             losingProfile);
 
         Assert.Equal(
             Math.Round(
-                maintenance.CaloriesKcal * 0.85m,
+                maintenanceTarget.CaloriesKcal * 0.85m,
                 0),
-            losing.CaloriesKcal);
+            losingTarget.CaloriesKcal);
+    }
+
+    [Fact]
+    public void Calculate_GoalWithoutEnergyStrategy_ThrowsInvalidOperationException() {
+        var profile = new UserNutritionProfile(
+        Id: Guid.NewGuid(),
+        DisplayName: "Invalid user",
+        Body: new BodyProfile(
+            Sex: BiologicalSex.Male,
+            AgeYears: 30,
+            HeightCm: 180m,
+            WeightKg: 80m,
+            BodyFatPercent: null,
+            BoneMassKg: null),
+        LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+        Goal: new NutritionGoal(
+            GoalType: WeightGoalType.Maintain,
+            Strategy: null));
+
+        Assert.Throws<InvalidOperationException>(
+            () => NutritionTargetCalculator.Calculate(
+                profile));
     }
 }

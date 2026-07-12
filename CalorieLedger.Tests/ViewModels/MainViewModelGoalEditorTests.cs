@@ -1,5 +1,6 @@
 ﻿using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels;
+using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels;
 
@@ -42,27 +43,25 @@ public sealed class MainViewModelGoalEditorTests {
     public void SaveValidGoal_ClosesEditorAndRefreshesDashboard() {
         var viewModel = new MainViewModel();
 
-        var action =
-            viewModel.Today.GoalActions.Single(
-                x => x.Action == GoalNextAction.SetNewGoal);
+        var action = viewModel.Today.GoalActions.Single(x => x.Action == GoalNextAction.SetNewGoal);
 
         action.SelectCommand.Execute(null);
 
-        var editor = Assert.IsType<
-            CalorieLedger.ViewModels.Profile
-                .NutritionGoalEditorViewModel>(
-            viewModel.GoalEditor);
+        var editor = Assert.IsType<NutritionGoalEditorViewModel>(viewModel.GoalEditor);
 
-        editor.GoalType =
-            WeightGoalType.LoseWeight;
+        editor.GoalType = WeightGoalType.LoseWeight;
 
         editor.TargetWeightKg = 75m;
         editor.TargetBodyFatPercent = 15m;
 
-        editor.DesiredWeightChangeKgPerWeek = null;
-        editor.EnergyBalancePercent = -10m;
+        editor.StrategyMode = EnergyStrategyMode.BalancePercent;
+
+        editor.StrategyValue = 10m;
 
         editor.SaveCommand.Execute(null);
+
+        Assert.False(editor.HasValidationErrors);
+        Assert.Empty(editor.ValidationMessages);
 
         Assert.False(viewModel.IsGoalEditorOpen);
         Assert.True(viewModel.IsTodayDashboardVisible);
@@ -103,5 +102,31 @@ public sealed class MainViewModelGoalEditorTests {
         Assert.Contains(
             nameof(MainViewModel.IsTodayDashboardVisible),
             changedProperties);
+    }
+
+    [Fact]
+    public void SaveInvalidGoal_KeepsEditorOpen() {
+        var viewModel = new MainViewModel();
+
+        var action = viewModel.Today.GoalActions.Single(x => x.Action == GoalNextAction.SetNewGoal);
+
+        action.SelectCommand.Execute(null);
+
+        var editor = Assert.IsType<CalorieLedger.ViewModels.Profile.NutritionGoalEditorViewModel>(viewModel.GoalEditor);
+
+        editor.GoalType = WeightGoalType.LoseWeight;
+
+        editor.TargetWeightKg = 75m;
+        editor.StrategyMode = EnergyStrategyMode.BalancePercent;
+        editor.StrategyValue = 0m;
+
+        editor.SaveCommand.Execute(null);
+
+        Assert.True(editor.HasValidationErrors);
+        Assert.NotEmpty(editor.ValidationMessages);
+
+        Assert.True(viewModel.IsGoalEditorOpen);
+        Assert.False(viewModel.IsTodayDashboardVisible);
+        Assert.Same(editor, viewModel.GoalEditor);
     }
 }

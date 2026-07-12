@@ -9,7 +9,7 @@ public sealed class NutritionGoalValidatorTests {
             GoalType: WeightGoalType.LoseWeight,
             TargetWeightKg: 75m,
             TargetBodyFatPercent: 15m,
-            EnergyBalancePercent: -15m);
+            Strategy : EnergyStrategy.FromBalancePercent(15m));
 
         var result =
             NutritionGoalValidator.Validate(goal);
@@ -22,7 +22,7 @@ public sealed class NutritionGoalValidatorTests {
     public void Validate_WeightGainWithBodyFatStopLimit_ReturnsValid() {
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.GainWeight,
-            EnergyBalancePercent: 5m,
+            Strategy : EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: 18m,
             MassGainIntent:
                 MassGainIntent.LeanMassPriority);
@@ -35,89 +35,86 @@ public sealed class NutritionGoalValidatorTests {
     }
 
     [Fact]
-    public void Validate_WeightLossWithSurplus_ReturnsError() {
+    public void Validate_WeightLossWithZeroStrategy_ReturnsError() {
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.LoseWeight,
-            TargetWeightKg: 75m,
-            EnergyBalancePercent: 5m);
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(0m));
 
         var result =
-            NutritionGoalValidator.Validate(goal);
+        NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
         Assert.Contains(
             NutritionGoalValidationError
-                .WeightLossRequiresDeficit,
+                .InvalidEnergyStrategyValue,
             result.Errors);
     }
 
     [Fact]
-    public void Validate_WeightGainWithDeficit_ReturnsError() {
+    public void Validate_WeightLossWithPositiveStrategy_ReturnsValid() {
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.GainWeight,
-            TargetWeightKg: 85m,
-            EnergyBalancePercent: -10m,
-            MassGainIntent:
-                MassGainIntent.TotalMass);
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(5m));
 
         var result =
-            NutritionGoalValidator.Validate(goal);
+        NutritionGoalValidator.Validate(goal);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void Validate_NegativeEnergyStrategyValue_ReturnsError() {
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        Strategy: new EnergyStrategy(
+            EnergyStrategyMode.BalancePercent,
+            -15m));
+
+        var result =
+        NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
         Assert.Contains(
             NutritionGoalValidationError
-                .WeightGainRequiresSurplus,
+                .InvalidEnergyStrategyValue,
             result.Errors);
     }
 
     [Fact]
-    public void Validate_WithBothEnergyStrategies_ReturnsError() {
+    public void Validate_MaintenanceWithNonZeroStrategy_ReturnsError() {
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.LoseWeight,
-            TargetWeightKg: 75m,
-            DesiredWeightChangeKgPerWeek: 0.5m,
-            EnergyBalancePercent: -15m);
+        GoalType: WeightGoalType.Maintain,
+        Strategy: EnergyStrategy.FromWeightChangePerWeek(
+            0.25m));
 
-        var result =
-            NutritionGoalValidator.Validate(goal);
+        var result = NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
         Assert.Contains(
-            NutritionGoalValidationError
-                .ConflictingEnergyStrategies,
-            result.Errors);
-    }
-
-    [Fact]
-    public void Validate_MaintenanceWithWeightChange_ReturnsError() {
-        var goal = new NutritionGoal(
-            GoalType: WeightGoalType.Maintain,
-            DesiredWeightChangeKgPerWeek: 0.25m);
-
-        var result =
-            NutritionGoalValidator.Validate(goal);
-
-        Assert.False(result.IsValid);
-
-        Assert.Contains(
-            NutritionGoalValidationError
-                .WeightChangeNotAllowedForMaintenance,
+            NutritionGoalValidationError.MaintenanceRequiresNeutralEnergyBalance,
             result.Errors);
     }
 
     [Fact]
     public void Validate_StopLimitOnWeightLoss_ReturnsError() {
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.LoseWeight,
-            TargetBodyFatPercent: 15m,
-            EnergyBalancePercent: -15m,
-            StopAtBodyFatPercent: 18m);
+        GoalType: WeightGoalType.LoseWeight,
+        TargetBodyFatPercent: 15m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(15m),
+        StopAtBodyFatPercent: 18m);
 
         var result =
-            NutritionGoalValidator.Validate(goal);
+        NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
@@ -133,98 +130,85 @@ public sealed class NutritionGoalValidatorTests {
             GoalType: WeightGoalType.GainWeight,
             TargetBodyFatPercent: 100m,
             TargetMusclePercent: 0m,
-            EnergyBalancePercent: 5m,
+            Strategy: EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: -1m);
 
-        var result =
-            NutritionGoalValidator.Validate(goal);
+        var result = NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
         Assert.Contains(
-            NutritionGoalValidationError
-                .InvalidTargetBodyFatPercent,
+            NutritionGoalValidationError.InvalidTargetBodyFatPercent,
             result.Errors);
 
         Assert.Contains(
-            NutritionGoalValidationError
-                .InvalidTargetMusclePercent,
+            NutritionGoalValidationError.InvalidTargetMusclePercent,
             result.Errors);
 
         Assert.Contains(
-            NutritionGoalValidationError
-                .InvalidStopBodyFatPercent,
+            NutritionGoalValidationError.InvalidStopBodyFatPercent,
             result.Errors);
     }
 
     [Fact]
-    public void Validate_UnifiedWeightLossStrategy_ReturnsValid() {
+    public void Validate_MissingEnergyStrategy_ReturnsError() {
         var goal = new NutritionGoal(
-        GoalType: WeightGoalType.LoseWeight,
-        TargetWeightKg: 75m,
-        Strategy:
-            EnergyStrategy.FromBalancePercent(15m));
+            GoalType: WeightGoalType.LoseWeight,
+            TargetWeightKg: 75m,
+            Strategy: null);
 
-        var result =
-        NutritionGoalValidator.Validate(goal);
+        var result = NutritionGoalValidator.Validate(goal);
+
+        Assert.False(result.IsValid);
+
+        Assert.Contains(
+            NutritionGoalValidationError.MissingEnergyStrategy,
+            result.Errors);
+    }
+
+    [Fact]
+    public void Validate_MaintenanceWithZeroStrategy_ReturnsValid() {
+        var goal = new NutritionGoal(
+            GoalType: WeightGoalType.Maintain,
+            Strategy: EnergyStrategy.FromBalancePercent(0m));
+
+        var result = NutritionGoalValidator.Validate(goal);
 
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);
     }
 
     [Fact]
-    public void Validate_UnifiedWeightGainStrategy_ReturnsValid() {
+    public void Validate_OneHundredPercentStrategy_ReturnsError() {
         var goal = new NutritionGoal(
-        GoalType: WeightGoalType.GainWeight,
-        TargetWeightKg: 85m,
-        Strategy:
-            EnergyStrategy.FromBalancePercent(5m),
-        MassGainIntent:
-            MassGainIntent.LeanMassPriority);
+            GoalType: WeightGoalType.LoseWeight,
+            TargetWeightKg: 75m,
+            Strategy: EnergyStrategy.FromBalancePercent(100m));
 
-        var result =
-        NutritionGoalValidator.Validate(goal);
-
-        Assert.True(result.IsValid);
-        Assert.Empty(result.Errors);
-    }
-
-    [Fact]
-    public void Validate_UnifiedAndLegacyStrategies_ReturnsConflict() {
-        var goal = new NutritionGoal(
-        GoalType: WeightGoalType.LoseWeight,
-        TargetWeightKg: 75m,
-        EnergyBalancePercent: -15m,
-        Strategy:
-            EnergyStrategy.FromBalancePercent(15m));
-
-        var result =
-        NutritionGoalValidator.Validate(goal);
+        var result = NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
         Assert.Contains(
-            NutritionGoalValidationError
-                .ConflictingLegacyAndUnifiedEnergyStrategies,
+            NutritionGoalValidationError.InvalidEnergyStrategyValue,
             result.Errors);
     }
 
     [Fact]
-    public void Validate_ZeroUnifiedWeightLossStrategy_ReturnsError() {
+    public void Validate_UnknownStrategyMode_ReturnsError() {
         var goal = new NutritionGoal(
-        GoalType: WeightGoalType.LoseWeight,
-        TargetWeightKg: 75m,
-        Strategy:
-            EnergyStrategy.FromBalancePercent(0m));
+            GoalType: WeightGoalType.LoseWeight,
+            TargetWeightKg: 75m,
+            Strategy: new EnergyStrategy(
+                (EnergyStrategyMode)999,
+                15m));
 
-        var result =
-        NutritionGoalValidator.Validate(goal);
+        var result = NutritionGoalValidator.Validate(goal);
 
         Assert.False(result.IsValid);
 
         Assert.Contains(
-            NutritionGoalValidationError
-                .InvalidEnergyStrategyValue,
+            NutritionGoalValidationError.InvalidEnergyStrategyValue,
             result.Errors);
     }
 }

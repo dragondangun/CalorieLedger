@@ -110,46 +110,49 @@
             FontWeight="SemiBold" />
 
         <TextBlock
-            Text="Укажите только один вариант: процент баланса или изменение веса в неделю."
+            Text="Выберите, чем задавать стратегию. Второй показатель будет рассчитан автоматически."
             TextWrapping="Wrap"
             Opacity="0.75" />
 
+        <TextBlock
+            Text="Способ задания"
+            FontWeight="SemiBold" />
+
+        <ComboBox
+            ItemsSource="{Binding StrategyModes}"
+            SelectedItem="{Binding StrategyMode, Mode=TwoWay}"
+            HorizontalAlignment="Stretch" />
+
         <Grid
             ColumnDefinitions="*,*"
-            RowDefinitions="Auto,Auto"
-            ColumnSpacing="12"
-            RowSpacing="8">
+            ColumnSpacing="12">
 
           <TextBlock
-              Grid.Row="0"
               Grid.Column="0"
-              Text="Дефицит / профицит, %"
-              VerticalAlignment="Center" />
+              Text="{Binding StrategyValueLabel}"
+              VerticalAlignment="Center"
+              TextWrapping="Wrap" />
 
           <NumericUpDown
-              Grid.Row="0"
               Grid.Column="1"
-              Value="{Binding EnergyBalancePercent, Mode=TwoWay}"
-              Minimum="-99"
-              Maximum="100"
-              Increment="0.5"
-              FormatString="0.0" />
-
-          <TextBlock
-              Grid.Row="1"
-              Grid.Column="0"
-              Text="Изменение веса, кг/нед."
-              VerticalAlignment="Center" />
-
-          <NumericUpDown
-              Grid.Row="1"
-              Grid.Column="1"
-              Value="{Binding DesiredWeightChangeKgPerWeek, Mode=TwoWay}"
-              Minimum="0.01"
-              Maximum="5"
-              Increment="0.05"
+              Value="{Binding StrategyValue, Mode=TwoWay}"
+              Minimum="0"
+              Maximum="{Binding StrategyValueMaximum}"
+              Increment="{Binding StrategyValueIncrement}"
               FormatString="0.00" />
         </Grid>
+
+        <Border
+            Padding="10"
+            CornerRadius="8"
+            BorderThickness="1">
+
+          <TextBlock
+              Text="{Binding StrategyPreviewSummary}"
+              TextWrapping="Wrap"
+              Opacity="0.85" />
+        </Border>
+
       </StackPanel>
 
       <StackPanel

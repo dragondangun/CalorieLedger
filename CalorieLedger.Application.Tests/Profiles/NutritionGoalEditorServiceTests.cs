@@ -6,14 +6,14 @@ namespace CalorieLedger.Application.Tests.Profiles;
 public sealed class NutritionGoalEditorServiceTests {
     [Fact]
     public void LoadCurrentGoal_ReturnsDraftFromStoredGoal() {
+        // Legacy goal: verifies temporary backward-compatible reading.
         var storedGoal = new NutritionGoal(
             GoalType: WeightGoalType.GainWeight,
             TargetWeightKg: 85m,
             TargetMuscleMassKg: 42m,
-            EnergyBalancePercent: 5m,
+            Strategy: EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: 18m,
-            MassGainIntent:
-                MassGainIntent.LeanMassPriority);
+            MassGainIntent: MassGainIntent.LeanMassPriority);
 
         var store =
             new TestUserNutritionProfileStore(storedGoal);
@@ -42,8 +42,12 @@ public sealed class NutritionGoalEditorServiceTests {
             draft.TargetMuscleMassKg);
 
         Assert.Equal(
-            storedGoal.EnergyBalancePercent,
-            draft.EnergyBalancePercent);
+            EnergyStrategyMode.BalancePercent,
+            draft.StrategyMode);
+
+        Assert.Equal(
+            5m,
+            draft.StrategyValue);
 
         Assert.Equal(
             storedGoal.StopAtBodyFatPercent,
@@ -77,8 +81,12 @@ public sealed class NutritionGoalEditorServiceTests {
             draft.GoalType);
 
         Assert.Equal(
+            EnergyStrategyMode.BalancePercent,
+            draft.StrategyMode);
+
+        Assert.Equal(
             0m,
-            draft.EnergyBalancePercent);
+            draft.StrategyValue);
 
         Assert.Null(
             draft.TargetWeightKg);
@@ -102,7 +110,9 @@ public sealed class NutritionGoalEditorServiceTests {
             GoalType: WeightGoalType.LoseWeight,
             TargetWeightKg: 75m,
             TargetBodyFatPercent: 15m,
-            EnergyBalancePercent: -15m);
+            StrategyMode:
+                EnergyStrategyMode.BalancePercent,
+            StrategyValue: 15m);
 
         var result =
             editorService.Save(draft);
@@ -125,9 +135,15 @@ public sealed class NutritionGoalEditorServiceTests {
             15m,
             savedGoal.TargetBodyFatPercent);
 
+        Assert.NotNull(savedGoal.Strategy);
+
         Assert.Equal(
-            -15m,
-            savedGoal.EnergyBalancePercent);
+            EnergyStrategyMode.BalancePercent,
+            savedGoal.Strategy.Mode);
+
+        Assert.Equal(
+            15m,
+            savedGoal.Strategy.Value);
     }
 
     [Fact]
@@ -152,7 +168,9 @@ public sealed class NutritionGoalEditorServiceTests {
                 GoalType:
                     WeightGoalType.LoseWeight,
                 TargetWeightKg: 75m,
-                EnergyBalancePercent: 5m);
+                StrategyMode:
+                    EnergyStrategyMode.BalancePercent,
+                StrategyValue: 0m);
 
         var result =
             editorService.Save(invalidDraft);
@@ -161,7 +179,7 @@ public sealed class NutritionGoalEditorServiceTests {
 
         Assert.Contains(
             NutritionGoalValidationError
-                .WeightLossRequiresDeficit,
+                .InvalidEnergyStrategyValue,
             result.Errors);
 
         Assert.Equal(
@@ -169,15 +187,42 @@ public sealed class NutritionGoalEditorServiceTests {
             store.GetCurrentProfile().Goal);
     }
 
-    private static NutritionGoal
-        CreateMaintenanceGoal() {
-        return new NutritionGoal(
-            GoalType: WeightGoalType.Maintain,
-            EnergyBalancePercent: 0m);
+    [Fact]
+    public void LoadCurrentGoal_UnifiedDeficitStrategy_ReturnsUnifiedDraftStrategy() {
+        var storedGoal = new NutritionGoal(
+            GoalType: WeightGoalType.LoseWeight,
+            TargetWeightKg: 75m,
+            Strategy:
+                EnergyStrategy.FromBalancePercent(15m));
+
+        var store = new TestUserNutritionProfileStore(
+                storedGoal);
+
+        var updateService = new NutritionGoalUpdateService(store);
+
+        var editorService = new NutritionGoalEditorService(
+            store,
+            updateService);
+
+        var draft = editorService.LoadCurrentGoal();
+
+        Assert.Equal(
+            EnergyStrategyMode.BalancePercent,
+            draft.StrategyMode);
+
+        Assert.Equal(
+            15m,
+            draft.StrategyValue);
     }
 
-    private sealed class TestUserNutritionProfileStore
-        :IUserNutritionProfileStore {
+    private static NutritionGoal CreateMaintenanceGoal() {
+        return new NutritionGoal(
+            GoalType: WeightGoalType.Maintain,
+            Strategy:
+                EnergyStrategy.FromBalancePercent(0m));
+    }
+
+    private sealed class TestUserNutritionProfileStore:IUserNutritionProfileStore {
         private UserNutritionProfile currentProfile;
 
         public TestUserNutritionProfileStore(
@@ -200,8 +245,7 @@ public sealed class NutritionGoalEditorServiceTests {
                     Goal: initialGoal);
         }
 
-        public UserNutritionProfile
-            GetCurrentProfile() {
+        public UserNutritionProfile GetCurrentProfile() {
             return currentProfile;
         }
 
@@ -215,16 +259,44 @@ public sealed class NutritionGoalEditorServiceTests {
     }
 
     [Fact]
-    public void LoadCurrentGoal_UnifiedDeficitStrategy_ReturnsSignedDraftPercent() {
-        var storedGoal = new NutritionGoal(
-        GoalType: WeightGoalType.LoseWeight,
-        TargetWeightKg: 75m,
-        Strategy:
-            EnergyStrategy.FromBalancePercent(15m));
+    public void CalculateStrategyPreview_PercentDeficit_ReturnsWeightLossForecast() {
+        var store = new TestUserNutritionProfileStore(
+            CreateMaintenanceGoal());
 
+        var updateService = new NutritionGoalUpdateService(store);
+
+        var editorService = new NutritionGoalEditorService(
+            store,
+            updateService);
+
+        var draft = new NutritionGoalDraft(
+            GoalType: WeightGoalType.LoseWeight,
+            StrategyMode: EnergyStrategyMode.BalancePercent,
+            StrategyValue: 15m);
+
+        var preview = editorService.CalculateStrategyPreview(
+            draft);
+
+        Assert.NotNull(preview);
+
+        Assert.Equal(
+            -15m,
+            preview.EnergyBalancePercent);
+
+        Assert.True(
+            preview.PredictedWeightChangeKgPerWeek
+            < 0m);
+
+        Assert.True(
+            preview.TargetCaloriesKcal
+            < preview.MaintenanceCaloriesKcal);
+    }
+
+    [Fact]
+    public void CalculateStrategyPreview_ZeroWeightLossStrategy_ReturnsNull() {
         var store =
         new TestUserNutritionProfileStore(
-            storedGoal);
+            CreateMaintenanceGoal());
 
         var updateService =
         new NutritionGoalUpdateService(store);
@@ -234,14 +306,55 @@ public sealed class NutritionGoalEditorServiceTests {
             store,
             updateService);
 
-        var draft =
-        editorService.LoadCurrentGoal();
+        var draft = new NutritionGoalDraft(
+        GoalType: WeightGoalType.LoseWeight,
+        StrategyMode:
+            EnergyStrategyMode.BalancePercent,
+        StrategyValue: 0m);
+
+        var preview =
+        editorService.CalculateStrategyPreview(
+            draft);
+
+        Assert.Null(preview);
+    }
+
+    [Fact]
+    public void CalculateStrategyPreview_ZeroMaintenanceStrategy_ReturnsNeutralPreview() {
+        var store =
+        new TestUserNutritionProfileStore(
+            CreateMaintenanceGoal());
+
+        var updateService =
+        new NutritionGoalUpdateService(store);
+
+        var editorService =
+        new NutritionGoalEditorService(
+            store,
+            updateService);
+
+        var draft = new NutritionGoalDraft(
+        GoalType: WeightGoalType.Maintain,
+        StrategyMode:
+            EnergyStrategyMode.BalancePercent,
+        StrategyValue: 0m);
+
+        var preview =
+        editorService.CalculateStrategyPreview(
+            draft);
+
+        Assert.NotNull(preview);
 
         Assert.Equal(
-            -15m,
-            draft.EnergyBalancePercent);
+            0m,
+            preview.EnergyBalancePercent);
 
-        Assert.Null(
-            draft.DesiredWeightChangeKgPerWeek);
+        Assert.Equal(
+            0m,
+            preview.PredictedWeightChangeKgPerWeek);
+
+        Assert.Equal(
+            preview.MaintenanceCaloriesKcal,
+            preview.TargetCaloriesKcal);
     }
 }

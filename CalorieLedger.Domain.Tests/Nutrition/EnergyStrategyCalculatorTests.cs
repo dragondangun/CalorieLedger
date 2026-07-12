@@ -173,4 +173,28 @@ public sealed class EnergyStrategyCalculatorTests {
                 WeightGoalType.Maintain,
                 maintenanceCaloriesKcal: 2500m));
     }
+
+    [Fact]
+    public void Calculate_ZeroWeightLossStrategy_ThrowsArgumentException() {
+        var strategy =
+        EnergyStrategy.FromBalancePercent(0m);
+
+        Assert.Throws<ArgumentException>(
+            () => EnergyStrategyCalculator.Calculate(
+                strategy,
+                WeightGoalType.LoseWeight,
+                maintenanceCaloriesKcal: 2500m));
+    }
+
+    [Fact]
+    public void Calculate_OneHundredPercentStrategy_ThrowsArgumentOutOfRangeException() {
+        var strategy =
+        EnergyStrategy.FromBalancePercent(100m);
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => EnergyStrategyCalculator.Calculate(
+                strategy,
+                WeightGoalType.LoseWeight,
+                maintenanceCaloriesKcal: 2500m));
+    }
 }

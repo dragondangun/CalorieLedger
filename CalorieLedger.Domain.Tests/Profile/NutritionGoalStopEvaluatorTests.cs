@@ -5,35 +5,53 @@ namespace CalorieLedger.Domain.Tests.Profile;
 public sealed class NutritionGoalStopEvaluatorTests {
     [Fact]
     public void Evaluate_GainWeightBelowBodyFatLimit_ReturnsNotReached() {
-        var body = CreateBodyProfile(bodyFatPercent: 17.5m);
+        var body = CreateBodyProfile(
+            bodyFatPercent: 17.5m);
 
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.GainWeight,
-            EnergyBalancePercent: 5m,
-            StopAtBodyFatPercent: 18m,
-            MassGainIntent: MassGainIntent.LeanMassPriority);
+        GoalType: WeightGoalType.GainWeight,
+        Strategy: EnergyStrategy.FromBalancePercent(5m),
+        StopAtBodyFatPercent: 18m,
+        MassGainIntent: MassGainIntent.LeanMassPriority);
 
-        var result = NutritionGoalStopEvaluator.Evaluate(body, goal);
+        var result = NutritionGoalStopEvaluator.Evaluate(
+            body,
+            goal);
 
-        Assert.Equal(GoalStopStatus.NotReached, result.Status);
+        Assert.Equal(
+            GoalStopStatus.NotReached,
+            result.Status);
+
         Assert.False(result.ShouldStop);
-        Assert.Equal(17.5m, result.CurrentBodyFatPercent);
-        Assert.Equal(18m, result.StopAtBodyFatPercent);
+
+        Assert.Equal(
+            17.5m,
+            result.CurrentBodyFatPercent);
+
+        Assert.Equal(
+            18m,
+            result.StopAtBodyFatPercent);
     }
 
     [Fact]
     public void Evaluate_GainWeightAtBodyFatLimit_ReturnsReached() {
-        var body = CreateBodyProfile(bodyFatPercent: 18m);
+        var body = CreateBodyProfile(
+            bodyFatPercent: 18m);
 
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.GainWeight,
-            EnergyBalancePercent: 5m,
+            Strategy: EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: 18m,
             MassGainIntent: MassGainIntent.LeanMassPriority);
 
-        var result = NutritionGoalStopEvaluator.Evaluate(body, goal);
+        var result = NutritionGoalStopEvaluator.Evaluate(
+            body,
+            goal);
 
-        Assert.Equal(GoalStopStatus.Reached, result.Status);
+        Assert.Equal(
+            GoalStopStatus.Reached,
+            result.Status);
+
         Assert.True(result.ShouldStop);
     }
 
@@ -43,6 +61,7 @@ public sealed class NutritionGoalStopEvaluatorTests {
 
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.GainWeight,
+            Strategy: EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: 18m,
             MassGainIntent: MassGainIntent.TotalMass);
 
@@ -58,6 +77,7 @@ public sealed class NutritionGoalStopEvaluatorTests {
 
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.GainWeight,
+            Strategy: EnergyStrategy.FromBalancePercent(5m),
             StopAtBodyFatPercent: 18m);
 
         var result = NutritionGoalStopEvaluator.Evaluate(body, goal);
@@ -71,7 +91,8 @@ public sealed class NutritionGoalStopEvaluatorTests {
         var body = CreateBodyProfile(bodyFatPercent: 20m);
 
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.GainWeight);
+            GoalType: WeightGoalType.GainWeight,
+            Strategy: EnergyStrategy.FromBalancePercent(5m));
 
         var result = NutritionGoalStopEvaluator.Evaluate(body, goal);
 
@@ -85,6 +106,7 @@ public sealed class NutritionGoalStopEvaluatorTests {
 
         var goal = new NutritionGoal(
             GoalType: WeightGoalType.LoseWeight,
+            Strategy: EnergyStrategy.FromBalancePercent(15m),
             StopAtBodyFatPercent: 18m);
 
         var result = NutritionGoalStopEvaluator.Evaluate(body, goal);
