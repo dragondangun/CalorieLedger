@@ -213,4 +213,35 @@ public sealed class NutritionGoalEditorServiceTests {
             };
         }
     }
+
+    [Fact]
+    public void LoadCurrentGoal_UnifiedDeficitStrategy_ReturnsSignedDraftPercent() {
+        var storedGoal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(15m));
+
+        var store =
+        new TestUserNutritionProfileStore(
+            storedGoal);
+
+        var updateService =
+        new NutritionGoalUpdateService(store);
+
+        var editorService =
+        new NutritionGoalEditorService(
+            store,
+            updateService);
+
+        var draft =
+        editorService.LoadCurrentGoal();
+
+        Assert.Equal(
+            -15m,
+            draft.EnergyBalancePercent);
+
+        Assert.Null(
+            draft.DesiredWeightChangeKgPerWeek);
+    }
 }

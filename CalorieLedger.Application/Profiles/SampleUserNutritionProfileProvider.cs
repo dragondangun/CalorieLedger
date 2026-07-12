@@ -38,6 +38,6 @@ public sealed class SampleUserNutritionProfileProvider
                 GoalType: WeightGoalType.LoseWeight,
                 TargetWeightKg: 75m,
                 TargetBodyFatPercent: 15m,
-                EnergyBalancePercent: -15m));
+                Strategy: EnergyStrategy.FromBalancePercent(15m)));
     }
 }

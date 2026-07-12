@@ -7,7 +7,7 @@ public sealed class NutritionGoalTransitionService(
     public NutritionGoalUpdateResult SwitchToMaintenance() {
         var maintenanceGoal = new NutritionGoal(
             GoalType: WeightGoalType.Maintain,
-            EnergyBalancePercent: 0m);
+            Strategy: EnergyStrategy.FromBalancePercent(0m));
 
         return goalUpdateService.UpdateGoal(
             maintenanceGoal);

@@ -89,4 +89,57 @@ public sealed class NutritionTargetCalculatorTests {
 
         Assert.True(gainingTarget.CaloriesKcal > maintenanceTarget.CaloriesKcal);
     }
+
+    [Fact]
+    public void Calculate_WeightLossWithUnifiedStrategy_AppliesPercentageDeficit() {
+        var body = new BodyProfile(
+        Sex: BiologicalSex.Male,
+        AgeYears: 30,
+        HeightCm: 180m,
+        WeightKg: 80m,
+        BodyFatPercent: null,
+        BoneMassKg: null,
+        MuscleMassKg: null,
+        MusclePercent: null);
+
+        var maintenanceProfile =
+        new UserNutritionProfile(
+            Id: Guid.NewGuid(),
+            DisplayName: "Maintenance user",
+            Body: body,
+            LifestyleActivityLevel:
+                LifestyleActivityLevel.Sedentary,
+            Goal: new NutritionGoal(
+                GoalType:
+                    WeightGoalType.Maintain,
+                Strategy:
+                    EnergyStrategy
+                        .FromBalancePercent(0m)));
+
+        var losingProfile =
+        maintenanceProfile with
+        {
+            Goal = new NutritionGoal(
+                GoalType:
+                    WeightGoalType.LoseWeight,
+                TargetWeightKg: 75m,
+                Strategy:
+                    EnergyStrategy
+                        .FromBalancePercent(15m))
+        };
+
+        var maintenance =
+        NutritionTargetCalculator.Calculate(
+            maintenanceProfile);
+
+        var losing =
+        NutritionTargetCalculator.Calculate(
+            losingProfile);
+
+        Assert.Equal(
+            Math.Round(
+                maintenance.CaloriesKcal * 0.85m,
+                0),
+            losing.CaloriesKcal);
+    }
 }

@@ -9,4 +9,5 @@ public sealed record NutritionGoal(
     decimal? DesiredWeightChangeKgPerWeek = null,
     decimal? EnergyBalancePercent = null,
     decimal? StopAtBodyFatPercent = null,
-    MassGainIntent? MassGainIntent = null);
+    MassGainIntent? MassGainIntent = null,
+    EnergyStrategy? Strategy = null);

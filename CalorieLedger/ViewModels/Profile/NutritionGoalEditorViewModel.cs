@@ -225,6 +225,12 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             NutritionGoalValidationError.MassGainIntentOnlyForWeightGain =>
                 "Тип набора массы применяется только к цели набора веса.",
 
+            NutritionGoalValidationError.ConflictingLegacyAndUnifiedEnergyStrategies =>
+                "Нельзя одновременно использовать старые поля и новую энергетическую стратегию.",
+
+            NutritionGoalValidationError.InvalidEnergyStrategyValue =>
+                "Некорректная величина энергетической стратегии.",
+
             _ => $"Неизвестная ошибка проверки: {error}."
         };
     }

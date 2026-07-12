@@ -156,4 +156,75 @@ public sealed class NutritionGoalValidatorTests {
                 .InvalidStopBodyFatPercent,
             result.Errors);
     }
+
+    [Fact]
+    public void Validate_UnifiedWeightLossStrategy_ReturnsValid() {
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(15m));
+
+        var result =
+        NutritionGoalValidator.Validate(goal);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void Validate_UnifiedWeightGainStrategy_ReturnsValid() {
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.GainWeight,
+        TargetWeightKg: 85m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(5m),
+        MassGainIntent:
+            MassGainIntent.LeanMassPriority);
+
+        var result =
+        NutritionGoalValidator.Validate(goal);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Fact]
+    public void Validate_UnifiedAndLegacyStrategies_ReturnsConflict() {
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        EnergyBalancePercent: -15m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(15m));
+
+        var result =
+        NutritionGoalValidator.Validate(goal);
+
+        Assert.False(result.IsValid);
+
+        Assert.Contains(
+            NutritionGoalValidationError
+                .ConflictingLegacyAndUnifiedEnergyStrategies,
+            result.Errors);
+    }
+
+    [Fact]
+    public void Validate_ZeroUnifiedWeightLossStrategy_ReturnsError() {
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        TargetWeightKg: 75m,
+        Strategy:
+            EnergyStrategy.FromBalancePercent(0m));
+
+        var result =
+        NutritionGoalValidator.Validate(goal);
+
+        Assert.False(result.IsValid);
+
+        Assert.Contains(
+            NutritionGoalValidationError
+                .InvalidEnergyStrategyValue,
+            result.Errors);
+    }
 }

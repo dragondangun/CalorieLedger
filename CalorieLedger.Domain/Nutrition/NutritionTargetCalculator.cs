@@ -65,6 +65,15 @@ public static class NutritionTargetCalculator {
     private static decimal CalculateGoalAdjustment(
         NutritionGoal goal,
         decimal maintenanceCalories) {
+        if(goal.Strategy is not null) {
+            var calculation = EnergyStrategyCalculator.Calculate(
+                strategy: goal.Strategy,
+                goalType: goal.GoalType,
+                maintenanceCaloriesKcal: maintenanceCalories);
+
+            return calculation.DailyEnergyAdjustmentKcal;
+        }
+
         if(goal.EnergyBalancePercent is not null) {
             return maintenanceCalories * goal.EnergyBalancePercent.Value / 100m;
         }

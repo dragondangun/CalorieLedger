@@ -47,13 +47,31 @@ public static class NutritionGoalValidator {
     }
 
     private static void ValidateEnergyStrategy(
-        NutritionGoal goal,
-        ICollection<NutritionGoalValidationError> errors) {
+    NutritionGoal goal,
+    ICollection<NutritionGoalValidationError> errors) {
+        var hasUnifiedStrategy =
+        goal.Strategy is not null;
+
         var hasWeeklyWeightChange =
-            goal.DesiredWeightChangeKgPerWeek is not null;
+        goal.DesiredWeightChangeKgPerWeek is not null;
 
         var hasEnergyBalancePercent =
-            goal.EnergyBalancePercent is not null;
+        goal.EnergyBalancePercent is not null;
+
+        if(hasUnifiedStrategy) {
+            if(hasWeeklyWeightChange
+                || hasEnergyBalancePercent) {
+                errors.Add(
+                    NutritionGoalValidationError
+                        .ConflictingLegacyAndUnifiedEnergyStrategies);
+            }
+
+            ValidateUnifiedEnergyStrategy(
+                goal,
+                errors);
+
+            return;
+        }
 
         if(hasWeeklyWeightChange
             && hasEnergyBalancePercent) {
@@ -102,6 +120,43 @@ public static class NutritionGoalValidator {
                     nameof(goal.GoalType),
                     goal.GoalType,
                     null);
+        }
+    }
+
+    private static void ValidateUnifiedEnergyStrategy(
+    NutritionGoal goal,
+    ICollection<NutritionGoalValidationError> errors) {
+        var strategy = goal.Strategy!;
+
+        if(strategy.Value < 0m) {
+            errors.Add(
+                NutritionGoalValidationError
+                    .InvalidEnergyStrategyValue);
+
+            return;
+        }
+
+        if(strategy.Mode == EnergyStrategyMode.BalancePercent
+            && strategy.Value >= 100m) {
+            errors.Add(
+                NutritionGoalValidationError
+                    .InvalidEnergyStrategyValue);
+        }
+
+        if(goal.GoalType == WeightGoalType.Maintain) {
+            if(strategy.Value != 0m) {
+                errors.Add(
+                    NutritionGoalValidationError
+                        .MaintenanceRequiresNeutralEnergyBalance);
+            }
+
+            return;
+        }
+
+        if(strategy.Value == 0m) {
+            errors.Add(
+                NutritionGoalValidationError
+                    .InvalidEnergyStrategyValue);
         }
     }
 

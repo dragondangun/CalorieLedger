@@ -21,5 +21,8 @@ public enum NutritionGoalValidationError {
     InvalidStopBodyFatPercent = 13,
     StopBodyFatOnlyForWeightGain = 14,
 
-    MassGainIntentOnlyForWeightGain = 15
+    MassGainIntentOnlyForWeightGain = 15,
+
+    ConflictingLegacyAndUnifiedEnergyStrategies = 16,
+    InvalidEnergyStrategyValue = 17
 }
