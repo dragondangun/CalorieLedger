@@ -9,30 +9,27 @@ namespace CalorieLedger.ViewModels;
 public partial class MainViewModel:ViewModelBase {
     private readonly IUserNutritionProfileStore profileStore;
     private readonly ITodayDashboardSnapshotProvider todayProvider;
-    private readonly NutritionGoalTransitionService
-        goalTransitionService;
+
+    private readonly NutritionGoalTransitionService goalTransitionService;
+
+    private readonly NutritionGoalUpdateService goalUpdateService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
 
     public MainViewModel() {
-        profileStore =
-            new SampleUserNutritionProfileProvider();
+        profileStore = new SampleUserNutritionProfileProvider();
 
-        todayProvider =
-            new SampleTodayDashboardSnapshotProvider(
-                profileStore);
+        todayProvider = new SampleTodayDashboardSnapshotProvider(profileStore);
 
-        goalTransitionService =
-            new NutritionGoalTransitionService(
-                profileStore);
+        goalUpdateService = new NutritionGoalUpdateService(profileStore);
+
+        goalTransitionService = new NutritionGoalTransitionService(goalUpdateService);
 
         today = CreateTodayDashboardViewModel();
     }
 
-    private TodayDashboardViewModel
-        CreateTodayDashboardViewModel(
-            string? actionSummary = null) {
+    private TodayDashboardViewModel CreateTodayDashboardViewModel(string? actionSummary = null) {
         var snapshot = todayProvider.GetToday();
 
         return new TodayDashboardViewModel(
@@ -41,13 +38,23 @@ public partial class MainViewModel:ViewModelBase {
             initialGoalActionSummary: actionSummary);
     }
 
-    private bool TryExecuteGoalAction(
-        GoalNextAction action) {
+    private bool TryExecuteGoalAction(GoalNextAction action) {
         if(action != GoalNextAction.SwitchToMaintenance) {
             return false;
         }
 
-        goalTransitionService.SwitchToMaintenance();
+        var result = goalTransitionService.SwitchToMaintenance();
+
+        if(!result.IsSuccess) {
+            var errorCodes =
+            string.Join(", ", result.Errors);
+
+            Today.GoalActionSelectionSummary =
+                "Не удалось изменить цель. " +
+                $"Ошибки проверки: {errorCodes}.";
+
+            return true;
+        }
 
         Today = CreateTodayDashboardViewModel(
             "Цель изменена на поддержание. " +

@@ -5,6 +5,7 @@
   <Project Path="CalorieLedger.Android/CalorieLedger.Android.csproj">
     <Deploy />
   </Project>
+  <Project Path="CalorieLedger.Application.Tests/CalorieLedger.Application.Tests.csproj" Id="f184a3ee-ada3-4df4-8a23-c91295ed430d" />
   <Project Path="CalorieLedger.Application/CalorieLedger.Application.csproj" Id="80ea80f7-737e-4d08-b7e8-62d65c6027ce" />
   <Project Path="CalorieLedger.Browser/CalorieLedger.Browser.csproj" />
   <Project Path="CalorieLedger.Desktop/CalorieLedger.Desktop.csproj" />
