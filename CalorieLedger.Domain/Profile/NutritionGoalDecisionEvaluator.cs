@@ -12,7 +12,8 @@ public static class NutritionGoalDecisionEvaluator {
 
         var status = DetermineStatus(
             progress,
-            stopCondition);
+            stopCondition,
+            goal.GoalType);
 
         var availableActions = GetAvailableActions(
             status,
@@ -27,7 +28,8 @@ public static class NutritionGoalDecisionEvaluator {
 
     private static NutritionGoalDecisionStatus DetermineStatus(
         NutritionGoalProgressEvaluation progress,
-        GoalStopEvaluation stopCondition) {
+        GoalStopEvaluation stopCondition,
+        WeightGoalType goalType) {
         if(stopCondition.Status == GoalStopStatus.Reached) {
             return NutritionGoalDecisionStatus.StopLimitReached;
         }
@@ -50,7 +52,7 @@ public static class NutritionGoalDecisionEvaluator {
         }
 
         if(progress.Status == NutritionGoalProgressStatus.NotConfigured
-            && stopCondition.Status == GoalStopStatus.NotReached) {
+            && goalType == WeightGoalType.Maintain) {
             return NutritionGoalDecisionStatus.InProgress;
         }
 

@@ -45,8 +45,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     private decimal carbsG;
 
     [ObservableProperty]
-    private string goalActionSelectionSummary =
-    "Выберите дальнейшее действие.";
+    private string goalActionSelectionSummary = string.Empty;
 
     public ObservableCollection<TodayMealGroupViewModel> MealGroups { get; } = [];
 
@@ -71,6 +70,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     public ObservableCollection<TodayActivityItemViewModel> Activities { get; } = [];
 
+    private readonly Func<GoalNextAction, bool> tryExecuteGoalAction;
+
     public decimal ActivityBurnedCaloriesKcal =>
     Activities.Sum(x => x.BurnedCaloriesKcal);
 
@@ -79,7 +80,16 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
             : "Дополнительная активность не указана";
 
-    public TodayDashboardViewModel(TodayDashboardSnapshot snapshot) {
+    public TodayDashboardViewModel(
+        TodayDashboardSnapshot snapshot,
+        Func<GoalNextAction, bool> tryExecuteGoalAction,
+        string? initialGoalActionSummary = null) {
+        this.tryExecuteGoalAction = tryExecuteGoalAction;
+
+        GoalActionSelectionSummary =
+            initialGoalActionSummary
+            ?? "Выберите дальнейшее действие.";
+
         target = snapshot.Target;
         weeklySummary = snapshot.WeeklySummary;
 
@@ -361,6 +371,10 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private void SelectGoalAction(
     GoalNextAction action) {
+        if(tryExecuteGoalAction(action)) {
+            return;
+        }
+
         GoalActionSelectionSummary = action switch
         {
             GoalNextAction.ContinueCurrentGoal =>

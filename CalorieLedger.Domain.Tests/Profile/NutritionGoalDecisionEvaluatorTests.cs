@@ -152,22 +152,25 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
     }
 
     [Fact]
-    public void Evaluate_WithoutTargets_ReturnsNotConfigured() {
+    public void Evaluate_MaintenanceWithoutTargets_ReturnsInProgress() {
         var body = CreateBodyProfile(
-            weightKg: 80m,
-            bodyFatPercent: 18m);
+        weightKg: 80m,
+        bodyFatPercent: 18m);
 
         var goal = new NutritionGoal(
-            GoalType: WeightGoalType.Maintain);
+        GoalType: WeightGoalType.Maintain,
+        EnergyBalancePercent: 0m);
 
         var result =
-            NutritionGoalDecisionEvaluator.Evaluate(body, goal);
+        NutritionGoalDecisionEvaluator.Evaluate(body, goal);
 
         Assert.Equal(
-            NutritionGoalDecisionStatus.NotConfigured,
+            NutritionGoalDecisionStatus.InProgress,
             result.Status);
 
-        Assert.Single(result.AvailableActions);
+        Assert.Contains(
+            GoalNextAction.ContinueCurrentGoal,
+            result.AvailableActions);
 
         Assert.Contains(
             GoalNextAction.SetNewGoal,
@@ -188,5 +191,29 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
             BoneMassKg: null,
             MuscleMassKg: muscleMassKg,
             MusclePercent: musclePercent);
+    }
+
+    [Fact]
+    public void Evaluate_WeightLossWithoutTargets_ReturnsNotConfigured() {
+        var body = CreateBodyProfile(
+        weightKg: 80m,
+        bodyFatPercent: 18m);
+
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.LoseWeight,
+        EnergyBalancePercent: -10m);
+
+        var result =
+        NutritionGoalDecisionEvaluator.Evaluate(body, goal);
+
+        Assert.Equal(
+            NutritionGoalDecisionStatus.NotConfigured,
+            result.Status);
+
+        Assert.Single(result.AvailableActions);
+
+        Assert.Contains(
+            GoalNextAction.SetNewGoal,
+            result.AvailableActions);
     }
 }

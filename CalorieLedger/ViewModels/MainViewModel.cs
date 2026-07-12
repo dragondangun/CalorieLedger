@@ -1,21 +1,58 @@
 ﻿using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Today;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Today;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CalorieLedger.ViewModels;
 
 public partial class MainViewModel:ViewModelBase {
-    public TodayDashboardViewModel Today { get; }
+    private readonly IUserNutritionProfileStore profileStore;
+    private readonly ITodayDashboardSnapshotProvider todayProvider;
+    private readonly NutritionGoalTransitionService
+        goalTransitionService;
+
+    [ObservableProperty]
+    private TodayDashboardViewModel today;
 
     public MainViewModel() {
-        IUserNutritionProfileProvider profileProvider =
+        profileStore =
             new SampleUserNutritionProfileProvider();
 
-        ITodayDashboardSnapshotProvider todayProvider =
-            new SampleTodayDashboardSnapshotProvider(profileProvider);
+        todayProvider =
+            new SampleTodayDashboardSnapshotProvider(
+                profileStore);
 
-        var today = todayProvider.GetToday();
+        goalTransitionService =
+            new NutritionGoalTransitionService(
+                profileStore);
 
-        Today = new TodayDashboardViewModel(today);
+        today = CreateTodayDashboardViewModel();
+    }
+
+    private TodayDashboardViewModel
+        CreateTodayDashboardViewModel(
+            string? actionSummary = null) {
+        var snapshot = todayProvider.GetToday();
+
+        return new TodayDashboardViewModel(
+            snapshot: snapshot,
+            tryExecuteGoalAction: TryExecuteGoalAction,
+            initialGoalActionSummary: actionSummary);
+    }
+
+    private bool TryExecuteGoalAction(
+        GoalNextAction action) {
+        if(action != GoalNextAction.SwitchToMaintenance) {
+            return false;
+        }
+
+        goalTransitionService.SwitchToMaintenance();
+
+        Today = CreateTodayDashboardViewModel(
+            "Цель изменена на поддержание. " +
+            "Дневная норма КБЖУ пересчитана.");
+
+        return true;
     }
 }
