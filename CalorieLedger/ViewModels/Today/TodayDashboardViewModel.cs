@@ -44,6 +44,10 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     [NotifyPropertyChangedFor(nameof(MacrosSummary))]
     private decimal carbsG;
 
+    [ObservableProperty]
+    private string goalActionSelectionSummary =
+    "Выберите дальнейшее действие.";
+
     public ObservableCollection<TodayMealGroupViewModel> MealGroups { get; } = [];
 
     public decimal RemainingCaloriesKcal => TargetCaloriesKcal - ConsumedCaloriesKcal;
@@ -107,8 +111,9 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
                 foreach(var action in snapshot.GoalDecision.AvailableActions) {
                     GoalActions.Add(new TodayGoalActionViewModel(
-                        Action: action,
-                        Title: FormatGoalAction(action)));
+                        action: action,
+                        title: FormatGoalAction(action),
+                        onSelected: SelectGoalAction));
                 }
     }
 
@@ -346,6 +351,35 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
             GoalNextAction.RepeatMeasurements =>
                 "Повторить измерения",
+
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(action),
+                action,
+                null)
+        };   
+    }
+
+    private void SelectGoalAction(
+    GoalNextAction action) {
+        GoalActionSelectionSummary = action switch
+        {
+            GoalNextAction.ContinueCurrentGoal =>
+                "Текущая цель оставлена без изменений.",
+
+            GoalNextAction.SwitchToMaintenance =>
+                "Выбран переход на поддержание. Изменение цели пока не сохранено.",
+
+            GoalNextAction.StartWeightLoss =>
+                "Выбрано снижение веса. Далее потребуется настроить параметры новой цели.",
+
+            GoalNextAction.StartWeightGain =>
+                "Выбран набор массы. Далее потребуется настроить параметры новой цели.",
+
+            GoalNextAction.SetNewGoal =>
+                "Выбрано создание новой цели. Форма настройки будет добавлена позже.",
+
+            GoalNextAction.RepeatMeasurements =>
+                "Выбрано обновление измерений тела. Форма измерений будет добавлена позже.",
 
             _ => throw new ArgumentOutOfRangeException(
                 nameof(action),

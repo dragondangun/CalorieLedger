@@ -77,20 +77,29 @@
               FontWeight="SemiBold" />
 
           <ItemsControl ItemsSource="{Binding Today.GoalActions}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
-                <Border
-                    Padding="10,6"
-                    Margin="0,0,0,6"
-                    CornerRadius="8"
-                    BorderThickness="1">
-                  <TextBlock
-                      Text="{Binding Title}"
-                      TextWrapping="Wrap" />
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
+              <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
+                      <Button
+                          Content="{Binding Title}"
+                          Command="{Binding SelectCommand}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          Padding="12,8"
+                          Margin="0,0,0,6" />
+                  </DataTemplate>
+              </ItemsControl.ItemTemplate>
           </ItemsControl>
+          <Border
+              Padding="10"
+              Margin="0,4,0,0"
+              CornerRadius="8"
+              BorderThickness="1">
+              <TextBlock
+                  Text="{Binding Today.GoalActionSelectionSummary}"
+                  TextWrapping="Wrap"
+                  FontStyle="Italic"
+                  Opacity="0.85" />
+          </Border>
         </StackPanel>
       </Border>
 
