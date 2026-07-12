@@ -56,6 +56,12 @@ public static class NutritionGoalDecisionEvaluator {
             return NutritionGoalDecisionStatus.InProgress;
         }
 
+        if(progress.Status == NutritionGoalProgressStatus.NotConfigured
+            && goalType == WeightGoalType.GainWeight
+            && stopCondition.Status == GoalStopStatus.NotReached) {
+            return NutritionGoalDecisionStatus.InProgress;
+        }
+
         return NutritionGoalDecisionStatus.NotConfigured;
     }
 

@@ -177,6 +177,37 @@ public sealed class NutritionGoalDecisionEvaluatorTests {
             result.AvailableActions);
     }
 
+    [Fact]
+    public void Evaluate_MassGainWithOnlyBodyFatStopLimit_ReturnsInProgress() {
+        var body = CreateBodyProfile(
+        weightKg: 82m,
+        bodyFatPercent: 16m);
+
+        var goal = new NutritionGoal(
+        GoalType: WeightGoalType.GainWeight,
+        EnergyBalancePercent: 5m,
+        StopAtBodyFatPercent: 18m,
+        MassGainIntent:
+            MassGainIntent.LeanMassPriority);
+
+        var result =
+        NutritionGoalDecisionEvaluator.Evaluate(
+            body,
+            goal);
+
+        Assert.Equal(
+            NutritionGoalDecisionStatus.InProgress,
+            result.Status);
+
+        Assert.Equal(
+            GoalStopStatus.NotReached,
+            result.StopCondition.Status);
+
+        Assert.Contains(
+            GoalNextAction.ContinueCurrentGoal,
+            result.AvailableActions);
+    }
+
     private static BodyProfile CreateBodyProfile(
         decimal weightKg,
         decimal? bodyFatPercent,
