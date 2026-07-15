@@ -1,10 +1,12 @@
 ﻿using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Common;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace CalorieLedger.ViewModels.Profile;
 
@@ -46,7 +48,35 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
     [ObservableProperty]
     private string statusSummary = string.Empty;
 
-    public IReadOnlyList<EnergyStrategyMode> StrategyModes { get; } = Enum.GetValues<EnergyStrategyMode>();
+    [ObservableProperty]
+    private SelectionOption<WeightGoalType>? selectedGoalTypeOption;
+
+    [ObservableProperty]
+    private SelectionOption<EnergyStrategyMode>? selectedStrategyModeOption;
+
+    public IReadOnlyList<SelectionOption<WeightGoalType>> GoalTypeOptions { get; } = [
+        new(
+            WeightGoalType.Maintain,
+            "Поддержание веса"),
+
+        new(
+            WeightGoalType.LoseWeight,
+            "Снижение веса"),
+
+        new(
+            WeightGoalType.GainWeight,
+            "Набор веса")
+    ];
+
+    public IReadOnlyList<SelectionOption<EnergyStrategyMode>> StrategyModeOptions { get; } = [
+        new(
+        EnergyStrategyMode.BalancePercent,
+        "Процент дефицита или профицита"),
+
+        new(
+            EnergyStrategyMode.WeightChangePerWeek,
+            "Изменение веса в неделю")
+    ];
 
     public decimal StrategyValueMaximum => StrategyMode switch
     {
@@ -129,19 +159,31 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
         StrategyValue = draft.StrategyValue;
         StopAtBodyFatPercent = draft.StopAtBodyFatPercent;
         MassGainIntent = draft.MassGainIntent;
-        UpdateStrategyPreview();
+
+        SelectedGoalTypeOption = GoalTypeOptions.Single(
+            option =>
+                option.Value == GoalType);
+
+        SelectedStrategyModeOption = StrategyModeOptions.Single(
+            option =>
+                option.Value == StrategyMode);
+
     }
 
-    partial void OnStrategyModeChanged(
-    EnergyStrategyMode value) {
-        OnPropertyChanged(
-            nameof(StrategyValueLabel));
+    partial void OnStrategyModeChanged(EnergyStrategyMode value) {
+        var selectedOption = StrategyModeOptions.First(
+            option =>
+                option.Value == value);
 
-        OnPropertyChanged(
-            nameof(StrategyValueMaximum));
+        if(SelectedStrategyModeOption != selectedOption) {
+            SelectedStrategyModeOption = selectedOption;
+        }
 
-        OnPropertyChanged(
-            nameof(StrategyValueIncrement));
+        OnPropertyChanged(nameof(StrategyValueLabel));
+
+        OnPropertyChanged(nameof(StrategyValueMaximum));
+
+        OnPropertyChanged(nameof(StrategyValueIncrement));
 
         UpdateStrategyPreview();
     }
@@ -149,9 +191,6 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
     partial void OnStrategyValueChanged(decimal? value) {
         UpdateStrategyPreview();
     }
-
-    public IReadOnlyList<WeightGoalType> GoalTypes { get; } =
-        Enum.GetValues<WeightGoalType>();
 
     public IReadOnlyList<MassGainIntent> MassGainIntents { get; } =
         Enum.GetValues<MassGainIntent>();
@@ -207,6 +246,16 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
     }
 
     partial void OnGoalTypeChanged(WeightGoalType value) {
+        var selectedOption =
+        GoalTypeOptions.First(
+            option =>
+                option.Value == value);
+
+        if(SelectedGoalTypeOption != selectedOption) {
+            SelectedGoalTypeOption =
+                selectedOption;
+        }
+
         OnPropertyChanged(nameof(IsMaintenance));
         OnPropertyChanged(nameof(IsWeightLoss));
         OnPropertyChanged(nameof(IsWeightGain));
@@ -300,8 +349,7 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasValidationErrors));
     }
 
-    private static string FormatValidationError(
-    NutritionGoalValidationError error) {
+    private static string FormatValidationError(NutritionGoalValidationError error) {
         return error switch
         {
             NutritionGoalValidationError.InvalidTargetWeight =>
@@ -337,5 +385,19 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             _ =>
                 $"Неизвестная ошибка проверки: {error}."
         };
+    }
+
+    partial void OnSelectedGoalTypeOptionChanged(SelectionOption<WeightGoalType>? value) {
+        if(value is not null
+            && GoalType != value.Value) {
+            GoalType = value.Value;
+        }
+    }
+
+    partial void OnSelectedStrategyModeOptionChanged(SelectionOption<EnergyStrategyMode>? value) {
+        if(value is not null
+            && StrategyMode != value.Value) {
+            StrategyMode = value.Value;
+        }
     }
 }

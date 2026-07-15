@@ -290,4 +290,60 @@ public sealed class NutritionGoalEditorViewModelTests {
             };
         }
     }
+
+    [Fact]
+    public void Constructor_SelectsLocalizedGoalAndStrategyOptions() {
+        var store = new TestUserNutritionProfileStore();
+
+        var editorService = CreateEditorService(store);
+
+        var draft = new NutritionGoalDraft(
+            GoalType: WeightGoalType.LoseWeight,
+            StrategyMode: EnergyStrategyMode.BalancePercent,
+            StrategyValue: 15m);
+
+        var viewModel = new NutritionGoalEditorViewModel(
+            editorService,
+            draft,
+            onSaved: () => { },
+            onCancelled: () => { });
+
+        Assert.NotNull(viewModel.SelectedGoalTypeOption);
+
+        Assert.Equal(
+            "Снижение веса",
+            viewModel.SelectedGoalTypeOption.DisplayName);
+
+        Assert.NotNull(viewModel.SelectedStrategyModeOption);
+
+        Assert.Equal(
+            "Процент дефицита или профицита",
+            viewModel.SelectedStrategyModeOption.DisplayName);
+    }
+
+    [Fact]
+    public void SelectedStrategyModeOptionChanged_UpdatesStrategyMode() {
+        var store = new TestUserNutritionProfileStore();
+
+        var editorService = CreateEditorService(store);
+
+        var draft = editorService.CreateNewGoal(WeightGoalType.LoseWeight);
+
+        var viewModel = new NutritionGoalEditorViewModel(
+            editorService,
+            draft,
+            onSaved: () => { },
+            onCancelled: () => { });
+
+        viewModel.SelectedStrategyModeOption = viewModel.StrategyModeOptions.Single(
+            option => option.Value == EnergyStrategyMode.WeightChangePerWeek);
+
+        Assert.Equal(
+            EnergyStrategyMode.WeightChangePerWeek,
+            viewModel.StrategyMode);
+
+        Assert.Equal(
+            "Снижение веса, кг/нед.",
+            viewModel.StrategyValueLabel);
+    }
 }

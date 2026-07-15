@@ -22,9 +22,14 @@
           FontWeight="SemiBold" />
 
       <ComboBox
-          ItemsSource="{Binding GoalTypes}"
-          SelectedItem="{Binding GoalType, Mode=TwoWay}"
-          HorizontalAlignment="Stretch" />
+          ItemsSource="{Binding GoalTypeOptions}"
+          SelectedItem="{Binding SelectedGoalTypeOption, Mode=TwoWay}">
+          <ComboBox.ItemTemplate>
+              <DataTemplate x:CompileBindings="False">
+                  <TextBlock Text="{Binding DisplayName}" />
+              </DataTemplate>
+          </ComboBox.ItemTemplate>
+      </ComboBox>
 
       <TextBlock
           Text="Целевые показатели"
@@ -119,9 +124,16 @@
             FontWeight="SemiBold" />
 
         <ComboBox
-            ItemsSource="{Binding StrategyModes}"
-            SelectedItem="{Binding StrategyMode, Mode=TwoWay}"
-            HorizontalAlignment="Stretch" />
+            ItemsSource="{Binding StrategyModeOptions}"
+            SelectedItem="{Binding SelectedStrategyModeOption, Mode=TwoWay}"
+            HorizontalAlignment="Stretch">
+
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:CompileBindings="False">
+                    <TextBlock Text="{Binding DisplayName}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
 
         <Grid
             ColumnDefinitions="*,*"
