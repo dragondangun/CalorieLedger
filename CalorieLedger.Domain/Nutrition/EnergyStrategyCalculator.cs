@@ -3,7 +3,7 @@
 namespace CalorieLedger.Domain.Nutrition;
 
 public static class EnergyStrategyCalculator {
-    private const decimal KcalPerKgBodyWeight = 7700m;
+    public const decimal KcalPerKgBodyWeight = 7700m;
 
     public static EnergyStrategyCalculation Calculate(
         EnergyStrategy strategy,
