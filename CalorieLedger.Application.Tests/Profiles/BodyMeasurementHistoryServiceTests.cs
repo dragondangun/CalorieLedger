@@ -279,4 +279,4 @@ public sealed class
             MuscleMassKg: 35m,
             MusclePercent: 43.75m);
     }
-}
+} 
