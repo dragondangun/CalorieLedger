@@ -16,6 +16,13 @@
               FontSize="28"
               FontWeight="Bold" />
 
+          <Button
+              Content="Добавить измерение тела"
+              Command="{Binding AddBodyMeasurementCommand}"
+              HorizontalAlignment="Stretch"
+              HorizontalContentAlignment="Center"
+              Padding="12,10" />
+
           <Border
               Padding="16"
               CornerRadius="16"
@@ -277,6 +284,13 @@
             Panel.ZIndex="1">
             <profileViews:NutritionGoalEditorView
                 DataContext="{Binding GoalEditor}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsBodyMeasurementEditorOpen}"
+            Panel.ZIndex="1">
+
+            <profileViews:BodyMeasurementEditorView
+                DataContext="{Binding BodyMeasurementEditor}" />
         </Grid>
     </Grid>
 </UserControl>

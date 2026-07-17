@@ -5,6 +5,8 @@ using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Today;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System;
 
 namespace CalorieLedger.ViewModels;
 
@@ -15,12 +17,15 @@ public partial class MainViewModel:ViewModelBase {
     private readonly NutritionGoalUpdateService goalUpdateService;
     private readonly NutritionGoalTransitionService goalTransitionService;
     private readonly NutritionGoalEditorService goalEditorService;
+    private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
 
     [ObservableProperty]
     private NutritionGoalEditorViewModel? goalEditor;
+    [ObservableProperty]
+    private BodyMeasurementEditorViewModel? bodyMeasurementEditor;
 
     public MainViewModel() {
         profileStore = new SampleUserNutritionProfileProvider();
@@ -42,14 +47,34 @@ public partial class MainViewModel:ViewModelBase {
             profileProvider: profileStore,
             goalUpdateService: goalUpdateService);
 
+        var bodyMeasurementStore = new InMemoryBodyMeasurementStore();
+
+        var bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+
+        bodyMeasurementEditorService =new BodyMeasurementEditorService(bodyMeasurementHistoryService);
+
         today = CreateTodayDashboardViewModel();
     }
 
-    public bool IsGoalEditorOpen =>
-        GoalEditor is not null;
+    public bool IsGoalEditorOpen => GoalEditor is not null;
 
-    public bool IsTodayDashboardVisible =>
-        GoalEditor is null;
+    public bool IsBodyMeasurementEditorOpen => BodyMeasurementEditor is not null;
+
+    public bool IsTodayDashboardVisible => GoalEditor is null && BodyMeasurementEditor is null;
+
+    [RelayCommand]
+    private void AddBodyMeasurement() {
+        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        var draft = bodyMeasurementEditorService.CreateNew(currentDate);
+
+        BodyMeasurementEditor = new BodyMeasurementEditorViewModel(
+            editorService: bodyMeasurementEditorService,
+            draft: draft,
+            currentDate: currentDate,
+            onSaved: OnBodyMeasurementSaved,
+            onCancelled: CloseBodyMeasurementEditor);
+    }
 
     private TodayDashboardViewModel CreateTodayDashboardViewModel(
         string? actionSummary = null) {
@@ -129,12 +154,26 @@ public partial class MainViewModel:ViewModelBase {
             "Дневная норма КБЖУ пересчитана.");
     }
 
+    private void OnBodyMeasurementSaved() {
+        BodyMeasurementEditor = null;
+    }
+
+    private void CloseBodyMeasurementEditor() {
+        BodyMeasurementEditor = null;
+    }
+
     private void CloseGoalEditor() {
         GoalEditor = null;
     }
 
     partial void OnGoalEditorChanged(NutritionGoalEditorViewModel? value) {
         OnPropertyChanged(nameof(IsGoalEditorOpen));
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+    }
+
+    partial void OnBodyMeasurementEditorChanged(BodyMeasurementEditorViewModel? value) {
+        OnPropertyChanged(nameof(IsBodyMeasurementEditorOpen));
+
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 }

@@ -1,0 +1,163 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Profile.BodyMeasurementEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
+    x:DataType="profileVm:BodyMeasurementEditorViewModel">
+
+  <ScrollViewer>
+    <StackPanel
+        Margin="24"
+        Spacing="14"
+        MaxWidth="640"
+        HorizontalAlignment="Center">
+
+      <TextBlock
+          Text="Измерение тела"
+          FontSize="26"
+          FontWeight="Bold" />
+
+      <TextBlock
+          Text="Обязательны только дата и вес. Остальные показатели можно оставить пустыми."
+          TextWrapping="Wrap"
+          Opacity="0.8" />
+
+      <Grid
+          ColumnDefinitions="*,*"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+          ColumnSpacing="12"
+          RowSpacing="10">
+
+        <TextBlock
+            Grid.Row="0"
+            Grid.Column="0"
+            Text="Дата"
+            VerticalAlignment="Center" />
+
+        <DatePicker
+            Grid.Row="0"
+            Grid.Column="1"
+            SelectedDate="{Binding MeasurementDate, Mode=TwoWay}"
+            HorizontalAlignment="Stretch" />
+
+        <TextBlock
+            Grid.Row="1"
+            Grid.Column="0"
+            Text="Вес, кг"
+            VerticalAlignment="Center"
+            FontWeight="SemiBold" />
+
+        <NumericUpDown
+            Grid.Row="1"
+            Grid.Column="1"
+            Value="{Binding WeightKg, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="500"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="2"
+            Grid.Column="0"
+            Text="Жир, %"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="2"
+            Grid.Column="1"
+            Value="{Binding BodyFatPercent, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="99.9"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="3"
+            Grid.Column="0"
+            Text="Костная масса, кг"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="3"
+            Grid.Column="1"
+            Value="{Binding BoneMassKg, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="100"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="4"
+            Grid.Column="0"
+            Text="Мышечная масса, кг"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="4"
+            Grid.Column="1"
+            Value="{Binding MuscleMassKg, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="300"
+            Increment="0.1"
+            FormatString="0.0" />
+
+        <TextBlock
+            Grid.Row="5"
+            Grid.Column="0"
+            Text="Мышцы, %"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="5"
+            Grid.Column="1"
+            Value="{Binding MusclePercent, Mode=TwoWay}"
+            Minimum="0.1"
+            Maximum="99.9"
+            Increment="0.1"
+            FormatString="0.0" />
+      </Grid>
+
+      <Border
+          IsVisible="{Binding HasValidationErrors}"
+          Padding="12"
+          BorderThickness="1"
+          CornerRadius="8">
+
+        <ItemsControl
+            ItemsSource="{Binding ValidationMessages}">
+
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock
+                  Text="{Binding}"
+                  TextWrapping="Wrap"
+                  Margin="0,2" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+
+      <Grid
+          ColumnDefinitions="*,*"
+          ColumnSpacing="12"
+          Margin="0,8,0,0">
+
+        <Button
+            Grid.Column="0"
+            Content="Отмена"
+            Command="{Binding CancelCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+
+        <Button
+            Grid.Column="1"
+            Content="Сохранить"
+            Command="{Binding SaveCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
