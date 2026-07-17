@@ -25,4 +25,8 @@
     <ProjectReference Include="..\CalorieLedger.Application\CalorieLedger.Application.csproj" />
     <ProjectReference Include="..\CalorieLedger.Domain\CalorieLedger.Domain.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Application\" />
+  </ItemGroup>
 </Project>

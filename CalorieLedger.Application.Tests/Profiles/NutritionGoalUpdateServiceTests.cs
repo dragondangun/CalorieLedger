@@ -1,5 +1,6 @@
 ﻿using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.Application.Adaptive;
 
 namespace CalorieLedger.Application.Tests.Profiles;
 
@@ -107,5 +108,118 @@ public sealed class NutritionGoalUpdateServiceTests {
         Assert.Equal(
             originalGoal,
             store.GetCurrentProfile().Goal);
+    }
+
+    private sealed class TestAdaptiveEnergyHistoryResetter:IAdaptiveEnergyHistoryResetter {
+        public int ResetCallCount { get; private set; }
+
+        public void ResetHistory() {
+            ResetCallCount++;
+        }
+    }
+
+    [Fact]
+    public void UpdateGoal_EnergyConfigurationChanged_ResetsAdaptiveHistory() {
+        var store =
+        new TestUserNutritionProfileStore();
+
+        var historyResetter =
+        new TestAdaptiveEnergyHistoryResetter();
+
+        var service =
+        new NutritionGoalUpdateService(
+            store,
+            historyResetter);
+
+        var goal =
+        new NutritionGoal(
+            GoalType:
+                WeightGoalType.LoseWeight,
+            TargetWeightKg:
+                75m,
+            Strategy:
+                EnergyStrategy
+                    .FromBalancePercent(
+                        15m));
+
+        var result =
+        service.UpdateGoal(goal);
+
+        Assert.True(result.IsSuccess);
+
+        Assert.Equal(
+            1,
+            historyResetter.ResetCallCount);
+    }
+
+    [Fact]
+    public void UpdateGoal_OnlyTargetValuesChanged_DoesNotResetAdaptiveHistory() {
+        var store =
+        new TestUserNutritionProfileStore();
+
+        var historyResetter =
+        new TestAdaptiveEnergyHistoryResetter();
+
+        var service =
+        new NutritionGoalUpdateService(
+            store,
+            historyResetter);
+
+        var goal =
+        new NutritionGoal(
+            GoalType:
+                WeightGoalType.Maintain,
+            TargetWeightKg:
+                80m,
+            TargetBodyFatPercent:
+                18m,
+            Strategy:
+                EnergyStrategy
+                    .FromBalancePercent(
+                        0m));
+
+        var result =
+        service.UpdateGoal(goal);
+
+        Assert.True(result.IsSuccess);
+
+        Assert.Equal(
+            0,
+            historyResetter.ResetCallCount);
+    }
+
+    [Fact]
+    public void UpdateGoal_InvalidGoal_DoesNotResetAdaptiveHistory() {
+        var store =
+        new TestUserNutritionProfileStore();
+
+        var historyResetter =
+        new TestAdaptiveEnergyHistoryResetter();
+
+        var service =
+        new NutritionGoalUpdateService(
+            store,
+            historyResetter);
+
+        var invalidGoal =
+        new NutritionGoal(
+            GoalType:
+                WeightGoalType.LoseWeight,
+            TargetWeightKg:
+                75m,
+            Strategy:
+                EnergyStrategy
+                    .FromBalancePercent(
+                        0m));
+
+        var result =
+        service.UpdateGoal(
+            invalidGoal);
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Equal(
+            0,
+            historyResetter.ResetCallCount);
     }
 }

@@ -1,4 +1,5 @@
-﻿using CalorieLedger.Application.Profiles;
+﻿using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
@@ -22,25 +23,24 @@ public partial class MainViewModel:ViewModelBase {
     private NutritionGoalEditorViewModel? goalEditor;
 
     public MainViewModel() {
-        profileStore =
-            new SampleUserNutritionProfileProvider();
+        profileStore = new SampleUserNutritionProfileProvider();
 
-        todayProvider =
-            new SampleTodayDashboardSnapshotProvider(
-                profileStore);
+        todayProvider = new SampleTodayDashboardSnapshotProvider(profileStore);
 
-        goalUpdateService =
-            new NutritionGoalUpdateService(
-                profileStore);
+        var adaptiveEvaluationStore = new InMemoryAdaptiveEnergyEvaluationStore();
 
-        goalTransitionService =
-            new NutritionGoalTransitionService(
-                goalUpdateService);
+        var adaptiveAssessmentService = new AdaptiveEnergyAssessmentService(adaptiveEvaluationStore);
 
-        goalEditorService =
-            new NutritionGoalEditorService(
-                profileProvider: profileStore,
-                goalUpdateService: goalUpdateService);
+        goalUpdateService = new NutritionGoalUpdateService(
+            profileStore,
+            adaptiveAssessmentService);
+
+        goalTransitionService = new NutritionGoalTransitionService(
+            goalUpdateService);
+
+        goalEditorService = new NutritionGoalEditorService(
+            profileProvider: profileStore,
+            goalUpdateService: goalUpdateService);
 
         today = CreateTodayDashboardViewModel();
     }

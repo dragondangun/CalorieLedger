@@ -1,21 +1,52 @@
-﻿using CalorieLedger.Domain.Profile;
+﻿using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
-public sealed class NutritionGoalUpdateService(
-    IUserNutritionProfileStore profileStore) {
-    public NutritionGoalUpdateResult UpdateGoal(
-        NutritionGoal goal) {
-        var validation =
-            NutritionGoalValidator.Validate(goal);
+public sealed class NutritionGoalUpdateService {
+    private readonly IUserNutritionProfileStore _profileStore;
 
-        if(!validation.IsValid) {
+    private readonly IAdaptiveEnergyHistoryResetter? _adaptiveEnergyHistoryResetter;
+
+    public NutritionGoalUpdateService(IUserNutritionProfileStore profileStore)
+        : this(
+            profileStore,
+            adaptiveEnergyHistoryResetter: null) {
+    }
+
+    public NutritionGoalUpdateService(
+        IUserNutritionProfileStore profileStore,
+        IAdaptiveEnergyHistoryResetter?
+            adaptiveEnergyHistoryResetter) {
+        ArgumentNullException.ThrowIfNull(profileStore);
+
+        _profileStore = profileStore;
+
+        _adaptiveEnergyHistoryResetter = adaptiveEnergyHistoryResetter;
+    }
+
+    public NutritionGoalUpdateResult UpdateGoal(NutritionGoal goal) {
+        ArgumentNullException.ThrowIfNull(goal);
+
+        var validationResult = NutritionGoalValidator.Validate(goal);
+
+        if(!validationResult.IsValid) {
             return new NutritionGoalUpdateResult(
                 IsSuccess: false,
-                Errors: validation.Errors);
+                Errors: validationResult.Errors);
         }
 
-        profileStore.UpdateGoal(goal);
+        var previousGoal = _profileStore.GetCurrentProfile().Goal;
+
+        var shouldResetAdaptiveHistory = AdaptiveEnergyHistoryResetPolicy.ShouldReset(
+            previousGoal,
+            goal);
+
+        _profileStore.UpdateGoal(goal);
+
+        if(shouldResetAdaptiveHistory) {
+            _adaptiveEnergyHistoryResetter?.ResetHistory();
+        }
 
         return new NutritionGoalUpdateResult(
             IsSuccess: true,

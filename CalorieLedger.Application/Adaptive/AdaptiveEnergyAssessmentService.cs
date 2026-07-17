@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace CalorieLedger.Application.Adaptive;
 
-public sealed class AdaptiveEnergyAssessmentService {
+public sealed class AdaptiveEnergyAssessmentService:IAdaptiveEnergyHistoryResetter {
     private readonly
         IAdaptiveEnergyEvaluationStore
         _evaluationStore;
