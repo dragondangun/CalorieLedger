@@ -7,6 +7,7 @@ using CalorieLedger.ViewModels.Today;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.ObjectModel;
 
 namespace CalorieLedger.ViewModels;
 
@@ -17,6 +18,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly NutritionGoalUpdateService goalUpdateService;
     private readonly NutritionGoalTransitionService goalTransitionService;
     private readonly NutritionGoalEditorService goalEditorService;
+    private readonly BodyMeasurementHistoryService bodyMeasurementHistoryService;
     private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
 
     [ObservableProperty]
@@ -26,6 +28,12 @@ public partial class MainViewModel:ViewModelBase {
     private NutritionGoalEditorViewModel? goalEditor;
     [ObservableProperty]
     private BodyMeasurementEditorViewModel? bodyMeasurementEditor;
+    
+    public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
+
+    public bool HasBodyMeasurements => BodyMeasurements.Count > 0;
+
+    public bool HasNoBodyMeasurements => BodyMeasurements.Count == 0;
 
     public MainViewModel() {
         profileStore = new SampleUserNutritionProfileProvider();
@@ -49,11 +57,13 @@ public partial class MainViewModel:ViewModelBase {
 
         var bodyMeasurementStore = new InMemoryBodyMeasurementStore();
 
-        var bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+        bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
 
-        bodyMeasurementEditorService =new BodyMeasurementEditorService(bodyMeasurementHistoryService);
+        bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
         today = CreateTodayDashboardViewModel();
+        
+        RefreshBodyMeasurements();
     }
 
     public bool IsGoalEditorOpen => GoalEditor is not null;
@@ -68,12 +78,61 @@ public partial class MainViewModel:ViewModelBase {
 
         var draft = bodyMeasurementEditorService.CreateNew(currentDate);
 
+        OpenBodyMeasurementEditor(
+            draft,
+            currentDate);
+    }
+
+    private void EditBodyMeasurement(Guid id) {
+        var draft = bodyMeasurementEditorService.Load(id);
+
+        if(draft is null) {
+            return;
+        }
+
+        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        OpenBodyMeasurementEditor(
+            draft,
+            currentDate);
+    }
+
+    private void DeleteBodyMeasurement(Guid id) {
+        var deleted = bodyMeasurementEditorService.Delete(id);
+
+        if(!deleted) {
+            return;
+        }
+
+        RefreshBodyMeasurements();
+    }
+
+    private void OpenBodyMeasurementEditor(BodyMeasurementDraft draft, DateOnly currentDate) {
         BodyMeasurementEditor = new BodyMeasurementEditorViewModel(
             editorService: bodyMeasurementEditorService,
             draft: draft,
             currentDate: currentDate,
             onSaved: OnBodyMeasurementSaved,
             onCancelled: CloseBodyMeasurementEditor);
+    }
+
+    private void RefreshBodyMeasurements() {
+        BodyMeasurements.Clear();
+
+        var entries = bodyMeasurementHistoryService.GetAll();
+
+        // Хранилище возвращает записи от старых к новым.
+        // На экране показываем новые сверху.
+        for(var index = entries.Count - 1; index >= 0; index--) {
+            BodyMeasurements.Add(new BodyMeasurementListItemViewModel(
+                entry: entries[index],
+                onEdit: EditBodyMeasurement,
+                onDelete: DeleteBodyMeasurement));
+        }
+
+        OnPropertyChanged(nameof(HasBodyMeasurements));
+
+        OnPropertyChanged(nameof(HasNoBodyMeasurements));
     }
 
     private TodayDashboardViewModel CreateTodayDashboardViewModel(
@@ -156,6 +215,8 @@ public partial class MainViewModel:ViewModelBase {
 
     private void OnBodyMeasurementSaved() {
         BodyMeasurementEditor = null;
+
+        RefreshBodyMeasurements();
     }
 
     private void CloseBodyMeasurementEditor() {
