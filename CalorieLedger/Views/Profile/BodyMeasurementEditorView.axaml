@@ -22,8 +22,13 @@
           TextWrapping="Wrap"
           Opacity="0.8" />
 
+      <TextBlock
+          Text="Заполните мышечную массу или процент мышц — второе значение будет рассчитано автоматически."
+          TextWrapping="Wrap"
+          Opacity="0.75" />
+
       <Grid
-          ColumnDefinitions="*,*"
+          ColumnDefinitions="*,*" 
           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
           ColumnSpacing="12"
           RowSpacing="10">

@@ -16,6 +16,10 @@ public partial class BodyMeasurementEditorViewModel
     private readonly Action onSaved;
     private readonly Action onCancelled;
 
+    private bool isSynchronizingMuscleValues;
+
+    private MuscleValueInputSource muscleValueInputSource = MuscleValueInputSource.None;
+
     [ObservableProperty]
     private DateTimeOffset? measurementDate;
 
@@ -40,6 +44,12 @@ public partial class BodyMeasurementEditorViewModel
     public bool HasValidationErrors =>
         ValidationMessages.Count > 0;
 
+    private enum MuscleValueInputSource {
+        None,
+        MuscleMass,
+        MusclePercent
+    }
+
     public BodyMeasurementEditorViewModel(
         BodyMeasurementEditorService editorService,
         BodyMeasurementDraft draft,
@@ -60,17 +70,101 @@ public partial class BodyMeasurementEditorViewModel
 
         measurementId = draft.Id;
 
-        MeasurementDate =
-            new DateTimeOffset(
-                draft.Date.ToDateTime(
-                    TimeOnly.MinValue),
-                TimeSpan.Zero);
+        isSynchronizingMuscleValues = true;
+        
+        MeasurementDate = new DateTimeOffset(
+            draft.Date.ToDateTime(TimeOnly.MinValue),
+            TimeSpan.Zero);
 
         WeightKg = draft.WeightKg;
         BodyFatPercent = draft.BodyFatPercent;
         BoneMassKg = draft.BoneMassKg;
         MuscleMassKg = draft.MuscleMassKg;
         MusclePercent = draft.MusclePercent;
+
+        isSynchronizingMuscleValues = false;
+
+        muscleValueInputSource = draft.MuscleMassKg is not null
+            ? MuscleValueInputSource.MuscleMass
+            : draft.MusclePercent is not null
+                ? MuscleValueInputSource.MusclePercent
+                    : MuscleValueInputSource.None;
+    }
+
+    partial void OnWeightKgChanged(decimal? value) {
+        if(isSynchronizingMuscleValues) {
+            return;
+        }
+
+        switch(muscleValueInputSource) {
+            case MuscleValueInputSource.MuscleMass:
+                RecalculateMusclePercent();
+                break;
+
+            case MuscleValueInputSource.MusclePercent:
+                RecalculateMuscleMass();
+                break;
+        }
+    }
+
+    partial void OnMuscleMassKgChanged(decimal? value) {
+        if(isSynchronizingMuscleValues) {
+            return;
+        }
+
+        muscleValueInputSource = MuscleValueInputSource.MuscleMass;
+
+        RecalculateMusclePercent();
+    }
+
+    partial void OnMusclePercentChanged(decimal? value) {
+        if(isSynchronizingMuscleValues) {
+            return;
+        }
+
+        muscleValueInputSource = MuscleValueInputSource.MusclePercent;
+
+        RecalculateMuscleMass();
+    }
+
+    private void RecalculateMusclePercent() {
+        isSynchronizingMuscleValues = true;
+
+        try {
+            if(WeightKg is not > 0m
+                || MuscleMassKg is not > 0m) {
+                MusclePercent = null;
+                return;
+            }
+
+            MusclePercent = BodyMeasurementMuscleValueNormalizer
+                .CalculateMusclePercent(
+                    weightKg: WeightKg.Value,
+                    muscleMassKg: MuscleMassKg.Value);
+        }
+        finally {
+            isSynchronizingMuscleValues = false;
+        }
+    }
+
+    private void RecalculateMuscleMass() {
+        isSynchronizingMuscleValues = true;
+
+        try {
+            if(WeightKg is not > 0m
+                || MusclePercent is not > 0m
+                or >= 100m) {
+                MuscleMassKg = null;
+                return;
+            }
+
+            MuscleMassKg = BodyMeasurementMuscleValueNormalizer.CalculateMuscleMass(
+                weightKg: WeightKg.Value,
+                musclePercent: MusclePercent.Value);
+        }
+        finally {
+            isSynchronizingMuscleValues = false;
+        }
     }
 
     [RelayCommand]
@@ -153,7 +247,7 @@ public partial class BodyMeasurementEditorViewModel
                 "Процент жира должен быть больше 0 и меньше 100.",
 
             BodyMeasurementValidationError.InvalidBoneMass =>
-                "Костная масса должна быть положительной.",
+                "Костная масса должна быть положительной и не превышать вес тела.",
 
             BodyMeasurementValidationError.InvalidMuscleMass =>
                 "Мышечная масса должна быть положительной и не превышать вес тела.",
@@ -164,8 +258,10 @@ public partial class BodyMeasurementEditorViewModel
             BodyMeasurementValidationError.InconsistentMuscleValues =>
                 "Мышечная масса и процент мышц не согласованы с весом тела.",
 
-            _ =>
-                "Не удалось сохранить измерение."
+            BodyMeasurementValidationError.InconsistentBodyComposition =>
+                "Жировая, мышечная и костная масса не согласованы с общим весом тела.",
+
+            _ => "Не удалось сохранить измерение."
         };
     }
 }

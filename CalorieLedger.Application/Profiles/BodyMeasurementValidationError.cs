@@ -8,5 +8,6 @@ public enum BodyMeasurementValidationError {
     InvalidBoneMass,
     InvalidMuscleMass,
     InvalidMusclePercent,
-    InconsistentMuscleValues
+    InconsistentMuscleValues,
+    InconsistentBodyComposition
 }

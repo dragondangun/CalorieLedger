@@ -54,39 +54,26 @@ public sealed class BodyMeasurementHistoryService {
     private static IReadOnlyList<BodyMeasurementValidationError> Validate(
         BodyMeasurementEntry entry,
         DateOnly currentDate) {
-        var errors =
-            new List<
-                BodyMeasurementValidationError>();
+        var errors = new List<BodyMeasurementValidationError>();
 
         if(entry.Id == Guid.Empty) {
-            errors.Add(
-                BodyMeasurementValidationError
-                    .MissingId);
+            errors.Add(BodyMeasurementValidationError.MissingId);
         }
 
         if(entry.Date > currentDate) {
-            errors.Add(
-                BodyMeasurementValidationError
-                    .FutureDate);
+            errors.Add(BodyMeasurementValidationError.FutureDate);
         }
 
         if(entry.WeightKg <= 0m) {
-            errors.Add(
-                BodyMeasurementValidationError
-                    .InvalidWeight);
+            errors.Add(BodyMeasurementValidationError.InvalidWeight);
         }
 
-        if(!IsValidOptionalPercentage(
-                entry.BodyFatPercent)) {
-            errors.Add(
-                BodyMeasurementValidationError
-                    .InvalidBodyFatPercent);
+        if(!IsValidOptionalPercentage(entry.BodyFatPercent)) {
+            errors.Add(BodyMeasurementValidationError.InvalidBodyFatPercent);
         }
 
-        if(entry.BoneMassKg is <= 0m) {
-            errors.Add(
-                BodyMeasurementValidationError
-                    .InvalidBoneMass);
+        if(entry.BoneMassKg is decimal boneMassKg && (boneMassKg <= 0m || boneMassKg > entry.WeightKg)) {
+            errors.Add(BodyMeasurementValidationError.InvalidBoneMass);
         }
 
         if(entry.MuscleMassKg is decimal muscleMassKg
@@ -102,6 +89,12 @@ public sealed class BodyMeasurementHistoryService {
 
         if(!BodyMeasurementMuscleValueNormalizer.AreValuesConsistent(entry)) {
             errors.Add(BodyMeasurementValidationError.InconsistentMuscleValues);
+        }
+
+        var compositionResult = BodyCompositionConsistencyCalculator.Evaluate(entry);
+
+        if(!compositionResult.IsConsistent) {
+            errors.Add(BodyMeasurementValidationError.InconsistentBodyComposition);
         }
 
         return errors.Distinct().ToArray();
