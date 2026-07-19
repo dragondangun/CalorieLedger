@@ -245,4 +245,74 @@ public sealed class
             30m,
             viewModel.MuscleMassKg);
     }
+
+    [Fact]
+    public void CompositionValuesChanged_UpdatesPreview() {
+        var editorService = CreateEditorService();
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            19);
+
+        var viewModel = new BodyMeasurementEditorViewModel(
+            editorService,
+            editorService.CreateNew(currentDate),
+            currentDate,
+            onSaved: () => { },
+            onCancelled: () => { });
+
+        viewModel.WeightKg = 80m;
+        viewModel.BodyFatPercent = 20m;
+        viewModel.BoneMassKg = 3.2m;
+        viewModel.MuscleMassKg = 35m;
+
+        Assert.True(
+            viewModel.HasCompositionPreview);
+
+        Assert.False(
+            viewModel.HasCompositionWarning);
+
+        Assert.Contains(
+            "Жировая масса: 16,00 кг",
+            viewModel.CompositionPreviewSummary);
+
+        Assert.Contains(
+            "Безжировая масса: 64,00 кг",
+            viewModel.CompositionPreviewSummary);
+
+        Assert.Contains(
+            "Доля костной массы: 4,00%",
+            viewModel.CompositionPreviewSummary);
+
+        Assert.Contains(
+            "Остальная масса: 25,80 кг",
+            viewModel.CompositionPreviewSummary);
+    }
+
+    [Fact]
+    public void InconsistentComposition_ShowsWarning() {
+        var editorService = CreateEditorService();
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            19);
+
+        var viewModel = new BodyMeasurementEditorViewModel(
+            editorService,
+            editorService.CreateNew(currentDate),
+            currentDate,
+            onSaved: () => { },
+            onCancelled: () => { });
+
+        viewModel.WeightKg = 80m;
+        viewModel.BodyFatPercent = 30m;
+        viewModel.BoneMassKg = 3m;
+        viewModel.MuscleMassKg = 55m;
+
+        Assert.True(viewModel.HasCompositionPreview);
+
+        Assert.True(viewModel.HasCompositionWarning);
+    }
 }

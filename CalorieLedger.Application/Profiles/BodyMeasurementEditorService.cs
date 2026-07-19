@@ -40,6 +40,14 @@ public sealed class BodyMeasurementEditorService {
                 .FromEntry(entry);
     }
 
+    public BodyCompositionConsistencyResult CalculateCompositionPreview(BodyMeasurementDraft draft) {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var entry = BodyMeasurementDraftMapper.ToEntry(draft);
+
+        return BodyCompositionConsistencyCalculator.Evaluate(entry);
+    }
+
     public BodyMeasurementSaveResult Save(
         BodyMeasurementDraft draft,
         DateOnly currentDate) {

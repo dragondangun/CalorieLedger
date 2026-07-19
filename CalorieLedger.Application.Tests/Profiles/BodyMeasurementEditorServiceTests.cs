@@ -276,4 +276,46 @@ public sealed class BodyMeasurementEditorServiceTests {
         return new BodyMeasurementEditorService(
             historyService);
     }
+
+    [Fact]
+    public void CalculateCompositionPreview_ReturnsDerivedValues() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var historyService = new BodyMeasurementHistoryService(store);
+
+        var editorService = new BodyMeasurementEditorService(historyService);
+
+        var draft = new BodyMeasurementDraft(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(
+                    2026,
+                    7,
+                    19),
+            WeightKg: 80m,
+            BodyFatPercent: 20m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35m,
+            MusclePercent: 43.75m);
+
+        var result = editorService.CalculateCompositionPreview(draft);
+
+        Assert.Equal(
+            16m,
+            result.FatMassKg);
+
+        Assert.Equal(
+            64m,
+            result.FatFreeMassKg);
+
+        Assert.Equal(
+            4m,
+            result.BonePercent);
+
+        Assert.Equal(
+            25.8m,
+            result.ResidualMassKg);
+
+        Assert.True(
+            result.IsConsistent);
+    }
 }

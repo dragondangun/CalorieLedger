@@ -121,6 +121,29 @@
             Increment="0.1"
             FormatString="0.0" />
       </Grid>
+      <Border
+          IsVisible="{Binding HasCompositionPreview}"
+          Padding="12"
+          BorderThickness="1"
+          CornerRadius="8">
+
+              <StackPanel Spacing="6">
+
+                <TextBlock
+                    Text="Расчёт состава тела"
+                    FontWeight="SemiBold" />
+
+                <TextBlock
+                    Text="{Binding CompositionPreviewSummary}"
+                    TextWrapping="Wrap" />
+
+                <TextBlock
+                    IsVisible="{Binding HasCompositionWarning}"
+                    Text="Введённые значения состава тела не согласованы с общим весом."
+                    TextWrapping="Wrap"
+                    FontWeight="SemiBold" />
+              </StackPanel>
+      </Border>
 
       <Border
           IsVisible="{Binding HasValidationErrors}"

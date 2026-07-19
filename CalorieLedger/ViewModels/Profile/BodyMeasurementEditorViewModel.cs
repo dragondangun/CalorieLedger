@@ -3,13 +3,14 @@ using System.Collections.ObjectModel;
 using CalorieLedger.Application.Profiles;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.Generic;
+using System.Globalization;
 
 namespace CalorieLedger.ViewModels.Profile;
 
-public partial class BodyMeasurementEditorViewModel
-    :ViewModelBase {
-    private readonly BodyMeasurementEditorService
-        editorService;
+public partial class BodyMeasurementEditorViewModel:ViewModelBase {
+    private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private readonly BodyMeasurementEditorService editorService;
 
     private readonly DateOnly currentDate;
     private readonly Guid measurementId;
@@ -38,11 +39,18 @@ public partial class BodyMeasurementEditorViewModel
     [ObservableProperty]
     private decimal? musclePercent;
 
-    public ObservableCollection<string>
-        ValidationMessages { get; } = [];
+    [ObservableProperty]
+    private string compositionPreviewSummary = string.Empty;
 
-    public bool HasValidationErrors =>
-        ValidationMessages.Count > 0;
+    [ObservableProperty]
+    private bool hasCompositionPreview;
+
+    [ObservableProperty]
+    private bool hasCompositionWarning;
+
+    public ObservableCollection<string> ValidationMessages { get; } = [];
+
+    public bool HasValidationErrors => ValidationMessages.Count > 0;
 
     private enum MuscleValueInputSource {
         None,
@@ -89,6 +97,8 @@ public partial class BodyMeasurementEditorViewModel
             : draft.MusclePercent is not null
                 ? MuscleValueInputSource.MusclePercent
                     : MuscleValueInputSource.None;
+
+        UpdateCompositionPreview();
     }
 
     partial void OnWeightKgChanged(decimal? value) {
@@ -105,6 +115,16 @@ public partial class BodyMeasurementEditorViewModel
                 RecalculateMuscleMass();
                 break;
         }
+
+        UpdateCompositionPreview();
+    }
+
+    partial void OnBodyFatPercentChanged(decimal? value) {
+        UpdateCompositionPreview();
+    }
+
+    partial void OnBoneMassKgChanged(decimal? value) {
+        UpdateCompositionPreview();
     }
 
     partial void OnMuscleMassKgChanged(decimal? value) {
@@ -112,9 +132,12 @@ public partial class BodyMeasurementEditorViewModel
             return;
         }
 
-        muscleValueInputSource = MuscleValueInputSource.MuscleMass;
+        muscleValueInputSource = value is null
+            ? MuscleValueInputSource.None
+            : MuscleValueInputSource.MuscleMass;
 
         RecalculateMusclePercent();
+        UpdateCompositionPreview();
     }
 
     partial void OnMusclePercentChanged(decimal? value) {
@@ -122,9 +145,12 @@ public partial class BodyMeasurementEditorViewModel
             return;
         }
 
-        muscleValueInputSource = MuscleValueInputSource.MusclePercent;
+        muscleValueInputSource = value is null
+            ? MuscleValueInputSource.None
+            : MuscleValueInputSource.MusclePercent;
 
         RecalculateMuscleMass();
+        UpdateCompositionPreview();
     }
 
     private void RecalculateMusclePercent() {
@@ -178,27 +204,13 @@ public partial class BodyMeasurementEditorViewModel
             return;
         }
 
-        var draft =
-            new BodyMeasurementDraft(
-                Id: measurementId,
-                Date:
-                    DateOnly.FromDateTime(
-                        MeasurementDate
-                            .Value
-                            .DateTime),
-                WeightKg: WeightKg,
-                BodyFatPercent:
-                    BodyFatPercent,
-                BoneMassKg: BoneMassKg,
-                MuscleMassKg:
-                    MuscleMassKg,
-                MusclePercent:
-                    MusclePercent);
+        var measurementDate = DateOnly.FromDateTime(MeasurementDate.Value.DateTime);
 
-        var result =
-            editorService.Save(
-                draft,
-                currentDate);
+        var draft = CreateCurrentDraft(measurementDate);
+
+        var result = editorService.Save(
+            draft,
+            currentDate);
 
         if(result.IsSuccess) {
             onSaved();
@@ -230,8 +242,68 @@ public partial class BodyMeasurementEditorViewModel
             nameof(HasValidationErrors));
     }
 
-    private static string GetValidationMessage(
-        BodyMeasurementValidationError error) {
+    private BodyMeasurementDraft CreateCurrentDraft(DateOnly date) {
+        return new BodyMeasurementDraft(
+            Id: measurementId,
+            Date: date,
+            WeightKg: WeightKg,
+            BodyFatPercent: BodyFatPercent,
+            BoneMassKg: BoneMassKg,
+            MuscleMassKg: MuscleMassKg,
+            MusclePercent: MusclePercent);
+    }
+
+    private void UpdateCompositionPreview() {
+        var previewDate = MeasurementDate is null
+            ? currentDate
+            : DateOnly.FromDateTime(MeasurementDate.Value.DateTime);
+
+        var draft = CreateCurrentDraft(previewDate);
+
+        var result = editorService.CalculateCompositionPreview(draft);
+
+        var values = new List<string>();
+
+        if(result.FatMassKg is decimal fatMassKg) {
+            values.Add($"Жировая масса: {FormatKilograms(fatMassKg)}");
+        }
+
+        if(result.FatFreeMassKg is decimal fatFreeMassKg) {
+            values.Add($"Безжировая масса: {FormatKilograms(fatFreeMassKg)}");
+        }
+
+        if(result.BonePercent is decimal bonePercent) {
+            values.Add($"Доля костной массы: {FormatPercent(bonePercent)}");
+        }
+
+        if(result.ResidualMassKg is decimal residualMassKg) {
+            values.Add($"Остальная масса: {FormatKilograms(residualMassKg)}");
+        }
+
+        CompositionPreviewSummary = string.Join(
+            Environment.NewLine,
+            values);
+
+        HasCompositionPreview = values.Count > 0;
+
+        HasCompositionWarning =
+            HasCompositionPreview
+            && !result.IsConsistent;
+    }
+
+    private static string FormatKilograms(decimal value) {
+        return value.ToString(
+            "0.00",
+            RussianCulture) + " кг";
+    }
+
+    private static string FormatPercent(decimal value) {
+        return value.ToString(
+            "0.00",
+            RussianCulture) + "%";
+    }
+
+    private static string GetValidationMessage(BodyMeasurementValidationError error) {
         return error switch
         {
             BodyMeasurementValidationError.MissingId =>
