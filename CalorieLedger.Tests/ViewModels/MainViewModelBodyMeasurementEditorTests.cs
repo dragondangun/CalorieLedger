@@ -129,4 +129,52 @@ public sealed class
 
         Assert.True(viewModel.HasNoBodyMeasurements);
     }
+
+    [Fact]
+    public void SaveMeasurement_RefreshesTodayDashboard() {
+        var viewModel = new MainViewModel();
+
+        var previousToday = viewModel.Today;
+
+        viewModel.AddBodyMeasurementCommand.Execute(null);
+
+        Assert.NotNull(viewModel.BodyMeasurementEditor);
+
+        viewModel.BodyMeasurementEditor.WeightKg = 70m;
+
+        viewModel.BodyMeasurementEditor.SaveCommand.Execute(null);
+
+        Assert.NotSame(
+            previousToday,
+            viewModel.Today);
+
+        Assert.Contains(
+            "Измерение сохранено",
+            viewModel.Today.GoalActionSelectionSummary);
+    }
+
+    [Fact]
+    public void DeleteMeasurement_RefreshesTodayDashboard() {
+        var viewModel = new MainViewModel();
+
+        viewModel.AddBodyMeasurementCommand.Execute(null);
+
+        Assert.NotNull(viewModel.BodyMeasurementEditor);
+
+        viewModel.BodyMeasurementEditor.WeightKg = 70m;
+
+        viewModel.BodyMeasurementEditor.SaveCommand.Execute(null);
+
+        var todayAfterSave = viewModel.Today;
+
+        var measurement = Assert.Single(viewModel.BodyMeasurements);
+
+        measurement.DeleteCommand.Execute(null);
+
+        Assert.NotSame(todayAfterSave, viewModel.Today);
+
+        Assert.Contains(
+            "Измерение удалено",
+            viewModel.Today.GoalActionSelectionSummary);
+    }
 }

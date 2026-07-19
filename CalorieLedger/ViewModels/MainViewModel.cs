@@ -38,7 +38,17 @@ public partial class MainViewModel:ViewModelBase {
     public MainViewModel() {
         profileStore = new SampleUserNutritionProfileProvider();
 
-        todayProvider = new SampleTodayDashboardSnapshotProvider(profileStore);
+        var bodyMeasurementStore = new InMemoryBodyMeasurementStore();
+
+        bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+
+        bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
+
+        var currentProfileProvider = new BodyMeasurementAwareNutritionProfileProvider(
+            baseProfileProvider: profileStore,
+            measurementHistoryService: bodyMeasurementHistoryService);
+
+        todayProvider = new SampleTodayDashboardSnapshotProvider(currentProfileProvider);
 
         var adaptiveEvaluationStore = new InMemoryAdaptiveEnergyEvaluationStore();
 
@@ -48,21 +58,14 @@ public partial class MainViewModel:ViewModelBase {
             profileStore,
             adaptiveAssessmentService);
 
-        goalTransitionService = new NutritionGoalTransitionService(
-            goalUpdateService);
+        goalTransitionService = new NutritionGoalTransitionService(goalUpdateService);
 
         goalEditorService = new NutritionGoalEditorService(
-            profileProvider: profileStore,
+            profileProvider: currentProfileProvider,
             goalUpdateService: goalUpdateService);
 
-        var bodyMeasurementStore = new InMemoryBodyMeasurementStore();
-
-        bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
-
-        bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
-
         today = CreateTodayDashboardViewModel();
-        
+
         RefreshBodyMeasurements();
     }
 
@@ -105,6 +108,8 @@ public partial class MainViewModel:ViewModelBase {
         }
 
         RefreshBodyMeasurements();
+
+        Today = CreateTodayDashboardViewModel("Измерение удалено. Текущий профиль и дневная норма КБЖУ обновлены.");
     }
 
     private void OpenBodyMeasurementEditor(BodyMeasurementDraft draft, DateOnly currentDate) {
@@ -217,6 +222,8 @@ public partial class MainViewModel:ViewModelBase {
         BodyMeasurementEditor = null;
 
         RefreshBodyMeasurements();
+
+        Today = CreateTodayDashboardViewModel("Измерение сохранено. Текущий профиль и дневная норма КБЖУ обновлены.");
     }
 
     private void CloseBodyMeasurementEditor() {
