@@ -279,4 +279,130 @@ public sealed class
             MuscleMassKg: 35m,
             MusclePercent: 43.75m);
     }
+
+    [Fact]
+    public void Save_MuscleMassOnly_CalculatesMusclePercent() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(
+            store);
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            19);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m,
+            MuscleMassKg: 35m,
+            MusclePercent: null);
+
+        var result = service.Save(
+            entry,
+            currentDate);
+
+        Assert.True(result.IsSuccess);
+
+        var savedEntry = Assert.Single(service.GetAll());
+
+        Assert.Equal(
+            43.75m,
+            savedEntry.MusclePercent);
+    }
+
+    [Fact]
+    public void Save_MusclePercentOnly_CalculatesMuscleMass() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(
+            store);
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            19);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m,
+            MuscleMassKg: null,
+            MusclePercent: 43.75m);
+
+        var result = service.Save(
+            entry,
+            currentDate);
+
+        Assert.True(result.IsSuccess);
+
+        var savedEntry = Assert.Single(
+            service.GetAll());
+
+        Assert.Equal(
+            35m,
+            savedEntry.MuscleMassKg);
+    }
+
+    [Fact]
+    public void Save_InconsistentMuscleValues_DoesNotSave() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            19);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m,
+            MuscleMassKg: 35m,
+            MusclePercent: 40m);
+
+        var result = service.Save(
+            entry,
+            currentDate);
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Contains(
+            BodyMeasurementValidationError.InconsistentMuscleValues,
+            result.Errors);
+
+        Assert.Empty(service.GetAll());
+    }
+
+    [Fact]
+    public void Save_MuscleMassGreaterThanWeight_DoesNotSave() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            19);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m,
+            MuscleMassKg: 81m);
+
+        var result = service.Save(
+            entry,
+            currentDate);
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Contains(
+            BodyMeasurementValidationError.InvalidMuscleMass,
+            result.Errors);
+
+        Assert.Empty(service.GetAll());
+    }
 } 

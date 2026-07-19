@@ -112,8 +112,7 @@ public partial class BodyMeasurementEditorViewModel
         }
 
         foreach(var error in result.Errors) {
-            AddValidationMessage(
-                GetValidationMessage(error));
+            AddValidationMessage(GetValidationMessage(error));
         }
     }
 
@@ -150,19 +149,20 @@ public partial class BodyMeasurementEditorViewModel
             BodyMeasurementValidationError.InvalidWeight =>
                 "Укажите положительное значение веса.",
 
-            BodyMeasurementValidationError
-                .InvalidBodyFatPercent =>
+            BodyMeasurementValidationError .InvalidBodyFatPercent =>
                 "Процент жира должен быть больше 0 и меньше 100.",
 
             BodyMeasurementValidationError.InvalidBoneMass =>
                 "Костная масса должна быть положительной.",
 
             BodyMeasurementValidationError.InvalidMuscleMass =>
-                "Мышечная масса должна быть положительной.",
+                "Мышечная масса должна быть положительной и не превышать вес тела.",
 
-            BodyMeasurementValidationError
-                .InvalidMusclePercent =>
+            BodyMeasurementValidationError.InvalidMusclePercent =>
                 "Процент мышц должен быть больше 0 и меньше 100.",
+
+            BodyMeasurementValidationError.InconsistentMuscleValues =>
+                "Мышечная масса и процент мышц не согласованы с весом тела.",
 
             _ =>
                 "Не удалось сохранить измерение."

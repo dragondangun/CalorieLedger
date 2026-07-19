@@ -23,10 +23,9 @@ public sealed class BodyMeasurementHistoryService {
         DateOnly currentDate) {
         ArgumentNullException.ThrowIfNull(entry);
 
-        var errors =
-            Validate(
-                entry,
-                currentDate);
+        var errors = Validate(
+            entry,
+            currentDate);
 
         if(errors.Count > 0) {
             return new BodyMeasurementSaveResult(
@@ -34,13 +33,13 @@ public sealed class BodyMeasurementHistoryService {
                 Errors: errors);
         }
 
-        _store.Save(entry);
+        var normalizedEntry = BodyMeasurementMuscleValueNormalizer.Normalize(entry);
+
+        _store.Save(normalizedEntry);
 
         return new BodyMeasurementSaveResult(
             IsSuccess: true,
-            Errors:
-                Array.Empty<
-                    BodyMeasurementValidationError>());
+            Errors: Array.Empty<BodyMeasurementValidationError>());
     }
 
     public bool Delete(
@@ -52,8 +51,7 @@ public sealed class BodyMeasurementHistoryService {
         return _store.Delete(id);
     }
 
-    private static IReadOnlyList<
-        BodyMeasurementValidationError> Validate(
+    private static IReadOnlyList<BodyMeasurementValidationError> Validate(
         BodyMeasurementEntry entry,
         DateOnly currentDate) {
         var errors =
@@ -91,22 +89,22 @@ public sealed class BodyMeasurementHistoryService {
                     .InvalidBoneMass);
         }
 
-        if(entry.MuscleMassKg is <= 0m) {
-            errors.Add(
-                BodyMeasurementValidationError
-                    .InvalidMuscleMass);
+        if(entry.MuscleMassKg is decimal muscleMassKg
+            && (muscleMassKg <= 0m || muscleMassKg > entry.WeightKg)) {
+            errors.Add(BodyMeasurementValidationError.InvalidMuscleMass);
         }
 
-        if(!IsValidOptionalPercentage(
-                entry.MusclePercent)) {
+        if(!IsValidOptionalPercentage(entry.MusclePercent)) {
             errors.Add(
                 BodyMeasurementValidationError
                     .InvalidMusclePercent);
         }
 
-        return errors
-            .Distinct()
-            .ToArray();
+        if(!BodyMeasurementMuscleValueNormalizer.AreValuesConsistent(entry)) {
+            errors.Add(BodyMeasurementValidationError.InconsistentMuscleValues);
+        }
+
+        return errors.Distinct().ToArray();
     }
 
     private static bool IsValidOptionalPercentage(
