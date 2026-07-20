@@ -1,17 +1,16 @@
 ﻿using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Profile;
-
+using CalorieLedger.Application.Profiles;
 namespace CalorieLedger.Tests.ViewModels;
 
 public sealed class MainViewModelGoalEditorTests {
     [Fact]
     public void SetNewGoalAction_OpensGoalEditor() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
-        var action =
-            viewModel.Today.GoalActions.Single(
-                x => x.Action == GoalNextAction.SetNewGoal);
+        var action = viewModel.Today.GoalActions.Single(
+            x => x.Action == GoalNextAction.SetNewGoal);
 
         action.SelectCommand.Execute(null);
 
@@ -22,11 +21,9 @@ public sealed class MainViewModelGoalEditorTests {
 
     [Fact]
     public void CancelGoalEditing_ReturnsToTodayDashboard() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
-        var action =
-            viewModel.Today.GoalActions.Single(
-                x => x.Action == GoalNextAction.SetNewGoal);
+        var action = viewModel.Today.GoalActions.Single(x => x.Action == GoalNextAction.SetNewGoal);
 
         action.SelectCommand.Execute(null);
 
@@ -41,7 +38,7 @@ public sealed class MainViewModelGoalEditorTests {
 
     [Fact]
     public void SaveValidGoal_ClosesEditorAndRefreshesDashboard() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         var action = viewModel.Today.GoalActions.Single(x => x.Action == GoalNextAction.SetNewGoal);
 
@@ -74,7 +71,7 @@ public sealed class MainViewModelGoalEditorTests {
 
     [Fact]
     public void SetNewGoalAction_RaisesVisibilityPropertyChangedEvents() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         var changedProperties = new List<string>();
 
@@ -85,9 +82,7 @@ public sealed class MainViewModelGoalEditorTests {
             }
         };
 
-        var action =
-        viewModel.Today.GoalActions.Single(
-            x => x.Action == GoalNextAction.SetNewGoal);
+        var action = viewModel.Today.GoalActions.Single(x => x.Action == GoalNextAction.SetNewGoal);
 
         action.SelectCommand.Execute(null);
 
@@ -106,7 +101,7 @@ public sealed class MainViewModelGoalEditorTests {
 
     [Fact]
     public void SaveInvalidGoal_KeepsEditorOpen() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         var action = viewModel.Today.GoalActions.Single(x => x.Action == GoalNextAction.SetNewGoal);
 

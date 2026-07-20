@@ -1,59 +1,44 @@
 ﻿using CalorieLedger.ViewModels;
 
 namespace CalorieLedger.Tests.ViewModels;
+using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Profile;
 
 public sealed class
     MainViewModelBodyMeasurementEditorTests {
     [Fact]
     public void AddBodyMeasurementCommand_OpensEditor() {
-        var viewModel =
-            new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
-        viewModel
-            .AddBodyMeasurementCommand
-            .Execute(null);
+        viewModel.AddBodyMeasurementCommand.Execute(null);
 
-        Assert.True(
-            viewModel
-                .IsBodyMeasurementEditorOpen);
+        Assert.True(viewModel.IsBodyMeasurementEditorOpen);
 
-        Assert.False(
-            viewModel
-                .IsTodayDashboardVisible);
+        Assert.False(viewModel.IsTodayDashboardVisible);
 
-        Assert.NotNull(
-            viewModel.BodyMeasurementEditor);
+        Assert.NotNull(viewModel.BodyMeasurementEditor);
     }
 
     [Fact]
     public void CancelMeasurementEditing_ReturnsToDashboard() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
-        viewModel
-            .AddBodyMeasurementCommand
-            .Execute(null);
+        viewModel.AddBodyMeasurementCommand.Execute(null);
 
         Assert.NotNull(viewModel.BodyMeasurementEditor);
 
-        viewModel
-            .BodyMeasurementEditor
-            .CancelCommand
-            .Execute(null);
+        viewModel.BodyMeasurementEditor.CancelCommand.Execute(null);
 
-        Assert.False(
-            viewModel
-                .IsBodyMeasurementEditorOpen);
+        Assert.False(viewModel.IsBodyMeasurementEditorOpen);
 
-        Assert.True(
-            viewModel
-                .IsTodayDashboardVisible);
+        Assert.True(viewModel.IsTodayDashboardVisible);
 
         Assert.Null(viewModel.BodyMeasurementEditor);
     }
 
     [Fact]
     public void SaveMeasurement_AddsItToHistory() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         viewModel.AddBodyMeasurementCommand.Execute(null);
 
@@ -76,7 +61,7 @@ public sealed class
 
     [Fact]
     public void EditMeasurement_UpdatesExistingHistoryItem() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         viewModel.AddBodyMeasurementCommand.Execute(null);
 
@@ -109,7 +94,7 @@ public sealed class
 
     [Fact]
     public void DeleteMeasurement_RemovesHistoryItem() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         viewModel.AddBodyMeasurementCommand.Execute(null);
 
@@ -132,7 +117,7 @@ public sealed class
 
     [Fact]
     public void SaveMeasurement_RefreshesTodayDashboard() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         var previousToday = viewModel.Today;
 
@@ -155,7 +140,7 @@ public sealed class
 
     [Fact]
     public void DeleteMeasurement_RefreshesTodayDashboard() {
-        var viewModel = new MainViewModel();
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
 
         viewModel.AddBodyMeasurementCommand.Execute(null);
 
@@ -176,5 +161,31 @@ public sealed class
         Assert.Contains(
             "Измерение удалено",
             viewModel.Today.GoalActionSelectionSummary);
+    }
+
+    [Fact]
+    public void Constructor_LoadsExistingMeasurementsFromStore() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var historyService = new BodyMeasurementHistoryService(store);
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            20);
+
+        historyService.Save(new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 80m),
+            currentDate);
+
+        var viewModel = new MainViewModel(store);
+
+        var measurement = Assert.Single(viewModel.BodyMeasurements);
+
+        Assert.Equal(
+            "80,0 кг",
+            measurement.WeightSummary);
     }
 }

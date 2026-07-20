@@ -8,7 +8,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
-
+using CalorieLedger.Persistence;
 namespace CalorieLedger.ViewModels;
 
 public partial class MainViewModel:ViewModelBase {
@@ -35,10 +35,12 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool HasNoBodyMeasurements => BodyMeasurements.Count == 0;
 
-    public MainViewModel() {
-        profileStore = new SampleUserNutritionProfileProvider();
+    public MainViewModel(): this(JsonBodyMeasurementStore.CreateDefault()) {
+    }
 
-        var bodyMeasurementStore = new InMemoryBodyMeasurementStore();
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore) {
+        ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
+        profileStore = new SampleUserNutritionProfileProvider();
 
         bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
 
