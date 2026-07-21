@@ -1,0 +1,108 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Profile.BodyTrendsView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
+    x:DataType="profileVm:BodyTrendsViewModel">
+
+  <Border
+      Padding="16"
+      BorderThickness="1"
+      CornerRadius="16">
+
+    <StackPanel Spacing="12">
+
+      <TextBlock
+          Text="Тренды измерений"
+          FontSize="18"
+          FontWeight="SemiBold" />
+
+      <Grid
+          ColumnDefinitions="*,*"
+          ColumnSpacing="12">
+
+        <Border
+            Grid.Column="0"
+            Padding="12"
+            BorderThickness="1"
+            CornerRadius="10">
+
+          <StackPanel Spacing="6">
+
+            <TextBlock
+                Text="{Binding WeightTrend.Title}"
+                FontWeight="SemiBold" />
+
+            <StackPanel
+                IsVisible="{Binding WeightTrend.IsAvailable}"
+                Spacing="4">
+
+              <TextBlock
+                  Text="{Binding WeightTrend.CurrentValueSummary}"
+                  FontSize="20"
+                  FontWeight="Bold" />
+
+              <TextBlock
+                  Text="{Binding WeightTrend.ChangeSummary}" />
+
+              <TextBlock
+                  Text="{Binding WeightTrend.RateSummary}"
+                  Opacity="0.85" />
+
+              <TextBlock
+                  Text="{Binding WeightTrend.PeriodSummary}"
+                  Opacity="0.7" />
+            </StackPanel>
+
+            <TextBlock
+                IsVisible="{Binding WeightTrend.IsUnavailable}"
+                Text="{Binding WeightTrend.StatusSummary}"
+                TextWrapping="Wrap"
+                Opacity="0.75" />
+          </StackPanel>
+        </Border>
+
+        <Border
+            Grid.Column="1"
+            Padding="12"
+            BorderThickness="1"
+            CornerRadius="10">
+
+          <StackPanel Spacing="6">
+
+            <TextBlock
+                Text="{Binding BodyFatTrend.Title}"
+                FontWeight="SemiBold" />
+
+            <StackPanel
+                IsVisible="{Binding BodyFatTrend.IsAvailable}"
+                Spacing="4">
+
+              <TextBlock
+                  Text="{Binding BodyFatTrend.CurrentValueSummary}"
+                  FontSize="20"
+                  FontWeight="Bold" />
+
+              <TextBlock
+                  Text="{Binding BodyFatTrend.ChangeSummary}" />
+
+              <TextBlock
+                  Text="{Binding BodyFatTrend.RateSummary}"
+                  Opacity="0.85" />
+
+              <TextBlock
+                  Text="{Binding BodyFatTrend.PeriodSummary}"
+                  Opacity="0.7" />
+            </StackPanel>
+
+            <TextBlock
+                IsVisible="{Binding BodyFatTrend.IsUnavailable}"
+                Text="{Binding BodyFatTrend.StatusSummary}"
+                TextWrapping="Wrap"
+                Opacity="0.75" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </Border>
+</UserControl>
