@@ -28,7 +28,9 @@ public partial class MainViewModel:ViewModelBase {
     private NutritionGoalEditorViewModel? goalEditor;
     [ObservableProperty]
     private BodyMeasurementEditorViewModel? bodyMeasurementEditor;
-    
+    [ObservableProperty]
+    private BodyTrendsViewModel bodyTrends;
+
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
     public bool HasBodyMeasurements => BodyMeasurements.Count > 0;
@@ -66,6 +68,7 @@ public partial class MainViewModel:ViewModelBase {
             profileProvider: currentProfileProvider,
             goalUpdateService: goalUpdateService);
 
+        bodyTrends = BodyTrendsViewModel.CreateUnavailable();
         today = CreateTodayDashboardViewModel();
 
         RefreshBodyMeasurements();
@@ -140,6 +143,13 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasBodyMeasurements));
 
         OnPropertyChanged(nameof(HasNoBodyMeasurements));
+        RefreshBodyTrends();
+    }
+
+    private void RefreshBodyTrends() {
+        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+        var measurements = bodyMeasurementHistoryService.GetAll();
+        BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
     }
 
     private TodayDashboardViewModel CreateTodayDashboardViewModel(

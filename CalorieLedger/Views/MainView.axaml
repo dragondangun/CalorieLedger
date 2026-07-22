@@ -8,77 +8,77 @@
     xmlns:profileViews="using:CalorieLedger.Views.Profile"
     x:DataType="vm:MainViewModel">
 
-  <Grid>
-      <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
-          <StackPanel Spacing="16" Margin="20">
+    <Grid>
+        <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
+            <StackPanel Spacing="16" Margin="20">
 
-          <TextBlock
-              Text="Сегодня"
-              FontSize="28"
-              FontWeight="Bold" />
+            <TextBlock
+                Text="Сегодня"
+                FontSize="28"
+                FontWeight="Bold" />
 
-          <Button
-              Content="Добавить измерение тела"
-              Command="{Binding AddBodyMeasurementCommand}"
-              HorizontalAlignment="Stretch"
-              HorizontalContentAlignment="Center"
-              Padding="12,10" />
+            <Button
+                Content="Добавить измерение тела"
+                Command="{Binding AddBodyMeasurementCommand}"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center"
+                Padding="12,10" />
+            <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
+            <Border
+                Padding="16"
+                CornerRadius="16"
+                BorderThickness="1">
 
-          <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
+                <StackPanel Spacing="10">
 
-              <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="История измерений"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
 
-                  <TextBlock
-                      Text="История измерений"
-                      FontSize="18"
-                      FontWeight="SemiBold" />
+                    <TextBlock
+                        IsVisible="{Binding HasNoBodyMeasurements}"
+                        Text="Измерений пока нет."
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
 
-                  <TextBlock
-                      IsVisible="{Binding HasNoBodyMeasurements}"
-                      Text="Измерений пока нет."
-                      TextWrapping="Wrap"
-                      Opacity="0.75" />
+                    <ItemsControl
+                        IsVisible="{Binding HasBodyMeasurements}"
+                        ItemsSource="{Binding BodyMeasurements}">
 
-                  <ItemsControl
-                      IsVisible="{Binding HasBodyMeasurements}"
-                      ItemsSource="{Binding BodyMeasurements}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate
+                                x:DataType="profileVm:BodyMeasurementListItemViewModel">
 
-                      <ItemsControl.ItemTemplate>
-                          <DataTemplate
-                              x:DataType="profileVm:BodyMeasurementListItemViewModel">
+                                <Border
+                                    Padding="10"
+                                    Margin="0,0,0,8"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
 
-                              <Border
-                                  Padding="10"
-                                  Margin="0,0,0,8"
-                                  BorderThickness="1"
-                                  CornerRadius="10">
+                                    <Grid
+                                        ColumnDefinitions="*,Auto"
+                                        ColumnSpacing="12">
 
-                                  <Grid
-                                      ColumnDefinitions="*,Auto"
-                                      ColumnSpacing="12">
+                                        <StackPanel
+                                            Grid.Column="0"
+                                            Spacing="4">
 
-                                      <StackPanel
-                                          Grid.Column="0"
-                                          Spacing="4">
+                                            <TextBlock
+                                                Text="{Binding DateSummary}"
+                                                FontWeight="SemiBold" />
 
-                                          <TextBlock
-                                              Text="{Binding DateSummary}"
-                                              FontWeight="SemiBold" />
+                                            <TextBlock
+                                                Text="{Binding WeightSummary}"
+                                                FontSize="17"
+                                                FontWeight="Bold" />
 
-                                          <TextBlock
-                                              Text="{Binding WeightSummary}"
-                                              FontSize="17"
-                                              FontWeight="Bold" />
-
-                                          <TextBlock
-                                              IsVisible="{Binding HasAdditionalValues}"
-                                              Text="{Binding AdditionalValuesSummary}"
-                                              TextWrapping="Wrap"
-                                              Opacity="0.8" />
-                                      </StackPanel>
+                                            <TextBlock
+                                                IsVisible="{Binding HasAdditionalValues}"
+                                                Text="{Binding AdditionalValuesSummary}"
+                                                TextWrapping="Wrap"
+                                                Opacity="0.8" />
+                                        </StackPanel>
 
                                       <StackPanel
                                           Grid.Column="1"

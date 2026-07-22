@@ -188,4 +188,34 @@ public sealed class
             "80,0 кг",
             measurement.WeightSummary);
     }
+
+    [Fact]
+    public void Constructor_WithTrendHistory_CreatesTrendCards() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        for(var dayOffset = 21; dayOffset >= 0; dayOffset--) {
+            var elapsedDays = 21 - dayOffset;
+
+            decimal? bodyFatPercent = dayOffset % 3 == 0
+                ? 25m - elapsedDays * 0.02m
+                : null;
+
+            store.Save(
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate.AddDays(-dayOffset),
+                    WeightKg: 80m - elapsedDays * 0.05m,
+                    BodyFatPercent: bodyFatPercent));
+        }
+
+        var viewModel = new MainViewModel(store);
+
+        Assert.True(viewModel.BodyTrends.WeightTrend.IsAvailable);
+
+        Assert.True(viewModel.BodyTrends.BodyFatTrend.IsAvailable);
+
+        Assert.True(viewModel.BodyTrends.HasAnyAvailableTrend);
+    }
 }
