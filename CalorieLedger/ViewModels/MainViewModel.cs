@@ -2,6 +2,7 @@
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Today;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -30,6 +31,8 @@ public partial class MainViewModel:ViewModelBase {
     private BodyMeasurementEditorViewModel? bodyMeasurementEditor;
     [ObservableProperty]
     private BodyTrendsViewModel bodyTrends;
+    [ObservableProperty]
+    private AdaptiveEnergyAssessmentViewModel adaptiveEnergyAssessment;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -69,6 +72,10 @@ public partial class MainViewModel:ViewModelBase {
             goalUpdateService: goalUpdateService);
 
         bodyTrends = BodyTrendsViewModel.CreateUnavailable();
+        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModel.CreateUnavailable(
+            "Для адаптивной оценки нужен достаточный период измерений и несколько последовательных оценок отклонения от цели."
+        );
+
         today = CreateTodayDashboardViewModel();
 
         RefreshBodyMeasurements();

@@ -6,6 +6,7 @@
     xmlns:todayVm="using:CalorieLedger.ViewModels.Today"
     xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
     xmlns:profileViews="using:CalorieLedger.Views.Profile"
+    xmlns:adaptiveViews="using:CalorieLedger.Views.Adaptive"
     x:DataType="vm:MainViewModel">
 
     <Grid>
@@ -24,6 +25,7 @@
                 HorizontalContentAlignment="Center"
                 Padding="12,10" />
             <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
+            <adaptiveViews:AdaptiveEnergyAssessmentView DataContext="{Binding AdaptiveEnergyAssessment}" />
             <Border
                 Padding="16"
                 CornerRadius="16"

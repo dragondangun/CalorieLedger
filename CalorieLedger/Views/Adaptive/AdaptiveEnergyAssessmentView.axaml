@@ -1,0 +1,52 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Adaptive.AdaptiveEnergyAssessmentView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:adaptiveVm="using:CalorieLedger.ViewModels.Adaptive"
+    x:DataType="adaptiveVm:AdaptiveEnergyAssessmentViewModel">
+
+    <Border
+        Padding="16"
+        BorderThickness="1"
+        CornerRadius="16">
+
+        <StackPanel Spacing="8">
+
+            <TextBlock
+                Text="{Binding Title}"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="{Binding Summary}"
+                FontSize="17"
+                FontWeight="Bold"
+                TextWrapping="Wrap" />
+
+            <TextBlock
+                IsVisible="{Binding HasDetails}"
+                Text="{Binding Details}"
+                TextWrapping="Wrap"
+                Opacity="0.8" />
+
+            <Border
+                IsVisible="{Binding HasRecommendation}"
+                Padding="10"
+                Margin="0,4,0,0"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <StackPanel Spacing="4">
+
+                    <TextBlock
+                        Text="Рекомендация"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        Text="{Binding Recommendation}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

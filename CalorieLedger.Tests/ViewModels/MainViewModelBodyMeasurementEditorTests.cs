@@ -218,4 +218,13 @@ public sealed class
 
         Assert.True(viewModel.BodyTrends.HasAnyAvailableTrend);
     }
-}
+
+    [Fact]
+    public void Constructor_AdaptiveAssessmentIsInitiallyUnavailable() {
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
+
+        Assert.True(viewModel.AdaptiveEnergyAssessment.IsUnavailable);
+
+        Assert.False(viewModel.AdaptiveEnergyAssessment.HasRecommendation);
+    }
+}   
