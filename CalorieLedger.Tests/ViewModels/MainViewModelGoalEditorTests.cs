@@ -124,4 +124,29 @@ public sealed class MainViewModelGoalEditorTests {
         Assert.False(viewModel.IsTodayDashboardVisible);
         Assert.Same(editor, viewModel.GoalEditor);
     }
+
+    [Fact]
+    public void SetNewGoalAction_OpensCurrentGoalDraft() {
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore()
+        );
+
+        var action = viewModel.Today.GoalActions.Single(
+            item => item.Action == GoalNextAction.SetNewGoal
+        );
+
+        action.SelectCommand.Execute(null);
+
+        Assert.NotNull(viewModel.GoalEditor);
+
+        var expectedGoalType = new SampleUserNutritionProfileProvider()
+            .GetCurrentProfile()
+            .Goal
+            .GoalType;
+
+        Assert.Equal(
+            expectedGoalType,
+            viewModel.GoalEditor.GoalType
+        );
+    }
 }

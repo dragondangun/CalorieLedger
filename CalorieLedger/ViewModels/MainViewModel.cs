@@ -72,8 +72,9 @@ public partial class MainViewModel:ViewModelBase {
             goalUpdateService: goalUpdateService);
 
         bodyTrends = BodyTrendsViewModel.CreateUnavailable();
-        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModel.CreateUnavailable(
-            "Для адаптивной оценки нужен достаточный период измерений и несколько последовательных оценок отклонения от цели."
+        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModelFactory.Create(
+            presentation: CreateInitialAdaptiveEnergyAssessment(),
+            openGoalEditor: OpenCurrentGoalEditor
         );
 
         today = CreateTodayDashboardViewModel();
@@ -159,6 +160,13 @@ public partial class MainViewModel:ViewModelBase {
         BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
     }
 
+    private static AdaptiveEnergyAssessmentPresentation CreateInitialAdaptiveEnergyAssessment() {
+        return new AdaptiveEnergyAssessmentPresentation(
+            State: AdaptiveEnergyAssessmentState.Unavailable,
+            Details: "Для адаптивной оценки нужен достаточный период измерений и несколько последовательных оценок отклонения от цели."
+        );
+    }
+
     private TodayDashboardViewModel CreateTodayDashboardViewModel(
         string? actionSummary = null) {
         var snapshot = todayProvider.GetToday();
@@ -175,8 +183,7 @@ public partial class MainViewModel:ViewModelBase {
                 return SwitchToMaintenance();
 
             case GoalNextAction.SetNewGoal:
-                OpenGoalEditor(
-                    goalEditorService.LoadCurrentGoal());
+                OpenCurrentGoalEditor();
 
                 return true;
 
@@ -219,6 +226,12 @@ public partial class MainViewModel:ViewModelBase {
             "Дневная норма КБЖУ пересчитана.");
 
         return true;
+    }
+
+    private void OpenCurrentGoalEditor() {
+        OpenGoalEditor(
+            goalEditorService.LoadCurrentGoal()
+        );
     }
 
     private void OpenGoalEditor(NutritionGoalDraft draft) {
