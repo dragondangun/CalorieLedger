@@ -5,13 +5,46 @@ namespace CalorieLedger.Application.Profiles;
 
 public sealed class NutritionGoalEditorService(
     IUserNutritionProfileProvider profileProvider,
-    NutritionGoalUpdateService goalUpdateService) {
+    NutritionGoalUpdateService goalUpdateService)
+{
     public NutritionGoalDraft LoadCurrentGoal() {
-        var profile =
-            profileProvider.GetCurrentProfile();
+        var profile = profileProvider.GetCurrentProfile();
 
-        return NutritionGoalDraftMapper.FromGoal(
-            profile.Goal);
+        return NutritionGoalDraftMapper.FromGoal(profile.Goal);
+    }
+
+    public NutritionGoalDraft LoadCurrentGoalWithSuggestedStrategy(
+        EnergyStrategyMode strategyMode,
+        decimal strategyValue)
+    {
+        if(strategyValue <= 0m) {
+            throw new ArgumentOutOfRangeException(
+                nameof(strategyValue),
+                strategyValue,
+                "Suggested strategy value must be greater than zero."
+            );
+        }
+
+        if(strategyMode == EnergyStrategyMode.BalancePercent
+            && strategyValue >= 100m) {
+            throw new ArgumentOutOfRangeException(
+                nameof(strategyValue),
+                strategyValue,
+                "Balance percentage must be less than 100."
+            );
+        }
+
+        var draft = LoadCurrentGoal();
+
+        if(draft.GoalType == WeightGoalType.Maintain) {
+            return draft;
+        }
+
+        return draft with
+        {
+            StrategyMode = strategyMode,
+            StrategyValue = strategyValue
+        };
     }
 
     public NutritionGoalDraft CreateNewGoal(WeightGoalType goalType) {

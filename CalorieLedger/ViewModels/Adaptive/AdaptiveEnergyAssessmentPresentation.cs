@@ -3,5 +3,6 @@
 public sealed record AdaptiveEnergyAssessmentPresentation(
     AdaptiveEnergyAssessmentState State,
     string Details,
-    string Recommendation = ""
+    string Recommendation = "",
+    AdaptiveEnergyStrategySuggestion? SuggestedStrategy = null
 );

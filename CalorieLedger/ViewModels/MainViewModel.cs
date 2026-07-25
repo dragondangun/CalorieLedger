@@ -74,7 +74,7 @@ public partial class MainViewModel:ViewModelBase {
         bodyTrends = BodyTrendsViewModel.CreateUnavailable();
         adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModelFactory.Create(
             presentation: CreateInitialAdaptiveEnergyAssessment(),
-            openGoalEditor: OpenCurrentGoalEditor
+            openGoalEditor: OpenGoalEditorWithSuggestedStrategy
         );
 
         today = CreateTodayDashboardViewModel();
@@ -226,6 +226,17 @@ public partial class MainViewModel:ViewModelBase {
             "Дневная норма КБЖУ пересчитана.");
 
         return true;
+    }
+
+    private void OpenGoalEditorWithSuggestedStrategy(AdaptiveEnergyStrategySuggestion suggestion) {
+        ArgumentNullException.ThrowIfNull(suggestion);
+
+        var draft = goalEditorService.LoadCurrentGoalWithSuggestedStrategy(
+            strategyMode: suggestion.Mode,
+            strategyValue: suggestion.Value
+        );
+
+        OpenGoalEditor(draft);
     }
 
     private void OpenCurrentGoalEditor() {
