@@ -1,8 +1,11 @@
 ﻿using System;
+using CommunityToolkit.Mvvm.Input;
 
 namespace CalorieLedger.ViewModels.Adaptive;
 
-public sealed class AdaptiveEnergyAssessmentViewModel:ViewModelBase {
+public sealed partial class AdaptiveEnergyAssessmentViewModel:ViewModelBase {
+    private readonly Action? openGoalEditor;
+
     public string Title { get; }
 
     public string Summary { get; }
@@ -27,12 +30,14 @@ public sealed class AdaptiveEnergyAssessmentViewModel:ViewModelBase {
 
     public bool IsAdjustmentSuggested => State == AdaptiveEnergyAssessmentState.AdjustmentSuggested;
 
+    public bool CanOpenGoalEditor => IsAdjustmentSuggested && openGoalEditor is not null;
+
     private AdaptiveEnergyAssessmentViewModel(
         string summary,
         string details,
         string recommendation,
-        AdaptiveEnergyAssessmentState state)
-    {
+        AdaptiveEnergyAssessmentState state,
+        Action? openGoalEditor = null) {
         ArgumentException.ThrowIfNullOrWhiteSpace(summary);
 
         Title = "Адаптивная оценка";
@@ -41,6 +46,7 @@ public sealed class AdaptiveEnergyAssessmentViewModel:ViewModelBase {
         Details = details;
         Recommendation = recommendation;
         State = state;
+        this.openGoalEditor = openGoalEditor;
     }
 
     public static AdaptiveEnergyAssessmentViewModel CreateUnavailable(string details) {
@@ -65,9 +71,10 @@ public sealed class AdaptiveEnergyAssessmentViewModel:ViewModelBase {
         );
     }
 
-    public static AdaptiveEnergyAssessmentViewModel CreateObservationRequired(string details, string recommendation) {
+    public static AdaptiveEnergyAssessmentViewModel CreateObservationRequired(
+        string details,
+        string recommendation) {
         ArgumentException.ThrowIfNullOrWhiteSpace(details);
-
         ArgumentException.ThrowIfNullOrWhiteSpace(recommendation);
 
         return new AdaptiveEnergyAssessmentViewModel(
@@ -78,16 +85,24 @@ public sealed class AdaptiveEnergyAssessmentViewModel:ViewModelBase {
         );
     }
 
-    public static AdaptiveEnergyAssessmentViewModel CreateAdjustmentSuggested(string details, string recommendation) {
+    public static AdaptiveEnergyAssessmentViewModel CreateAdjustmentSuggested(
+        string details,
+        string recommendation,
+        Action? openGoalEditor = null) {
         ArgumentException.ThrowIfNullOrWhiteSpace(details);
-
         ArgumentException.ThrowIfNullOrWhiteSpace(recommendation);
 
         return new AdaptiveEnergyAssessmentViewModel(
             summary: "Рекомендуется изменить стратегию",
             details: details,
             recommendation: recommendation,
-            state: AdaptiveEnergyAssessmentState.AdjustmentSuggested
+            state: AdaptiveEnergyAssessmentState.AdjustmentSuggested,
+            openGoalEditor: openGoalEditor
         );
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOpenGoalEditor))]
+    private void OpenGoalEditor() {
+        openGoalEditor?.Invoke();
     }
 }

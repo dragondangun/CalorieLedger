@@ -85,4 +85,44 @@ public sealed class AdaptiveEnergyAssessmentViewModelTests {
             viewModel.Recommendation
         );
     }
+
+    [Fact]
+    public void CreateAdjustmentSuggested_WithoutAction_CannotOpenGoalEditor() {
+        var viewModel =
+        AdaptiveEnergyAssessmentViewModel.CreateAdjustmentSuggested(
+            details: "Отклонение сохраняется несколько периодов.",
+            recommendation: "Уменьшите норму на 100 ккал."
+        );
+
+        Assert.False(viewModel.CanOpenGoalEditor);
+        Assert.False(viewModel.OpenGoalEditorCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void CreateAdjustmentSuggested_WithAction_OpensGoalEditor() {
+        var goalEditorOpened = false;
+
+        var viewModel = AdaptiveEnergyAssessmentViewModel.CreateAdjustmentSuggested(
+            details: "Отклонение сохраняется несколько периодов.",
+            recommendation: "Уменьшите норму на 100 ккал.",
+            openGoalEditor: () => goalEditorOpened = true
+        );
+
+        Assert.True(viewModel.CanOpenGoalEditor);
+        Assert.True(viewModel.OpenGoalEditorCommand.CanExecute(null));
+
+        viewModel.OpenGoalEditorCommand.Execute(null);
+
+        Assert.True(goalEditorOpened);
+    }
+
+    [Fact]
+    public void CreateWithinTarget_DoesNotAllowOpeningGoalEditor() {
+        var viewModel = AdaptiveEnergyAssessmentViewModel.CreateWithinTarget(
+            "Фактический темп соответствует запланированному."
+        );
+
+        Assert.False(viewModel.CanOpenGoalEditor);
+        Assert.False(viewModel.OpenGoalEditorCommand.CanExecute(null));
+    }
 }

@@ -45,6 +45,12 @@
                     <TextBlock
                         Text="{Binding Recommendation}"
                         TextWrapping="Wrap" />
+                    <Button
+                        IsVisible="{Binding CanOpenGoalEditor}"
+                        Content="Изменить энергетическую стратегию"
+                        Command="{Binding OpenGoalEditorCommand}"
+                        HorizontalAlignment="Left"
+                        Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
         </StackPanel>
