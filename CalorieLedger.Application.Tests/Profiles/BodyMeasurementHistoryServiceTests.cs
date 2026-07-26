@@ -405,4 +405,55 @@ public sealed class
 
         Assert.Empty(service.GetAll());
     }
+
+    [Fact]
+    public void GetLatest_EmptyHistory_ReturnsNull() {
+        var service = new BodyMeasurementHistoryService(
+            new InMemoryBodyMeasurementStore()
+        );
+
+        var result = service.GetLatest();
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void GetLatest_ReturnsMeasurementWithLatestDate() {
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var currentDate = new DateOnly(
+            2026,
+            7,
+            26
+        );
+
+        var latestMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 79m
+        );
+
+        service.Save(
+            latestMeasurement,
+            currentDate
+        );
+
+        service.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-5),
+                WeightKg: 80m
+            ),
+            currentDate
+        );
+
+        var result = service.GetLatest();
+
+        Assert.Equal(
+            latestMeasurement,
+            result
+        );
+    }
 } 

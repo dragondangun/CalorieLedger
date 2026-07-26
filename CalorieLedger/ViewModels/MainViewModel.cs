@@ -130,7 +130,7 @@ public partial class MainViewModel:ViewModelBase {
 
         profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
-            latestMeasurement: bodyMeasurementHistoryService.GetAll().LastOrDefault(),
+            latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
             currentDate: DateOnly.FromDateTime(DateTime.Today),
             editProfile: EditProfile
         );
