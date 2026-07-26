@@ -12,6 +12,8 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 namespace CalorieLedger.ViewModels;
+using CalorieLedger.Application.Time;
+using CalorieLedger.Infrastructure;
 
 public partial class MainViewModel:ViewModelBase {
     private readonly ITodayDashboardSnapshotProvider todayProvider;
@@ -24,6 +26,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly UserNutritionProfileEditorService profileEditorService;
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
     private readonly IUserNutritionProfileProvider currentProfileProvider;
+    private readonly ICurrentDateProvider currentDateProvider;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -49,36 +52,57 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
-
     public MainViewModel():this(
         JsonBodyMeasurementStore.CreateDefault(),
         JsonUserNutritionProfileStore.CreateDefault(),
-        new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
-    ) { }
+        new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
+        new SystemCurrentDateProvider()
+    ) {}
 
     public MainViewModel(IBodyMeasurementStore bodyMeasurementStore):this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
-        new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
+        new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
+        new SystemCurrentDateProvider()
+    ) {}
+
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, ICurrentDateProvider currentDateProvider):this(
+        bodyMeasurementStore,
+        CreateInMemoryProfileStore(),
+        new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
+        currentDateProvider
+    ) {}
+
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider):this(
+        bodyMeasurementStore,
+        CreateInMemoryProfileStore(),
+        adaptiveEnergyAssessmentPresentationProvider,
+        new SystemCurrentDateProvider()
     ) {}
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
-        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider)
+        IUserNutritionProfileStore profileStore,
+        IAdaptiveEnergyAssessmentPresentationProvider
+        adaptiveEnergyAssessmentPresentationProvider)
     :this(
         bodyMeasurementStore,
-        CreateInMemoryProfileStore(),
-        adaptiveEnergyAssessmentPresentationProvider
-    ) { }
+        profileStore,
+        adaptiveEnergyAssessmentPresentationProvider,
+        new SystemCurrentDateProvider()
+    ) {}
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
-        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider)
+        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider,
+        ICurrentDateProvider currentDateProvider) 
     {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
+        ArgumentNullException.ThrowIfNull(currentDateProvider);
+
         if(profileStore is not IUserNutritionProfileWriter profileWriter) {
             throw new ArgumentException(
                 "Profile store must implement IUserNutritionProfileWriter.",
@@ -86,12 +110,13 @@ public partial class MainViewModel:ViewModelBase {
             );
         }
 
+        this.currentDateProvider = currentDateProvider;
+        this.adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProvider;
+
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
             profileWriter: profileWriter
         );
-
-        this.adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProvider;
 
         bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
 
@@ -131,7 +156,7 @@ public partial class MainViewModel:ViewModelBase {
         profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
             latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
-            currentDate: DateOnly.FromDateTime(DateTime.Today),
+            currentDate: currentDateProvider.GetCurrentDate(),
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );
@@ -150,7 +175,7 @@ public partial class MainViewModel:ViewModelBase {
 
     [RelayCommand]
     private void AddBodyMeasurement() {
-        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+        var currentDate = currentDateProvider.GetCurrentDate();
 
         var existingMeasurement = bodyMeasurementHistoryService.GetByDate(currentDate);
 
@@ -182,7 +207,7 @@ public partial class MainViewModel:ViewModelBase {
             return;
         }
 
-        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+        var currentDate = currentDateProvider.GetCurrentDate();
 
         OpenBodyMeasurementEditor(
             draft,
@@ -233,7 +258,7 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshBodyTrends() {
-        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+        var currentDate = currentDateProvider.GetCurrentDate();
         var measurements = bodyMeasurementHistoryService.GetAll();
         BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
     }
@@ -396,7 +421,7 @@ public partial class MainViewModel:ViewModelBase {
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
             latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
-            currentDate: DateOnly.FromDateTime(DateTime.Today),
+            currentDate: currentDateProvider.GetCurrentDate(),
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );

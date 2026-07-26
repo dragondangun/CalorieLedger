@@ -4,6 +4,7 @@ namespace CalorieLedger.Tests.ViewModels;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
+using CalorieLedger.Tests.TestDoubles;
 
 public sealed class
     MainViewModelBodyMeasurementEditorTests {
@@ -271,7 +272,7 @@ public sealed class
     [Fact]
     public void AddBodyMeasurement_WhenTodayExists_OpensExistingMeasurement() {
         var store = new InMemoryBodyMeasurementStore();
-        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+        var currentDate = new DateOnly(2026, 7, 26);
 
         var existingMeasurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
@@ -281,7 +282,10 @@ public sealed class
 
         store.Save(existingMeasurement);
 
-        var viewModel = new MainViewModel(store);
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
 
         viewModel.AddBodyMeasurementCommand.Execute(null);
 
@@ -289,24 +293,65 @@ public sealed class
             viewModel.BodyMeasurementEditor
         );
 
-        Assert.Equal(
-            79.5m,
-            editor.WeightKg
-        );
+        Assert.Equal(79.5m, editor.WeightKg);
 
         editor.WeightKg = 79m;
         editor.SaveCommand.Execute(null);
 
         var savedMeasurement = Assert.Single(store.GetAll());
 
-        Assert.Equal(
-            existingMeasurement.Id,
-            savedMeasurement.Id
+        Assert.Equal(existingMeasurement.Id, savedMeasurement.Id);
+        Assert.Equal(79m, savedMeasurement.WeightKg);
+    }
+
+    [Fact]
+    public void AddBodyMeasurement_UsesCurrentDateProvider() {
+        var currentDate = new DateOnly(2030, 4, 15);
+
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            new FixedCurrentDateProvider(currentDate)
         );
 
+        viewModel.AddBodyMeasurementCommand.Execute(null);
+
+        var editor = Assert.IsType<BodyMeasurementEditorViewModel>(
+            viewModel.BodyMeasurementEditor
+        );
+
+        Assert.NotNull(editor.MeasurementDate);
+
         Assert.Equal(
-            79m,
-            savedMeasurement.WeightKg
+            currentDate,
+            DateOnly.FromDateTime(
+                editor.MeasurementDate.Value.DateTime
+            )
+        );
+    }
+
+    [Fact]
+    public void Constructor_UsesCurrentDateProviderForMeasurementFreshness() {
+        var store = new InMemoryBodyMeasurementStore();
+        var currentDate = new DateOnly(2030, 4, 15);
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-15),
+                WeightKg: 79m
+            )
+        );
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.True(viewModel.ProfileSummary.HasMeasurementWarning);
+
+        Assert.Contains(
+            "15 дней",
+            viewModel.ProfileSummary.MeasurementWarning
         );
     }
 }   
