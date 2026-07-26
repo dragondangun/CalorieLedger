@@ -57,9 +57,18 @@
           BorderThickness="1"
           CornerRadius="8">
 
-          <TextBlock
-              Text="{Binding MeasurementWarning}"
-              TextWrapping="Wrap" />
+          <StackPanel Spacing="8">
+
+              <TextBlock
+                  Text="{Binding MeasurementWarning}"
+                  TextWrapping="Wrap" />
+
+              <Button
+                  IsVisible="{Binding CanAddBodyMeasurement}"
+                  Content="Добавить измерение"
+                  Command="{Binding AddBodyMeasurementCommand}"
+                  HorizontalAlignment="Left" />
+          </StackPanel>
       </Border>
 
       <TextBlock

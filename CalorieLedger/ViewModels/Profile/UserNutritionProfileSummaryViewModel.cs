@@ -5,6 +5,7 @@ namespace CalorieLedger.ViewModels.Profile;
 
 public sealed partial class UserNutritionProfileSummaryViewModel:ViewModelBase {
     private readonly Action editProfile;
+    private readonly Action addBodyMeasurement;
 
     public string DisplayName { get; }
 
@@ -24,6 +25,8 @@ public sealed partial class UserNutritionProfileSummaryViewModel:ViewModelBase {
 
     public bool HasMeasurementWarning => !string.IsNullOrWhiteSpace(MeasurementWarning);
 
+    public bool CanAddBodyMeasurement => HasMeasurementWarning;
+
     public UserNutritionProfileSummaryViewModel(
         string displayName,
         string personalDataSummary,
@@ -32,13 +35,16 @@ public sealed partial class UserNutritionProfileSummaryViewModel:ViewModelBase {
         string weightSourceSummary,
         string bodyCompositionSummary,
         string measurementWarning,
-        Action editProfile) {
+        Action editProfile,
+        Action addBodyMeasurement)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
         ArgumentException.ThrowIfNullOrWhiteSpace(personalDataSummary);
         ArgumentException.ThrowIfNullOrWhiteSpace(activitySummary);
         ArgumentException.ThrowIfNullOrWhiteSpace(weightSummary);
         ArgumentException.ThrowIfNullOrWhiteSpace(weightSourceSummary);
         ArgumentNullException.ThrowIfNull(editProfile);
+        ArgumentNullException.ThrowIfNull(addBodyMeasurement);
 
         DisplayName = displayName;
         PersonalDataSummary = personalDataSummary;
@@ -48,10 +54,16 @@ public sealed partial class UserNutritionProfileSummaryViewModel:ViewModelBase {
         BodyCompositionSummary = bodyCompositionSummary;
         MeasurementWarning = measurementWarning;
         this.editProfile = editProfile;
+        this.addBodyMeasurement = addBodyMeasurement;
     }
 
     [RelayCommand]
     private void EditProfile() {
         editProfile();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAddBodyMeasurement))]
+    private void AddBodyMeasurement() {
+        addBodyMeasurement();
     }
 }

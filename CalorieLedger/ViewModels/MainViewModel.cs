@@ -132,7 +132,8 @@ public partial class MainViewModel:ViewModelBase {
             profile: currentProfileProvider.GetCurrentProfile(),
             latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
             currentDate: DateOnly.FromDateTime(DateTime.Today),
-            editProfile: EditProfile
+            editProfile: EditProfile,
+            addBodyMeasurement: AddBodyMeasurement
         );
 
         today = CreateTodayDashboardViewModel();
@@ -387,13 +388,12 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshProfileSummary() {
-        var latestMeasurement = bodyMeasurementHistoryService.GetLatest();
-
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
-            latestMeasurement: latestMeasurement,
+            latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
             currentDate: DateOnly.FromDateTime(DateTime.Today),
-            editProfile: EditProfile
+            editProfile: EditProfile,
+            addBodyMeasurement: AddBodyMeasurement
         );
     }
 }

@@ -254,4 +254,17 @@ public sealed class
             viewModel.ProfileSummary.HasMeasurementWarning
         );
     }
+
+    [Fact]
+    public void ProfileSummary_AddMeasurementCommand_OpensMeasurementEditor() {
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
+
+        Assert.True(viewModel.ProfileSummary.AddBodyMeasurementCommand.CanExecute(null));
+
+        viewModel.ProfileSummary.AddBodyMeasurementCommand.Execute(null);
+
+        Assert.True(viewModel.IsBodyMeasurementEditorOpen);
+        Assert.False(viewModel.IsTodayDashboardVisible);
+        Assert.NotNull(viewModel.BodyMeasurementEditor);
+    }
 }   

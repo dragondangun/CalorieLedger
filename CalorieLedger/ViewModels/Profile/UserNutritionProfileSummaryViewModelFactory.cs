@@ -14,10 +14,12 @@ public static class UserNutritionProfileSummaryViewModelFactory {
         UserNutritionProfile profile,
         BodyMeasurementEntry? latestMeasurement,
         DateOnly currentDate,
-        Action editProfile)
+        Action editProfile,
+        Action addBodyMeasurement)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(editProfile);
+        ArgumentNullException.ThrowIfNull(addBodyMeasurement);
 
         var personalDataSummary = $"{FormatSex(profile.Body.Sex)} · {FormatAge(profile.Body.AgeYears)} · {profile.Body.HeightCm.ToString("0.0", russianCulture)} см";
 
@@ -36,7 +38,8 @@ public static class UserNutritionProfileSummaryViewModelFactory {
             weightSourceSummary: weightSourceSummary,
             bodyCompositionSummary: FormatBodyComposition(profile.Body),
             measurementWarning: measurementWarning,
-            editProfile: editProfile
+            editProfile: editProfile,
+            addBodyMeasurement: addBodyMeasurement
         );
     }
 

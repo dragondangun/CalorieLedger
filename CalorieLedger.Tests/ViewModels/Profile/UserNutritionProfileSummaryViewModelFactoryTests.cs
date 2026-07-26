@@ -13,7 +13,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             profile,
             latestMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
-            editProfile: () => editInvoked = true
+            editProfile: () => editInvoked = true,
+            addBodyMeasurement: () => { }
         );
 
         Assert.Equal("Test user", viewModel.DisplayName);
@@ -71,7 +72,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             profile,
             latestMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
-            editProfile: () => { }
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
         );
 
         Assert.Contains(
@@ -109,7 +111,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             profile: CreateProfile(),
             latestMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
-            editProfile: () => { }
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
         );
 
         Assert.Equal(
@@ -139,7 +142,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             profile: CreateProfile(),
             latestMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
-            editProfile: () => { }
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
         );
 
         Assert.Equal(
@@ -163,7 +167,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             profile: CreateProfile(),
             latestMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
-            editProfile: () => { }
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
         );
 
         Assert.True(viewModel.HasMeasurementWarning);
@@ -172,5 +177,46 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             "26 дней",
             viewModel.MeasurementWarning
         );
+    }
+
+    [Fact]
+    public void Create_WithoutMeasurements_AllowsAddingMeasurement() {
+        var addMeasurementInvoked = false;
+
+        var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: null,
+            currentDate: new DateOnly(2026, 7, 26),
+            editProfile: () => { },
+            addBodyMeasurement: () => addMeasurementInvoked = true
+        );
+
+        Assert.True(viewModel.CanAddBodyMeasurement);
+        Assert.True(viewModel.AddBodyMeasurementCommand.CanExecute(null));
+
+        viewModel.AddBodyMeasurementCommand.Execute(null);
+
+        Assert.True(addMeasurementInvoked);
+    }
+
+    [Fact]
+    public void Create_WithRecentMeasurement_DisablesAddingFromWarning() {
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 25),
+            WeightKg: 70m
+        );
+
+        var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: measurement,
+            currentDate: new DateOnly(2026, 7, 26),
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.False(viewModel.HasMeasurementWarning);
+        Assert.False(viewModel.CanAddBodyMeasurement);
+        Assert.False(viewModel.AddBodyMeasurementCommand.CanExecute(null));
     }
 }
