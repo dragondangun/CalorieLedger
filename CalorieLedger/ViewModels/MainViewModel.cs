@@ -21,6 +21,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly NutritionGoalEditorService goalEditorService;
     private readonly BodyMeasurementHistoryService bodyMeasurementHistoryService;
     private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
+    private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -40,20 +41,38 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool HasNoBodyMeasurements => BodyMeasurements.Count == 0;
 
-    public MainViewModel(): this(JsonBodyMeasurementStore.CreateDefault()) {
-    }
+    public MainViewModel():this(
+        JsonBodyMeasurementStore.CreateDefault(),
+        new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
+    ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore) {
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore):this(
+        bodyMeasurementStore,
+        new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
+    ) { }
+
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IAdaptiveEnergyAssessmentPresentationProvider
+        adaptiveEnergyAssessmentPresentationProvider)
+    {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
+        ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
+
+        this.adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProvider;
+
         profileStore = new SampleUserNutritionProfileProvider();
 
-        bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+        var bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+
+        this.bodyMeasurementHistoryService = bodyMeasurementHistoryService;
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
         var currentProfileProvider = new BodyMeasurementAwareNutritionProfileProvider(
             baseProfileProvider: profileStore,
-            measurementHistoryService: bodyMeasurementHistoryService);
+            measurementHistoryService: bodyMeasurementHistoryService
+        );
 
         todayProvider = new SampleTodayDashboardSnapshotProvider(currentProfileProvider);
 
@@ -63,18 +82,20 @@ public partial class MainViewModel:ViewModelBase {
 
         goalUpdateService = new NutritionGoalUpdateService(
             profileStore,
-            adaptiveAssessmentService);
+            adaptiveAssessmentService
+        );
 
         goalTransitionService = new NutritionGoalTransitionService(goalUpdateService);
 
         goalEditorService = new NutritionGoalEditorService(
             profileProvider: currentProfileProvider,
-            goalUpdateService: goalUpdateService);
+            goalUpdateService: goalUpdateService
+        );
 
         bodyTrends = BodyTrendsViewModel.CreateUnavailable();
-        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModelFactory.Create(
-            presentation: CreateInitialAdaptiveEnergyAssessment(),
-            openGoalEditor: OpenGoalEditorWithSuggestedStrategy
+
+        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModel.CreateUnavailable(
+            "Адаптивная оценка ещё не рассчитана."
         );
 
         today = CreateTodayDashboardViewModel();
@@ -149,22 +170,16 @@ public partial class MainViewModel:ViewModelBase {
         }
 
         OnPropertyChanged(nameof(HasBodyMeasurements));
-
         OnPropertyChanged(nameof(HasNoBodyMeasurements));
+
         RefreshBodyTrends();
+        RefreshAdaptiveEnergyAssessment();
     }
 
     private void RefreshBodyTrends() {
         var currentDate = DateOnly.FromDateTime(DateTime.Today);
         var measurements = bodyMeasurementHistoryService.GetAll();
         BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
-    }
-
-    private static AdaptiveEnergyAssessmentPresentation CreateInitialAdaptiveEnergyAssessment() {
-        return new AdaptiveEnergyAssessmentPresentation(
-            State: AdaptiveEnergyAssessmentState.Unavailable,
-            Details: "Для адаптивной оценки нужен достаточный период измерений и несколько последовательных оценок отклонения от цели."
-        );
     }
 
     private TodayDashboardViewModel CreateTodayDashboardViewModel(
@@ -286,5 +301,14 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(IsBodyMeasurementEditorOpen));
 
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
+    }
+
+    private void RefreshAdaptiveEnergyAssessment() {
+        var presentation = adaptiveEnergyAssessmentPresentationProvider.GetCurrent();
+
+        AdaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModelFactory.Create(
+            presentation: presentation,
+            openGoalEditor: OpenGoalEditorWithSuggestedStrategy
+        );
     }
 }

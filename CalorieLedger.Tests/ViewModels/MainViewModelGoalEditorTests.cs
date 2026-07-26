@@ -1,7 +1,8 @@
-﻿using CalorieLedger.Domain.Profile;
+﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels;
+using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
-using CalorieLedger.Application.Profiles;
 namespace CalorieLedger.Tests.ViewModels;
 
 public sealed class MainViewModelGoalEditorTests {
@@ -148,5 +149,68 @@ public sealed class MainViewModelGoalEditorTests {
             expectedGoalType,
             viewModel.GoalEditor.GoalType
         );
+    }
+
+    [Fact]
+    public void AdaptiveRecommendation_OpensGoalEditorWithSuggestedStrategy() {
+        var presentation = new AdaptiveEnergyAssessmentPresentation(
+            State: AdaptiveEnergyAssessmentState.AdjustmentSuggested,
+            Details: "Темп снижения веса ниже запланированного.",
+            Recommendation: "Установите дефицит 17%.",
+            SuggestedStrategy: new AdaptiveEnergyStrategySuggestion(
+                Mode: EnergyStrategyMode.BalancePercent,
+                Value: 17m
+            )
+        );
+
+        var viewModel =
+        new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            new TestAdaptiveEnergyAssessmentPresentationProvider(
+                presentation
+            )
+        );
+
+        Assert.True(viewModel.AdaptiveEnergyAssessment.IsAdjustmentSuggested);
+
+        Assert.True(viewModel.AdaptiveEnergyAssessment.CanOpenGoalEditor);
+
+        viewModel.AdaptiveEnergyAssessment.OpenGoalEditorCommand.Execute(null);
+
+        var editor = Assert.IsType<NutritionGoalEditorViewModel>(viewModel.GoalEditor);
+
+        Assert.Equal(
+            EnergyStrategyMode.BalancePercent,
+            editor.StrategyMode
+        );
+
+        Assert.Equal(
+            17m,
+            editor.StrategyValue
+        );
+    }
+
+    [Fact]
+    public void DefaultAdaptiveProvider_ShowsUnavailableAssessment() {
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore()
+        );
+
+        Assert.True(viewModel.AdaptiveEnergyAssessment.IsUnavailable);
+
+        Assert.False(viewModel.AdaptiveEnergyAssessment.CanOpenGoalEditor);
+    }
+
+    private sealed class TestAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {
+        private readonly AdaptiveEnergyAssessmentPresentation presentation;
+
+        public TestAdaptiveEnergyAssessmentPresentationProvider(
+            AdaptiveEnergyAssessmentPresentation presentation) {
+            this.presentation = presentation;
+        }
+
+        public AdaptiveEnergyAssessmentPresentation GetCurrent() {
+            return presentation;
+        }
     }
 }
