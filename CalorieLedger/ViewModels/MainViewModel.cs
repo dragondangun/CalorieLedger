@@ -21,6 +21,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly NutritionGoalEditorService goalEditorService;
     private readonly BodyMeasurementHistoryService bodyMeasurementHistoryService;
     private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
+    private readonly UserNutritionProfileEditorService profileEditorService;
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
 
     [ObservableProperty]
@@ -34,12 +35,17 @@ public partial class MainViewModel:ViewModelBase {
     private BodyTrendsViewModel bodyTrends;
     [ObservableProperty]
     private AdaptiveEnergyAssessmentViewModel adaptiveEnergyAssessment;
+    [ObservableProperty]
+    private UserNutritionProfileEditorViewModel? profileEditor;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
     public bool HasBodyMeasurements => BodyMeasurements.Count > 0;
 
     public bool HasNoBodyMeasurements => BodyMeasurements.Count == 0;
+
+    public bool IsProfileEditorOpen => ProfileEditor is not null;
+
 
     public MainViewModel():this(
         JsonBodyMeasurementStore.CreateDefault(),
@@ -49,7 +55,7 @@ public partial class MainViewModel:ViewModelBase {
 
     public MainViewModel(IBodyMeasurementStore bodyMeasurementStore):this(
         bodyMeasurementStore,
-        new SampleUserNutritionProfileProvider(),
+        CreateInMemoryProfileStore(),
         new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
     ) {}
 
@@ -58,7 +64,7 @@ public partial class MainViewModel:ViewModelBase {
         IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider)
     :this(
         bodyMeasurementStore,
-        new SampleUserNutritionProfileProvider(),
+        CreateInMemoryProfileStore(),
         adaptiveEnergyAssessmentPresentationProvider
     ) { }
 
@@ -70,8 +76,19 @@ public partial class MainViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
+        if(profileStore is not IUserNutritionProfileWriter profileWriter) {
+            throw new ArgumentException(
+                "Profile store must implement IUserNutritionProfileWriter.",
+                nameof(profileStore)
+            );
+        }
 
         this.profileStore = profileStore;
+        profileEditorService = new UserNutritionProfileEditorService(
+            profileStore: profileStore,
+            profileWriter: profileWriter
+        );
+
         this.adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProvider;
 
         bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
@@ -118,7 +135,7 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsBodyMeasurementEditorOpen => BodyMeasurementEditor is not null;
 
-    public bool IsTodayDashboardVisible => GoalEditor is null && BodyMeasurementEditor is null;
+    public bool IsTodayDashboardVisible => GoalEditor is null && BodyMeasurementEditor is null && ProfileEditor is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -129,6 +146,17 @@ public partial class MainViewModel:ViewModelBase {
         OpenBodyMeasurementEditor(
             draft,
             currentDate);
+    }
+
+    [RelayCommand]
+    private void EditProfile() {
+        ProfileEditor =
+            new UserNutritionProfileEditorViewModel(
+                editorService: profileEditorService,
+                draft: profileEditorService.LoadCurrentProfile(),
+                onSaved: OnProfileEditorSaved,
+                onCancelled: CloseProfileEditor
+            );
     }
 
     private void EditBodyMeasurement(Guid id) {
@@ -321,5 +349,28 @@ public partial class MainViewModel:ViewModelBase {
             presentation: presentation,
             openGoalEditor: OpenGoalEditorWithSuggestedStrategy
         );
+    }
+
+    private static InMemoryUserNutritionProfileStore CreateInMemoryProfileStore() {
+        var profile = new SampleUserNutritionProfileProvider().GetCurrentProfile();
+
+        return new InMemoryUserNutritionProfileStore(profile);
+    }
+
+    private void OnProfileEditorSaved() {
+        ProfileEditor = null;
+
+        Today = CreateTodayDashboardViewModel("Профиль сохранён. Дневная норма КБЖУ пересчитана.");
+
+        RefreshAdaptiveEnergyAssessment();
+    }
+
+    private void CloseProfileEditor() {
+        ProfileEditor = null;
+    }
+
+    partial void OnProfileEditorChanged(UserNutritionProfileEditorViewModel? value) {
+        OnPropertyChanged(nameof(IsProfileEditorOpen));
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 }

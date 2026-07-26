@@ -9,370 +9,384 @@
     xmlns:adaptiveViews="using:CalorieLedger.Views.Adaptive"
     x:DataType="vm:MainViewModel">
 
-    <Grid>
-        <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
-            <StackPanel Spacing="16" Margin="20">
+  <Grid>
+    <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
+      <StackPanel Spacing="16" Margin="20">
+
+        <TextBlock
+            Text="Сегодня"
+            FontSize="28"
+            FontWeight="Bold" />
+
+        <Button
+            Content="Добавить измерение тела"
+            Command="{Binding AddBodyMeasurementCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+        <Button
+            Content="Редактировать профиль"
+            Command="{Binding EditProfileCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+        <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
+        <adaptiveViews:AdaptiveEnergyAssessmentView DataContext="{Binding AdaptiveEnergyAssessment}" />
+        <Border
+            Padding="16"
+            CornerRadius="16"
+            BorderThickness="1">
+
+          <StackPanel Spacing="10">
 
             <TextBlock
-                Text="Сегодня"
-                FontSize="28"
-                FontWeight="Bold" />
+                Text="История измерений"
+                FontSize="18"
+                FontWeight="SemiBold" />
 
-            <Button
-                Content="Добавить измерение тела"
-                Command="{Binding AddBodyMeasurementCommand}"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center"
-                Padding="12,10" />
-            <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
-            <adaptiveViews:AdaptiveEnergyAssessmentView DataContext="{Binding AdaptiveEnergyAssessment}" />
-            <Border
-                Padding="16"
-                CornerRadius="16"
-                BorderThickness="1">
+            <TextBlock
+                IsVisible="{Binding HasNoBodyMeasurements}"
+                Text="Измерений пока нет."
+                TextWrapping="Wrap"
+                Opacity="0.75" />
 
-                <StackPanel Spacing="10">
+            <ItemsControl
+                IsVisible="{Binding HasBodyMeasurements}"
+                ItemsSource="{Binding BodyMeasurements}">
 
-                    <TextBlock
-                        Text="История измерений"
-                        FontSize="18"
-                        FontWeight="SemiBold" />
+              <ItemsControl.ItemTemplate>
+                <DataTemplate
+                    x:DataType="profileVm:BodyMeasurementListItemViewModel">
 
-                    <TextBlock
-                        IsVisible="{Binding HasNoBodyMeasurements}"
-                        Text="Измерений пока нет."
-                        TextWrapping="Wrap"
-                        Opacity="0.75" />
-
-                    <ItemsControl
-                        IsVisible="{Binding HasBodyMeasurements}"
-                        ItemsSource="{Binding BodyMeasurements}">
-
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate
-                                x:DataType="profileVm:BodyMeasurementListItemViewModel">
-
-                                <Border
-                                    Padding="10"
-                                    Margin="0,0,0,8"
-                                    BorderThickness="1"
-                                    CornerRadius="10">
-
-                                    <Grid
-                                        ColumnDefinitions="*,Auto"
-                                        ColumnSpacing="12">
-
-                                        <StackPanel
-                                            Grid.Column="0"
-                                            Spacing="4">
-
-                                            <TextBlock
-                                                Text="{Binding DateSummary}"
-                                                FontWeight="SemiBold" />
-
-                                            <TextBlock
-                                                Text="{Binding WeightSummary}"
-                                                FontSize="17"
-                                                FontWeight="Bold" />
-
-                                            <TextBlock
-                                                IsVisible="{Binding HasAdditionalValues}"
-                                                Text="{Binding AdditionalValuesSummary}"
-                                                TextWrapping="Wrap"
-                                                Opacity="0.8" />
-                                        </StackPanel>
-
-                                      <StackPanel
-                                          Grid.Column="1"
-                                          Spacing="6"
-                                          VerticalAlignment="Center">
-
-                                          <Button
-                                              Content="Изменить"
-                                              Command="{Binding EditCommand}"
-                                              Padding="10,6" />
-
-                                          <Button
-                                              Content="Удалить"
-                                              Command="{Binding DeleteCommand}"
-                                              Padding="10,6" />
-                                      </StackPanel>
-                                  </Grid>
-                              </Border>
-                          </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-              </StackPanel>
-            </Border>
-
-          <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
-              <StackPanel Spacing="8">
-                  <TextBlock
-                      Text="Калории"
-                      FontSize="18"
-                      FontWeight="SemiBold" />
-
-                  <TextBlock
-                      Text="{Binding Today.CaloriesSummary}"
-                      FontSize="24"
-                      FontWeight="Bold" />
-
-                  <TextBlock
-                      Text="{Binding Today.RemainingCaloriesSummary}"
-                      FontSize="16" />
-              </StackPanel>
-          </Border>
-
-          <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
-              <StackPanel Spacing="8">
-                  <TextBlock
-                      Text="КБЖУ"
-                      FontSize="18"
-                      FontWeight="SemiBold" />
-
-                  <TextBlock
-                      Text="{Binding Today.MacrosSummary}"
-                      FontSize="18" />
-              </StackPanel>
-          </Border>
-
-          <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
-              <StackPanel Spacing="8">
-                  <TextBlock
-                      Text="Текущая цель"
-                      FontSize="18"
-                      FontWeight="SemiBold" />
-
-                  <TextBlock
-                      Text="{Binding Today.GoalStatusSummary}"
-                      FontSize="18"
-                      FontWeight="Bold" />
-
-                  <TextBlock
-                      Text="{Binding Today.GoalDetailsSummary}"
-                      TextWrapping="Wrap"
-                      Opacity="0.85" />
-
-                  <TextBlock
-                      Text="Доступные действия"
-                      Margin="0,6,0,0"
-                      FontWeight="SemiBold" />
-
-                  <ItemsControl ItemsSource="{Binding Today.GoalActions}">
-                      <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
-                              <Button
-                                  Content="{Binding Title}"
-                                  Command="{Binding SelectCommand}"
-                                  HorizontalAlignment="Stretch"
-                                  HorizontalContentAlignment="Left"
-                                  Padding="12,8"
-                                  Margin="0,0,0,6" />
-                          </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                  </ItemsControl>
                   <Border
                       Padding="10"
-                      Margin="0,4,0,0"
-                      CornerRadius="8"
-                      BorderThickness="1">
-                      <TextBlock
-                          Text="{Binding Today.GoalActionSelectionSummary}"
-                          TextWrapping="Wrap"
-                          FontStyle="Italic"
-                          Opacity="0.85" />
-                  </Border>
-              </StackPanel>
-          </Border>
+                      Margin="0,0,0,8"
+                      BorderThickness="1"
+                      CornerRadius="10">
 
-          <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
-              <StackPanel Spacing="8">
-                  <TextBlock
-                      Text="Среднее за 7 дней"
-                      FontSize="18"
-                      FontWeight="SemiBold" />
+                    <Grid
+                        ColumnDefinitions="*,Auto"
+                        ColumnSpacing="12">
 
-                  <TextBlock
-                      Text="{Binding Today.WeeklyCaloriesAverageSummary}"
-                      FontSize="18"
-                      FontWeight="Bold" />
+                      <StackPanel
+                          Grid.Column="0"
+                          Spacing="4">
 
-                  <TextBlock
-                      Text="{Binding Today.WeeklyMacrosAverageSummary}" />
-
-                  <TextBlock
-                      Text="{Binding Today.WeeklyBalanceSummary}"
-                      FontStyle="Italic"
-                      Opacity="0.85" />
-              </StackPanel>
-          </Border>
-
-          <Border
-        Padding="16"
-        CornerRadius="16"
-        BorderThickness="1">
-            <StackPanel Spacing="8">
-              <TextBlock
-                  Text="Активность сверх образа жизни"
-                  FontSize="18"
-                  FontWeight="SemiBold" />
-
-              <TextBlock
-                  Text="{Binding Today.ActivitySummary}"
-                  FontSize="18"
-                  FontWeight="Bold" />
-
-              <ItemsControl ItemsSource="{Binding Today.Activities}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="todayVm:TodayActivityItemViewModel">
-                    <Border
-                        Padding="8"
-                        Margin="0,0,0,6"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                      <StackPanel Spacing="4">
                         <TextBlock
-                            Text="{Binding Name}"
+                            Text="{Binding DateSummary}"
                             FontWeight="SemiBold" />
 
                         <TextBlock
-                            Text="{Binding CaloriesSummary}" />
+                            Text="{Binding WeightSummary}"
+                            FontSize="17"
+                            FontWeight="Bold" />
 
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock
-                              Text="{Binding TimeSummary}"
-                              Opacity="0.75" />
-
-                          <TextBlock
-                              Text="{Binding DurationSummary}"
-                              Opacity="0.75" />
-                        </StackPanel>
+                        <TextBlock
+                            IsVisible="{Binding HasAdditionalValues}"
+                            Text="{Binding AdditionalValuesSummary}"
+                            TextWrapping="Wrap"
+                            Opacity="0.8" />
                       </StackPanel>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-          </Border>
 
-          <Button
-              Content="Добавить еду"
-              Command="{Binding Today.AddSampleFoodCommand}"
-              HorizontalAlignment="Stretch" />
+                      <StackPanel
+                          Grid.Column="1"
+                          Spacing="6"
+                          VerticalAlignment="Center">
 
-          <Button
-              Content="Обожрался"
-              Command="{Binding Today.MarkOvereatingCommand}"
-              HorizontalAlignment="Stretch" />
+                        <Button
+                            Content="Изменить"
+                            Command="{Binding EditCommand}"
+                            Padding="10,6" />
 
-          <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
-                  <StackPanel Spacing="12">
+                        <Button
+                            Content="Удалить"
+                            Command="{Binding DeleteCommand}"
+                            Padding="10,6" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <Border
+            Padding="16"
+            CornerRadius="16"
+            BorderThickness="1">
+          <StackPanel Spacing="8">
+            <TextBlock
+                Text="Калории"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="{Binding Today.CaloriesSummary}"
+                FontSize="24"
+                FontWeight="Bold" />
+
+            <TextBlock
+                Text="{Binding Today.RemainingCaloriesSummary}"
+                FontSize="16" />
+          </StackPanel>
+        </Border>
+
+        <Border
+            Padding="16"
+            CornerRadius="16"
+            BorderThickness="1">
+          <StackPanel Spacing="8">
+            <TextBlock
+                Text="КБЖУ"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="{Binding Today.MacrosSummary}"
+                FontSize="18" />
+          </StackPanel>
+        </Border>
+
+        <Border
+            Padding="16"
+            CornerRadius="16"
+            BorderThickness="1">
+          <StackPanel Spacing="8">
+            <TextBlock
+                Text="Текущая цель"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="{Binding Today.GoalStatusSummary}"
+                FontSize="18"
+                FontWeight="Bold" />
+
+            <TextBlock
+                Text="{Binding Today.GoalDetailsSummary}"
+                TextWrapping="Wrap"
+                Opacity="0.85" />
+
+            <TextBlock
+                Text="Доступные действия"
+                Margin="0,6,0,0"
+                FontWeight="SemiBold" />
+
+            <ItemsControl ItemsSource="{Binding Today.GoalActions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
+                  <Button
+                      Content="{Binding Title}"
+                      Command="{Binding SelectCommand}"
+                      HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Left"
+                      Padding="12,8"
+                      Margin="0,0,0,6" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border
+                Padding="10"
+                Margin="0,4,0,0"
+                CornerRadius="8"
+                BorderThickness="1">
+              <TextBlock
+                  Text="{Binding Today.GoalActionSelectionSummary}"
+                  TextWrapping="Wrap"
+                  FontStyle="Italic"
+                  Opacity="0.85" />
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <Border
+            Padding="16"
+            CornerRadius="16"
+            BorderThickness="1">
+          <StackPanel Spacing="8">
+            <TextBlock
+                Text="Среднее за 7 дней"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="{Binding Today.WeeklyCaloriesAverageSummary}"
+                FontSize="18"
+                FontWeight="Bold" />
+
+            <TextBlock
+                Text="{Binding Today.WeeklyMacrosAverageSummary}" />
+
+            <TextBlock
+                Text="{Binding Today.WeeklyBalanceSummary}"
+                FontStyle="Italic"
+                Opacity="0.85" />
+          </StackPanel>
+        </Border>
+
+        <Border
+      Padding="16"
+      CornerRadius="16"
+      BorderThickness="1">
+          <StackPanel Spacing="8">
+            <TextBlock
+                Text="Активность сверх образа жизни"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="{Binding Today.ActivitySummary}"
+                FontSize="18"
+                FontWeight="Bold" />
+
+            <ItemsControl ItemsSource="{Binding Today.Activities}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="todayVm:TodayActivityItemViewModel">
+                  <Border
+                      Padding="8"
+                      Margin="0,0,0,6"
+                      BorderThickness="1"
+                      CornerRadius="8">
+                    <StackPanel Spacing="4">
                       <TextBlock
-                          Text="Съедено сегодня"
-                          FontSize="18"
+                          Text="{Binding Name}"
                           FontWeight="SemiBold" />
 
-                      <ItemsControl ItemsSource="{Binding Today.MealGroups}">
-                          <ItemsControl.ItemTemplate>
-                              <DataTemplate x:DataType="todayVm:TodayMealGroupViewModel">
-                                  <Border
-                                      Padding="10"
-                                      Margin="0,0,0,10"
-                                      BorderThickness="1"
-                                      CornerRadius="10">
-                                  <StackPanel Spacing="8">
-                                      <StackPanel Spacing="4">
-                                          <StackPanel Orientation="Horizontal" Spacing="8">
-                                              <TextBlock
-                                                  Text="{Binding Name}"
-                                                  FontWeight="SemiBold" />
+                      <TextBlock
+                          Text="{Binding CaloriesSummary}" />
 
-                                              <TextBlock
-                                                  Text="{Binding TimeSummary}"
-                                                  Opacity="0.7" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock
+                            Text="{Binding TimeSummary}"
+                            Opacity="0.75" />
 
-                                              <TextBlock
-                                                  Text="·"
-                                                  Opacity="0.7" />
+                        <TextBlock
+                            Text="{Binding DurationSummary}"
+                            Opacity="0.75" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
 
-                                              <TextBlock
-                                                  Text="{Binding CaloriesSummary}"
-                                                  Opacity="0.85" />
-                                          </StackPanel>
+        <Button
+            Content="Добавить еду"
+            Command="{Binding Today.AddSampleFoodCommand}"
+            HorizontalAlignment="Stretch" />
 
-                                          <TextBlock
-                                              Text="{Binding MacrosSummary}"
-                                              Opacity="0.85" />
-                                      </StackPanel>
+        <Button
+            Content="Обожрался"
+            Command="{Binding Today.MarkOvereatingCommand}"
+            HorizontalAlignment="Stretch" />
 
-                              <ItemsControl ItemsSource="{Binding FoodItems}">
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="todayVm:TodayFoodLogItemViewModel">
-                                    <Border
-                                        Padding="8"
-                                        Margin="0,0,0,6"
-                                        BorderThickness="1"
-                                        CornerRadius="8">
-                                      <StackPanel Spacing="4">
-                                        <TextBlock
-                                            Text="{Binding Name}"
-                                            FontWeight="SemiBold" />
+        <Border
+            Padding="16"
+            CornerRadius="16"
+            BorderThickness="1">
+          <StackPanel Spacing="12">
+            <TextBlock
+                Text="Съедено сегодня"
+                FontSize="18"
+                FontWeight="SemiBold" />
 
-                                        <TextBlock
-                                            Text="{Binding QuantitySummary}" />
+            <ItemsControl ItemsSource="{Binding Today.MealGroups}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="todayVm:TodayMealGroupViewModel">
+                  <Border
+                      Padding="10"
+                      Margin="0,0,0,10"
+                      BorderThickness="1"
+                      CornerRadius="10">
+                    <StackPanel Spacing="8">
+                      <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock
+                              Text="{Binding Name}"
+                              FontWeight="SemiBold" />
 
-                                        <TextBlock
-                                            Text="{Binding CaloriesSummary}" />
+                          <TextBlock
+                              Text="{Binding TimeSummary}"
+                              Opacity="0.7" />
 
-                                        <TextBlock
-                                            Text="{Binding MacrosSummary}" />
+                          <TextBlock
+                              Text="·"
+                              Opacity="0.7" />
 
-                                        <TextBlock
-                                            Text="{Binding AccuracySummary}"
-                                            FontStyle="Italic"
-                                            Opacity="0.75" />
-                                      </StackPanel>
-                                    </Border>
-                                  </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
-                            </StackPanel>
-                          </Border>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
-                </Border>
+                          <TextBlock
+                              Text="{Binding CaloriesSummary}"
+                              Opacity="0.85" />
+                        </StackPanel>
 
-            </StackPanel>
-        </ScrollViewer>
-        <Grid
-            IsVisible="{Binding IsGoalEditorOpen}"
-            Panel.ZIndex="1">
-            <profileViews:NutritionGoalEditorView
-                DataContext="{Binding GoalEditor}" />
-        </Grid>
-        <Grid
-            IsVisible="{Binding IsBodyMeasurementEditorOpen}"
-            Panel.ZIndex="1">
+                        <TextBlock
+                            Text="{Binding MacrosSummary}"
+                            Opacity="0.85" />
+                      </StackPanel>
 
-            <profileViews:BodyMeasurementEditorView
-                DataContext="{Binding BodyMeasurementEditor}" />
-        </Grid>
+                      <ItemsControl ItemsSource="{Binding FoodItems}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="todayVm:TodayFoodLogItemViewModel">
+                            <Border
+                                Padding="8"
+                                Margin="0,0,0,6"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                              <StackPanel Spacing="4">
+                                <TextBlock
+                                    Text="{Binding Name}"
+                                    FontWeight="SemiBold" />
+
+                                <TextBlock
+                                    Text="{Binding QuantitySummary}" />
+
+                                <TextBlock
+                                    Text="{Binding CaloriesSummary}" />
+
+                                <TextBlock
+                                    Text="{Binding MacrosSummary}" />
+
+                                <TextBlock
+                                    Text="{Binding AccuracySummary}"
+                                    FontStyle="Italic"
+                                    Opacity="0.75" />
+                              </StackPanel>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+    <Grid
+        IsVisible="{Binding IsGoalEditorOpen}"
+        Panel.ZIndex="1">
+      <profileViews:NutritionGoalEditorView
+          DataContext="{Binding GoalEditor}" />
     </Grid>
+    <Grid
+        IsVisible="{Binding IsBodyMeasurementEditorOpen}"
+        Panel.ZIndex="1">
+
+      <profileViews:BodyMeasurementEditorView
+          DataContext="{Binding BodyMeasurementEditor}" />
+    </Grid>
+
+    <Grid
+        IsVisible="{Binding IsProfileEditorOpen}"
+        Panel.ZIndex="1">
+
+      <profileViews:UserNutritionProfileEditorView
+          DataContext="{Binding ProfileEditor}" />
+    </Grid>
+  </Grid>
 </UserControl>

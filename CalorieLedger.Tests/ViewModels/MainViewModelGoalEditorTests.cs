@@ -266,7 +266,7 @@ public sealed class MainViewModelGoalEditorTests {
         }
     }
 
-    private sealed class TestUserNutritionProfileStore:IUserNutritionProfileStore {
+    private sealed class TestUserNutritionProfileStore:IUserNutritionProfileStore, IUserNutritionProfileWriter {
         private UserNutritionProfile currentProfile;
 
         public TestUserNutritionProfileStore(UserNutritionProfile initialProfile) {
@@ -281,6 +281,12 @@ public sealed class MainViewModelGoalEditorTests {
             currentProfile = currentProfile with {
                 Goal = goal,
             };
+        }
+
+        public void UpdateProfile(UserNutritionProfile profile) {
+            ArgumentNullException.ThrowIfNull(profile);
+
+            currentProfile = profile;
         }
     }
 }

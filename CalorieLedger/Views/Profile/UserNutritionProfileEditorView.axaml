@@ -1,0 +1,169 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Profile.UserNutritionProfileEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
+    x:DataType="profileVm:UserNutritionProfileEditorViewModel">
+
+  <ScrollViewer>
+    <StackPanel
+        Margin="24"
+        Spacing="14"
+        MaxWidth="640"
+        HorizontalAlignment="Center">
+
+      <TextBlock
+          Text="Редактирование профиля"
+          FontSize="26"
+          FontWeight="Bold" />
+
+      <TextBlock
+          Text="Эти параметры используются при расчёте основной и дневной потребности в энергии."
+          TextWrapping="Wrap"
+          Opacity="0.75" />
+
+      <TextBlock
+          Text="Имя"
+          FontWeight="SemiBold" />
+
+      <TextBox
+          Text="{Binding DisplayName, Mode=TwoWay}"
+          Watermark="Имя пользователя"
+          MaxLength="100" />
+
+      <TextBlock
+          Text="Пол"
+          FontWeight="SemiBold" />
+
+      <ComboBox
+          ItemsSource="{Binding SexOptions}"
+          SelectedItem="{Binding SelectedSexOption, Mode=TwoWay}"
+          HorizontalAlignment="Stretch">
+
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="profileVm:BiologicalSexOptionViewModel">
+            <TextBlock
+                Text="{Binding Title}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <Grid
+          ColumnDefinitions="*,*"
+          RowDefinitions="Auto,Auto"
+          ColumnSpacing="12"
+          RowSpacing="8">
+
+        <TextBlock
+            Grid.Row="0"
+            Grid.Column="0"
+            Text="Возраст, лет"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="0"
+            Grid.Column="1"
+            Value="{Binding AgeYears, Mode=TwoWay}"
+            Minimum="1"
+            Maximum="120"
+            Increment="1"
+            FormatString="0" />
+
+        <TextBlock
+            Grid.Row="1"
+            Grid.Column="0"
+            Text="Рост, см"
+            VerticalAlignment="Center" />
+
+        <NumericUpDown
+            Grid.Row="1"
+            Grid.Column="1"
+            Value="{Binding HeightCm, Mode=TwoWay}"
+            Minimum="50"
+            Maximum="250"
+            Increment="0.1"
+            FormatString="0.0" />
+      </Grid>
+
+      <TextBlock
+          Text="Повседневная активность"
+          Margin="0,8,0,0"
+          FontSize="18"
+          FontWeight="SemiBold" />
+
+      <ComboBox
+          ItemsSource="{Binding ActivityLevelOptions}"
+          SelectedItem="{Binding SelectedActivityLevelOption, Mode=TwoWay}"
+          HorizontalAlignment="Stretch">
+
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="profileVm:LifestyleActivityLevelOptionViewModel">
+            <StackPanel
+                Margin="4"
+                Spacing="2">
+
+              <TextBlock
+                  Text="{Binding Title}"
+                  FontWeight="SemiBold" />
+
+              <TextBlock
+                  Text="{Binding Description}"
+                  TextWrapping="Wrap"
+                  Opacity="0.7" />
+            </StackPanel>
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+
+      <Border
+          Padding="12"
+          CornerRadius="8"
+          BorderThickness="1">
+
+        <TextBlock
+            Text="Вес и показатели состава тела изменяются через историю измерений, а цель — через редактор цели."
+            TextWrapping="Wrap"
+            Opacity="0.75" />
+      </Border>
+
+      <Border
+          IsVisible="{Binding HasValidationErrors}"
+          Padding="12"
+          Margin="0,8,0,0"
+          CornerRadius="8"
+          BorderThickness="1">
+
+        <StackPanel Spacing="6">
+
+          <TextBlock
+              Text="Ошибки"
+              FontWeight="Bold" />
+
+          <ListBox
+              ItemsSource="{Binding ValidationMessages}"
+              IsHitTestVisible="False" />
+        </StackPanel>
+      </Border>
+
+      <TextBlock
+          Text="{Binding StatusSummary}"
+          TextWrapping="Wrap"
+          FontStyle="Italic" />
+
+      <StackPanel
+          Orientation="Horizontal"
+          HorizontalAlignment="Right"
+          Spacing="8"
+          Margin="0,8,0,0">
+
+        <Button
+            Content="Отмена"
+            Command="{Binding CancelCommand}" />
+
+        <Button
+            Content="Сохранить"
+            Command="{Binding SaveCommand}" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
