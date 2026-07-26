@@ -105,4 +105,10 @@ public sealed class BodyMeasurementHistoryService {
         return value is null
             || value is > 0m and < 100m;
     }
+
+    public BodyMeasurementEntry? GetLatest() {
+        var measurements = GetAll();
+
+        return measurements.Count == 0 ? null : measurements[^1];
+    }
 }

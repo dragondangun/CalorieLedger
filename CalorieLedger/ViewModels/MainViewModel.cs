@@ -387,7 +387,7 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshProfileSummary() {
-        var latestMeasurement = bodyMeasurementHistoryService.GetAll().LastOrDefault();
+        var latestMeasurement = bodyMeasurementHistoryService.GetLatest();
 
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
