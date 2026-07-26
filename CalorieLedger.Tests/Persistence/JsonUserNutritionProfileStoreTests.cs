@@ -147,6 +147,100 @@ public sealed class JsonUserNutritionProfileStoreTests:IDisposable {
         Assert.Single(preservedFiles);
     }
 
+    [Fact]
+    public void UpdateProfile_PersistsCompleteProfile() {
+        var fallbackProfile = CreateProfile();
+
+        var firstStore =
+        new JsonUserNutritionProfileStore(
+            filePath,
+            new TestProfileProvider(fallbackProfile)
+        );
+
+        var updatedProfile =
+        fallbackProfile with
+        {
+            DisplayName = "Updated user",
+            Body =
+                new BodyProfile(
+                    Sex: BiologicalSex.Female,
+                    AgeYears: 27,
+                    HeightCm: 184m,
+                    WeightKg: 70m,
+                    BodyFatPercent: 18m,
+                    BoneMassKg: 3.1m,
+                    MuscleMassKg: 34m,
+                    MusclePercent: 48.57m
+                ),
+            LifestyleActivityLevel =
+                LifestyleActivityLevel.ModeratelyActive,
+        };
+
+        firstStore.UpdateProfile(updatedProfile);
+
+        var secondStore =
+        new JsonUserNutritionProfileStore(
+            filePath,
+            new TestProfileProvider(
+                CreateDifferentProfile()
+            )
+        );
+
+        Assert.Equal(
+            updatedProfile,
+            secondStore.GetCurrentProfile()
+        );
+    }
+
+    [Fact]
+    public void UpdateGoal_AfterProfileUpdate_PreservesProfileFields() {
+        var fallbackProfile = CreateProfile();
+
+        var store = new JsonUserNutritionProfileStore(
+            filePath,
+            new TestProfileProvider(fallbackProfile)
+        );
+
+        var updatedProfile = fallbackProfile with
+        {
+            DisplayName = "Updated user",
+            LifestyleActivityLevel =
+                LifestyleActivityLevel.VeryActive,
+        };
+
+        store.UpdateProfile(updatedProfile);
+
+        var updatedGoal = new NutritionGoal(
+            GoalType: WeightGoalType.LoseWeight,
+            TargetWeightKg: 75m,
+            Strategy: EnergyStrategy.FromBalancePercent(17m)
+        );
+
+        store.UpdateGoal(updatedGoal);
+
+        var result = store.GetCurrentProfile();
+
+        Assert.Equal(
+            "Updated user",
+            result.DisplayName
+        );
+
+        Assert.Equal(
+            LifestyleActivityLevel.VeryActive,
+            result.LifestyleActivityLevel
+        );
+
+        Assert.Equal(
+            updatedProfile.Body,
+            result.Body
+        );
+
+        Assert.Equal(
+            updatedGoal,
+            result.Goal
+        );
+    }
+
     private static UserNutritionProfile CreateProfile() {
         return new UserNutritionProfile(
             Id: Guid.NewGuid(),

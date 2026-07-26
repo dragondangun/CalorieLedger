@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace CalorieLedger.Persistence;
 
-public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore {
+public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore, IUserNutritionProfileWriter {
     private static readonly JsonSerializerOptions serializerOptions = new() {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -43,7 +43,7 @@ public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore {
 
     public UserNutritionProfile GetCurrentProfile() {
         lock(syncRoot) {
-            return jsonFile.Read() ?? fallbackProfileProvider.GetCurrentProfile();
+            return ReadCurrentProfile();
         }
     }
 
@@ -51,8 +51,7 @@ public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore {
         ArgumentNullException.ThrowIfNull(goal);
 
         lock(syncRoot) {
-            var currentProfile = jsonFile.Read()
-                ?? fallbackProfileProvider.GetCurrentProfile();
+            var currentProfile = ReadCurrentProfile();
 
             var updatedProfile = currentProfile with {
                 Goal = goal,
@@ -60,5 +59,17 @@ public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore {
 
             jsonFile.Write(updatedProfile);
         }
+    }
+
+    public void UpdateProfile(UserNutritionProfile profile) {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        lock(syncRoot) {
+            jsonFile.Write(profile);
+        }
+    }
+
+    private UserNutritionProfile ReadCurrentProfile() {
+        return jsonFile.Read() ?? fallbackProfileProvider.GetCurrentProfile();
     }
 }
