@@ -46,6 +46,23 @@
           FontWeight="SemiBold" />
 
       <TextBlock
+          Text="{Binding WeightSourceSummary}"
+          TextWrapping="Wrap"
+          Opacity="0.7" />
+
+      <Border
+          IsVisible="{Binding HasMeasurementWarning}"
+          Padding="10"
+          Margin="0,4,0,0"
+          BorderThickness="1"
+          CornerRadius="8">
+
+          <TextBlock
+              Text="{Binding MeasurementWarning}"
+              TextWrapping="Wrap" />
+      </Border>
+
+      <TextBlock
           IsVisible="{Binding HasBodyCompositionSummary}"
           Text="{Binding BodyCompositionSummary}"
           TextWrapping="Wrap"

@@ -1,15 +1,19 @@
-﻿using CalorieLedger.Domain.Profile;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.ViewModels.Profile;
 
 public static class UserNutritionProfileSummaryViewModelFactory {
+    private const int FreshMeasurementMaximumAgeDays = 14;
+
     private static readonly CultureInfo russianCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     public static UserNutritionProfileSummaryViewModel Create(
         UserNutritionProfile profile,
+        BodyMeasurementEntry? latestMeasurement,
+        DateOnly currentDate,
         Action editProfile)
     {
         ArgumentNullException.ThrowIfNull(profile);
@@ -17,16 +21,53 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
         var personalDataSummary = $"{FormatSex(profile.Body.Sex)} · {FormatAge(profile.Body.AgeYears)} · {profile.Body.HeightCm.ToString("0.0", russianCulture)} см";
 
-        var bodyCompositionSummary = FormatBodyComposition(profile.Body);
+        var weightSourceSummary = FormatWeightSource(latestMeasurement);
+
+        var measurementWarning = FormatMeasurementWarning(
+            latestMeasurement,
+            currentDate
+        );
 
         return new UserNutritionProfileSummaryViewModel(
             displayName: profile.DisplayName,
             personalDataSummary: personalDataSummary,
             activitySummary: $"Активность: {FormatActivity(profile.LifestyleActivityLevel)}",
-            weightSummary: $"Актуальный вес: {profile.Body.WeightKg.ToString("0.0", russianCulture)} кг",
-            bodyCompositionSummary: bodyCompositionSummary,
+            weightSummary: $"Вес: {profile.Body.WeightKg.ToString("0.0", russianCulture)} кг",
+            weightSourceSummary: weightSourceSummary,
+            bodyCompositionSummary: FormatBodyComposition(profile.Body),
+            measurementWarning: measurementWarning,
             editProfile: editProfile
         );
+    }
+
+    private static string FormatWeightSource(BodyMeasurementEntry? latestMeasurement) {
+        if(latestMeasurement is null) {
+            return "Источник веса: исходные данные профиля";
+        }
+
+        var measurementDate = latestMeasurement.Date.ToString(
+            "dd.MM.yyyy",
+            russianCulture
+        );
+
+        return $"Последнее измерение: {measurementDate}";
+    }
+
+    private static string FormatMeasurementWarning(
+        BodyMeasurementEntry? latestMeasurement,
+        DateOnly currentDate)
+    {
+        if(latestMeasurement is null) {
+            return "Добавьте измерение тела, чтобы вес и состав тела обновлялись по истории измерений.";
+        }
+
+        var measurementAgeDays = Math.Max(0, currentDate.DayNumber - latestMeasurement.Date.DayNumber);
+
+        if(measurementAgeDays <= FreshMeasurementMaximumAgeDays) {
+            return string.Empty;
+        }
+
+        return $"Последнему измерению {FormatDays(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.";
     }
 
     private static string FormatBodyComposition(BodyProfile body) {
@@ -69,19 +110,30 @@ public static class UserNutritionProfileSummaryViewModelFactory {
     }
 
     private static string FormatAge(int ageYears) {
-        var lastTwoDigits = ageYears % 100;
-        var lastDigit = ageYears % 10;
+        return $"{ageYears} {GetCountSuffix(ageYears, "год", "года", "лет")}";
+    }
 
-        var suffix = lastTwoDigits is >= 11 and <= 14
-            ? "лет"
-            : lastDigit switch
-            {
-                1 => "год",
-                2 or 3 or 4 => "года",
-                _ => "лет",
-            };
+    private static string FormatDays(int dayCount) {
+        return $"{dayCount} {GetCountSuffix(dayCount, "день", "дня", "дней")}";
+    }
 
-        return $"{ageYears} {suffix}";
+    private static string GetCountSuffix(
+        int value,
+        string singular,
+        string paucal,
+        string plural)
+    {
+        var lastTwoDigits = value % 100;
+
+        if(lastTwoDigits is >= 11 and <= 14) {
+            return plural;
+        }
+
+        return (value % 10) switch {
+            1 => singular,
+            2 or 3 or 4 => paucal,
+            _ => plural,
+        };
     }
 
     private static string FormatActivity(LifestyleActivityLevel activityLevel) {

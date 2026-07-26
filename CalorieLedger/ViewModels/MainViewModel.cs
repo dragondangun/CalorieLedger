@@ -2,6 +2,7 @@
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.Persistence;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Today;
@@ -9,7 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
-using CalorieLedger.Persistence;
+using System.Linq;
 namespace CalorieLedger.ViewModels;
 
 public partial class MainViewModel:ViewModelBase {
@@ -128,8 +129,10 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
-            currentProfileProvider.GetCurrentProfile(),
-            EditProfile
+            profile: currentProfileProvider.GetCurrentProfile(),
+            latestMeasurement: bodyMeasurementHistoryService.GetAll().LastOrDefault(),
+            currentDate: DateOnly.FromDateTime(DateTime.Today),
+            editProfile: EditProfile
         );
 
         today = CreateTodayDashboardViewModel();
@@ -219,6 +222,7 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasNoBodyMeasurements));
 
         RefreshBodyTrends();
+        RefreshProfileSummary();
         RefreshAdaptiveEnergyAssessment();
     }
 
@@ -383,9 +387,13 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshProfileSummary() {
+        var latestMeasurement = bodyMeasurementHistoryService.GetAll().LastOrDefault();
+
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
-            currentProfileProvider.GetCurrentProfile(),
-            EditProfile
+            profile: currentProfileProvider.GetCurrentProfile(),
+            latestMeasurement: latestMeasurement,
+            currentDate: DateOnly.FromDateTime(DateTime.Today),
+            editProfile: EditProfile
         );
     }
 }

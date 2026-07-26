@@ -11,6 +11,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile,
+            latestMeasurement: null,
+            currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => editInvoked = true
         );
 
@@ -26,7 +28,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         );
 
         Assert.Equal(
-            "Актуальный вес: 70,5 кг",
+            "Вес: 70,5 кг",
             viewModel.WeightSummary
         );
 
@@ -67,6 +69,8 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile,
+            latestMeasurement: null,
+            currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { }
         );
 
@@ -95,6 +99,78 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
                 GoalType: WeightGoalType.Maintain,
                 Strategy: EnergyStrategy.FromBalancePercent(0m)
             )
+        );
+    }
+
+    [Fact]
+    public void Create_WithoutMeasurements_ShowsProfileSourceAndWarning() {
+        var viewModel =
+        UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: null,
+            currentDate: new DateOnly(2026, 7, 26),
+            editProfile: () => { }
+        );
+
+        Assert.Equal(
+            "Источник веса: исходные данные профиля",
+            viewModel.WeightSourceSummary
+        );
+
+        Assert.True(viewModel.HasMeasurementWarning);
+
+        Assert.Contains(
+            "Добавьте измерение тела",
+            viewModel.MeasurementWarning
+        );
+    }
+
+    [Fact]
+    public void Create_WithRecentMeasurement_ShowsDateWithoutWarning() {
+        var measurement =
+        new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 20),
+            WeightKg: 70.5m
+        );
+
+        var viewModel =
+        UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: measurement,
+            currentDate: new DateOnly(2026, 7, 26),
+            editProfile: () => { }
+        );
+
+        Assert.Equal(
+            "Последнее измерение: 20.07.2026",
+            viewModel.WeightSourceSummary
+        );
+
+        Assert.False(viewModel.HasMeasurementWarning);
+        Assert.Equal(string.Empty, viewModel.MeasurementWarning);
+    }
+
+    [Fact]
+    public void Create_WithStaleMeasurement_ShowsAgeWarning() {
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 6, 30),
+            WeightKg: 70.5m
+        );
+
+        var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: measurement,
+            currentDate: new DateOnly(2026, 7, 26),
+            editProfile: () => { }
+        );
+
+        Assert.True(viewModel.HasMeasurementWarning);
+
+        Assert.Contains(
+            "26 дней",
+            viewModel.MeasurementWarning
         );
     }
 }

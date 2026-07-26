@@ -3,6 +3,7 @@
 namespace CalorieLedger.Tests.ViewModels;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Profile;
 
 public sealed class
     MainViewModelBodyMeasurementEditorTests {
@@ -226,5 +227,31 @@ public sealed class
         Assert.True(viewModel.AdaptiveEnergyAssessment.IsUnavailable);
 
         Assert.False(viewModel.AdaptiveEnergyAssessment.HasRecommendation);
+    }
+
+    [Fact]
+    public void SaveMeasurement_RefreshesProfileMeasurementSource() {
+        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
+
+        Assert.Contains(
+            "исходные данные профиля",
+            viewModel.ProfileSummary.WeightSourceSummary
+        );
+
+        viewModel.AddBodyMeasurementCommand.Execute(null);
+
+        var editor = Assert.IsType<BodyMeasurementEditorViewModel>(viewModel.BodyMeasurementEditor);
+
+        editor.WeightKg = 70m;
+        editor.SaveCommand.Execute(null);
+
+        Assert.Contains(
+            "Последнее измерение:",
+            viewModel.ProfileSummary.WeightSourceSummary
+        );
+
+        Assert.False(
+            viewModel.ProfileSummary.HasMeasurementWarning
+        );
     }
 }   
