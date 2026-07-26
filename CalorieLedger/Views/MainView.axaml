@@ -24,12 +24,7 @@
             HorizontalAlignment="Stretch"
             HorizontalContentAlignment="Center"
             Padding="12,10" />
-        <Button
-            Content="Редактировать профиль"
-            Command="{Binding EditProfileCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
+        <profileViews:UserNutritionProfileSummaryView DataContext="{Binding ProfileSummary}" />
         <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
         <adaptiveViews:AdaptiveEnergyAssessmentView DataContext="{Binding AdaptiveEnergyAssessment}" />
         <Border

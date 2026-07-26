@@ -13,7 +13,6 @@ using CalorieLedger.Persistence;
 namespace CalorieLedger.ViewModels;
 
 public partial class MainViewModel:ViewModelBase {
-    private readonly IUserNutritionProfileStore profileStore;
     private readonly ITodayDashboardSnapshotProvider todayProvider;
 
     private readonly NutritionGoalUpdateService goalUpdateService;
@@ -23,6 +22,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
     private readonly UserNutritionProfileEditorService profileEditorService;
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
+    private readonly IUserNutritionProfileProvider currentProfileProvider;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -37,6 +37,8 @@ public partial class MainViewModel:ViewModelBase {
     private AdaptiveEnergyAssessmentViewModel adaptiveEnergyAssessment;
     [ObservableProperty]
     private UserNutritionProfileEditorViewModel? profileEditor;
+    [ObservableProperty]
+    private UserNutritionProfileSummaryViewModel profileSummary;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -83,7 +85,6 @@ public partial class MainViewModel:ViewModelBase {
             );
         }
 
-        this.profileStore = profileStore;
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
             profileWriter: profileWriter
@@ -95,7 +96,7 @@ public partial class MainViewModel:ViewModelBase {
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
-        var currentProfileProvider = new BodyMeasurementAwareNutritionProfileProvider(
+        currentProfileProvider = new BodyMeasurementAwareNutritionProfileProvider(
             baseProfileProvider: profileStore,
             measurementHistoryService: bodyMeasurementHistoryService
         );
@@ -126,9 +127,15 @@ public partial class MainViewModel:ViewModelBase {
             "Адаптивная оценка ещё не рассчитана."
         );
 
+        profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
+            currentProfileProvider.GetCurrentProfile(),
+            EditProfile
+        );
+
         today = CreateTodayDashboardViewModel();
 
         RefreshBodyMeasurements();
+        RefreshProfileSummary();
     }
 
     public bool IsGoalEditorOpen => GoalEditor is not null;
@@ -360,6 +367,7 @@ public partial class MainViewModel:ViewModelBase {
     private void OnProfileEditorSaved() {
         ProfileEditor = null;
 
+        RefreshProfileSummary();
         Today = CreateTodayDashboardViewModel("Профиль сохранён. Дневная норма КБЖУ пересчитана.");
 
         RefreshAdaptiveEnergyAssessment();
@@ -372,5 +380,12 @@ public partial class MainViewModel:ViewModelBase {
     partial void OnProfileEditorChanged(UserNutritionProfileEditorViewModel? value) {
         OnPropertyChanged(nameof(IsProfileEditorOpen));
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
+    }
+
+    private void RefreshProfileSummary() {
+        ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
+            currentProfileProvider.GetCurrentProfile(),
+            EditProfile
+        );
     }
 }

@@ -71,4 +71,38 @@ public sealed class MainViewModelProfileEditorTests {
             viewModel.Today.GoalActionSelectionSummary
         );
     }
+
+    [Fact]
+    public void SaveProfile_RefreshesProfileSummary() {
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore()
+        );
+
+        viewModel.EditProfileCommand.Execute(null);
+
+        var editor = Assert.IsType<UserNutritionProfileEditorViewModel>(
+            viewModel.ProfileEditor
+        );
+
+        editor.DisplayName = "Updated user";
+        editor.AgeYears = 31;
+        editor.HeightCm = 181.5m;
+
+        editor.SaveCommand.Execute(null);
+
+        Assert.Equal(
+            "Updated user",
+            viewModel.ProfileSummary.DisplayName
+        );
+
+        Assert.Contains(
+            "31 год",
+            viewModel.ProfileSummary.PersonalDataSummary
+        );
+
+        Assert.Contains(
+            "181,5 см",
+            viewModel.ProfileSummary.PersonalDataSummary
+        );
+    }
 }
