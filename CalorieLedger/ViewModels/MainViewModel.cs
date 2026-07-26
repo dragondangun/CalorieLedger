@@ -43,29 +43,38 @@ public partial class MainViewModel:ViewModelBase {
 
     public MainViewModel():this(
         JsonBodyMeasurementStore.CreateDefault(),
+        JsonUserNutritionProfileStore.CreateDefault(),
         new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
     ) { }
 
     public MainViewModel(IBodyMeasurementStore bodyMeasurementStore):this(
         bodyMeasurementStore,
+        new SampleUserNutritionProfileProvider(),
         new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
+    ) {}
+
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider)
+    :this(
+        bodyMeasurementStore,
+        new SampleUserNutritionProfileProvider(),
+        adaptiveEnergyAssessmentPresentationProvider
     ) { }
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
-        IAdaptiveEnergyAssessmentPresentationProvider
-        adaptiveEnergyAssessmentPresentationProvider)
+        IUserNutritionProfileStore profileStore,
+        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider)
     {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
+        ArgumentNullException.ThrowIfNull(profileStore);
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
+        this.profileStore = profileStore;
         this.adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProvider;
 
-        profileStore = new SampleUserNutritionProfileProvider();
-
-        var bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
-
-        this.bodyMeasurementHistoryService = bodyMeasurementHistoryService;
+        bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
@@ -74,7 +83,9 @@ public partial class MainViewModel:ViewModelBase {
             measurementHistoryService: bodyMeasurementHistoryService
         );
 
-        todayProvider = new SampleTodayDashboardSnapshotProvider(currentProfileProvider);
+        todayProvider = new SampleTodayDashboardSnapshotProvider(
+            currentProfileProvider
+        );
 
         var adaptiveEvaluationStore = new InMemoryAdaptiveEnergyEvaluationStore();
 

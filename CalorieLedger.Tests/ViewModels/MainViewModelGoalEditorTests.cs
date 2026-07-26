@@ -201,6 +201,58 @@ public sealed class MainViewModelGoalEditorTests {
         Assert.False(viewModel.AdaptiveEnergyAssessment.CanOpenGoalEditor);
     }
 
+    [Fact]
+    public void Constructor_UsesInjectedPersistentProfile() {
+        var profile = new UserNutritionProfile(
+            Id: Guid.NewGuid(),
+            DisplayName: "Test user",
+            Body: new BodyProfile(
+                Sex: BiologicalSex.Female,
+                AgeYears: 27,
+                HeightCm: 184m,
+                WeightKg: 80m
+            ),
+            LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+            Goal: new NutritionGoal(
+                GoalType: WeightGoalType.LoseWeight,
+                TargetWeightKg: 75m,
+                Strategy:
+                    EnergyStrategy.FromBalancePercent(17m)
+            )
+        );
+
+        var profileStore = new TestUserNutritionProfileStore(profile);
+
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            profileStore,
+            new UnavailableAdaptiveEnergyAssessmentPresentationProvider()
+        );
+
+        var action = viewModel.Today.GoalActions.Single(
+            item => item.Action == GoalNextAction.SetNewGoal
+        );
+
+        action.SelectCommand.Execute(null);
+
+        Assert.NotNull(viewModel.GoalEditor);
+
+        Assert.Equal(
+            WeightGoalType.LoseWeight,
+            viewModel.GoalEditor.GoalType
+        );
+
+        Assert.Equal(
+            EnergyStrategyMode.BalancePercent,
+            viewModel.GoalEditor.StrategyMode
+        );
+
+        Assert.Equal(
+            17m,
+            viewModel.GoalEditor.StrategyValue
+        );
+    }
+
     private sealed class TestAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {
         private readonly AdaptiveEnergyAssessmentPresentation presentation;
 
@@ -211,6 +263,24 @@ public sealed class MainViewModelGoalEditorTests {
 
         public AdaptiveEnergyAssessmentPresentation GetCurrent() {
             return presentation;
+        }
+    }
+
+    private sealed class TestUserNutritionProfileStore:IUserNutritionProfileStore {
+        private UserNutritionProfile currentProfile;
+
+        public TestUserNutritionProfileStore(UserNutritionProfile initialProfile) {
+            currentProfile = initialProfile;
+        }
+
+        public UserNutritionProfile GetCurrentProfile() {
+            return currentProfile;
+        }
+
+        public void UpdateGoal(NutritionGoal goal) {
+            currentProfile = currentProfile with {
+                Goal = goal,
+            };
         }
     }
 }
