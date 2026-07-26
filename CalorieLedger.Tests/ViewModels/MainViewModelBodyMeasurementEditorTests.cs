@@ -267,4 +267,46 @@ public sealed class
         Assert.False(viewModel.IsTodayDashboardVisible);
         Assert.NotNull(viewModel.BodyMeasurementEditor);
     }
+
+    [Fact]
+    public void AddBodyMeasurement_WhenTodayExists_OpensExistingMeasurement() {
+        var store = new InMemoryBodyMeasurementStore();
+        var currentDate = DateOnly.FromDateTime(DateTime.Today);
+
+        var existingMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 79.5m
+        );
+
+        store.Save(existingMeasurement);
+
+        var viewModel = new MainViewModel(store);
+
+        viewModel.AddBodyMeasurementCommand.Execute(null);
+
+        var editor = Assert.IsType<BodyMeasurementEditorViewModel>(
+            viewModel.BodyMeasurementEditor
+        );
+
+        Assert.Equal(
+            79.5m,
+            editor.WeightKg
+        );
+
+        editor.WeightKg = 79m;
+        editor.SaveCommand.Execute(null);
+
+        var savedMeasurement = Assert.Single(store.GetAll());
+
+        Assert.Equal(
+            existingMeasurement.Id,
+            savedMeasurement.Id
+        );
+
+        Assert.Equal(
+            79m,
+            savedMeasurement.WeightKg
+        );
+    }
 }   

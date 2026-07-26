@@ -20,12 +20,17 @@ public sealed class BodyMeasurementHistoryService {
 
     public BodyMeasurementSaveResult Save(
         BodyMeasurementEntry entry,
-        DateOnly currentDate) {
+        DateOnly currentDate)
+    {
         ArgumentNullException.ThrowIfNull(entry);
 
-        var errors = Validate(
-            entry,
-            currentDate);
+        var errors = Validate(entry, currentDate).ToList();
+        
+        if(HasConflictingDate(entry)) {
+            errors.Add(
+                BodyMeasurementValidationError.DuplicateDate
+            );
+        }
 
         if(errors.Count > 0) {
             return new BodyMeasurementSaveResult(
@@ -110,5 +115,30 @@ public sealed class BodyMeasurementHistoryService {
         var measurements = GetAll();
 
         return measurements.Count == 0 ? null : measurements[^1];
+    }
+
+    public BodyMeasurementEntry? GetByDate(DateOnly date) {
+        var measurements = GetAll();
+
+        foreach(var measurement in measurements) {
+            if(measurement.Date == date) {
+                return measurement;
+            }
+        }
+
+        return null;
+    }
+
+    private bool HasConflictingDate(BodyMeasurementEntry entry) {
+        var measurements = _store.GetAll();
+
+        foreach(var existingEntry in measurements) {
+            if(existingEntry.Id != entry.Id
+                && existingEntry.Date == entry.Date) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

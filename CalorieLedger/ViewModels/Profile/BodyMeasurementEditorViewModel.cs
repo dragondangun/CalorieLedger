@@ -333,6 +333,9 @@ public partial class BodyMeasurementEditorViewModel:ViewModelBase {
             BodyMeasurementValidationError.InconsistentBodyComposition =>
                 "Жировая, мышечная и костная масса не согласованы с общим весом тела.",
 
+            BodyMeasurementValidationError.DuplicateDate =>
+                "На выбранную дату уже сохранено измерение. Откройте существующую запись для редактирования.",
+
             _ => "Не удалось сохранить измерение."
         };
     }

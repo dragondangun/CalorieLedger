@@ -3,6 +3,7 @@
 public enum BodyMeasurementValidationError {
     MissingId,
     FutureDate,
+    DuplicateDate,
     InvalidWeight,
     InvalidBodyFatPercent,
     InvalidBoneMass,

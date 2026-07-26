@@ -152,11 +152,16 @@ public partial class MainViewModel:ViewModelBase {
     private void AddBodyMeasurement() {
         var currentDate = DateOnly.FromDateTime(DateTime.Today);
 
-        var draft = bodyMeasurementEditorService.CreateNew(currentDate);
+        var existingMeasurement = bodyMeasurementHistoryService.GetByDate(currentDate);
+
+        var draft = existingMeasurement is null
+            ? bodyMeasurementEditorService.CreateNew(currentDate)
+            : BodyMeasurementDraftMapper.FromEntry(existingMeasurement);
 
         OpenBodyMeasurementEditor(
             draft,
-            currentDate);
+            currentDate
+        );
     }
 
     [RelayCommand]

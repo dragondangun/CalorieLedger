@@ -410,4 +410,161 @@ public sealed class BodyMeasurementHistoryServiceTests {
             result
         );
     }
+
+    [Fact]
+    public void GetByDate_ExistingMeasurement_ReturnsMeasurement() {
+        var store = new InMemoryBodyMeasurementStore();
+        var service = new BodyMeasurementHistoryService(store);
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m
+        );
+
+        service.Save(
+            measurement,
+            currentDate
+        );
+
+        var result = service.GetByDate(currentDate);
+
+        Assert.Equal(
+            measurement,
+            result
+        );
+    }
+
+    [Fact]
+    public void GetByDate_MissingDate_ReturnsNull() {
+        var service = new BodyMeasurementHistoryService(
+            new InMemoryBodyMeasurementStore()
+        );
+
+        var result = service.GetByDate(
+            new DateOnly(2026, 7, 26)
+        );
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void Save_SecondMeasurementForSameDate_Fails() {
+        var store = new InMemoryBodyMeasurementStore();
+        var service = new BodyMeasurementHistoryService(store);
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        service.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 80m
+            ),
+            currentDate
+        );
+
+        var result = service.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 79.5m
+            ),
+            currentDate
+        );
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Contains(
+            BodyMeasurementValidationError.DuplicateDate,
+            result.Errors
+        );
+
+        Assert.Single(store.GetAll());
+    }
+
+    [Fact]
+    public void Save_ExistingMeasurementOnSameDate_UpdatesIt() {
+        var store = new InMemoryBodyMeasurementStore();
+        var service = new BodyMeasurementHistoryService(store);
+        var currentDate = new DateOnly(2026, 7, 26);
+        var id = Guid.NewGuid();
+
+        service.Save(
+            new BodyMeasurementEntry(
+                Id: id,
+                Date: currentDate,
+                WeightKg: 80m
+            ),
+            currentDate
+        );
+
+        var result = service.Save(
+            new BodyMeasurementEntry(
+                Id: id,
+                Date: currentDate,
+                WeightKg: 79.5m
+            ),
+            currentDate
+        );
+
+        Assert.True(result.IsSuccess);
+
+        var savedMeasurement = Assert.Single(store.GetAll());
+
+        Assert.Equal(
+            79.5m,
+            savedMeasurement.WeightKg
+        );
+    }
+
+    [Fact]
+    public void Save_MovingMeasurementToOccupiedDate_Fails() {
+        var store = new InMemoryBodyMeasurementStore();
+        var service = new BodyMeasurementHistoryService(store);
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        var firstMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 80m
+        );
+
+        var secondMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 79.5m
+        );
+
+        service.Save(
+            firstMeasurement,
+            currentDate
+        );
+
+        service.Save(
+            secondMeasurement,
+            currentDate
+        );
+
+        var movedMeasurement = firstMeasurement with {
+            Date = currentDate,
+        };
+
+        var result = service.Save(
+            movedMeasurement,
+            currentDate
+        );
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Contains(
+            BodyMeasurementValidationError.DuplicateDate,
+            result.Errors
+        );
+
+        Assert.Equal(
+            2,
+            store.GetAll().Count
+        );
+    }
 } 
