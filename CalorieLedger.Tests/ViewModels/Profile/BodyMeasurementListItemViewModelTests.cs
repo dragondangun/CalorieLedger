@@ -150,6 +150,37 @@ public sealed class
         Assert.False(deleteInvoked);
     }
 
+    [Fact]
+    public void InitialState_ShowsPrimaryActions() {
+        var viewModel = new BodyMeasurementListItemViewModel(
+            CreateEntry(),
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.True(viewModel.ArePrimaryActionsVisible);
+        Assert.False(viewModel.IsDeleteConfirmationVisible);
+    }
+
+    [Fact]
+    public void DeleteConfirmation_TogglesVisibleActionGroups() {
+        var viewModel = new BodyMeasurementListItemViewModel(
+            CreateEntry(),
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        viewModel.DeleteCommand.Execute(null);
+
+        Assert.False(viewModel.ArePrimaryActionsVisible);
+        Assert.True(viewModel.IsDeleteConfirmationVisible);
+
+        viewModel.CancelDeleteCommand.Execute(null);
+
+        Assert.True(viewModel.ArePrimaryActionsVisible);
+        Assert.False(viewModel.IsDeleteConfirmationVisible);
+    }
+
     private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),

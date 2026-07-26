@@ -1,0 +1,87 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Profile.BodyMeasurementListItemView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
+    x:DataType="profileVm:BodyMeasurementListItemViewModel">
+
+  <Border
+      Padding="12"
+      BorderThickness="1"
+      CornerRadius="10">
+
+    <StackPanel Spacing="8">
+
+      <Grid ColumnDefinitions="*,Auto">
+
+        <StackPanel
+            Grid.Column="0"
+            Spacing="2">
+
+          <TextBlock
+              Text="{Binding DateSummary}"
+              FontWeight="SemiBold" />
+
+          <TextBlock
+              Text="{Binding WeightSummary}"
+              FontSize="18"
+              FontWeight="Bold" />
+        </StackPanel>
+      </Grid>
+
+      <TextBlock
+          IsVisible="{Binding HasAdditionalValues}"
+          Text="{Binding AdditionalValuesSummary}"
+          TextWrapping="Wrap" />
+
+      <StackPanel
+          IsVisible="{Binding ArePrimaryActionsVisible}"
+          Orientation="Horizontal"
+          HorizontalAlignment="Left"
+          Spacing="8">
+
+        <Button
+            Content="Изменить"
+            Command="{Binding EditCommand}" />
+
+        <Button
+            Content="Удалить"
+            Command="{Binding DeleteCommand}" />
+      </StackPanel>
+
+      <Border
+          IsVisible="{Binding IsDeleteConfirmationVisible}"
+          Padding="10"
+          Margin="0,4,0,0"
+          BorderThickness="1"
+          CornerRadius="8">
+
+        <StackPanel Spacing="8">
+
+          <TextBlock
+              Text="Удалить это измерение?"
+              FontWeight="SemiBold" />
+
+          <TextBlock
+              Text="Запись будет удалена из истории. Если это последнее измерение, текущий профиль вернётся к предыдущей записи."
+              TextWrapping="Wrap"
+              Opacity="0.75" />
+
+          <StackPanel
+              Orientation="Horizontal"
+              HorizontalAlignment="Left"
+              Spacing="8">
+
+            <Button
+                Content="Отмена"
+                Command="{Binding CancelDeleteCommand}" />
+
+            <Button
+                Content="Удалить"
+                Command="{Binding ConfirmDeleteCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </Border>
+</UserControl>
