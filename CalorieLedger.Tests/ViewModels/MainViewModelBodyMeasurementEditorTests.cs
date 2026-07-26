@@ -109,6 +109,7 @@ public sealed class
         var measurement = Assert.Single(viewModel.BodyMeasurements);
 
         measurement.DeleteCommand.Execute(null);
+        measurement.ConfirmDeleteCommand.Execute(null);
 
         Assert.Empty(viewModel.BodyMeasurements);
 
@@ -157,6 +158,8 @@ public sealed class
         var measurement = Assert.Single(viewModel.BodyMeasurements);
 
         measurement.DeleteCommand.Execute(null);
+        measurement.ConfirmDeleteCommand.Execute(null);
+        Assert.Empty(viewModel.BodyMeasurements);
 
         Assert.NotSame(todayAfterSave, viewModel.Today);
 

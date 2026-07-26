@@ -70,25 +70,87 @@ public sealed class
     }
 
     [Fact]
-    public void DeleteCommand_PassesMeasurementId() {
+    public void ConfirmDeleteCommand_PassesMeasurementId() {
+        Guid? deletedId = null;
         var entry = CreateEntry();
-
-        Guid? passedId = null;
 
         var viewModel = new BodyMeasurementListItemViewModel(
             entry,
             onEdit: _ => { },
-            onDelete: id => passedId = id);
+            onDelete: id => deletedId = id
+        );
 
         viewModel.DeleteCommand.Execute(null);
 
+        Assert.Null(deletedId);
+        Assert.True(viewModel.IsDeleteConfirmationVisible);
+
+        viewModel.ConfirmDeleteCommand.Execute(null);
+
         Assert.Equal(
             entry.Id,
-            passedId);
+            deletedId
+        );
+
+        Assert.False(viewModel.IsDeleteConfirmationVisible);
     }
 
-    private static BodyMeasurementEntry
-        CreateEntry() {
+    [Fact]
+    public void DeleteCommand_ShowsConfirmationWithoutDeleting() {
+        var deletedId = Guid.Empty;
+        var entry = CreateEntry();
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry,
+            onEdit: _ => { },
+            onDelete: id => deletedId = id
+        );
+
+        viewModel.DeleteCommand.Execute(null);
+
+        Assert.True(viewModel.IsDeleteConfirmationVisible);
+        Assert.False(viewModel.ArePrimaryActionsVisible);
+        Assert.Equal(Guid.Empty, deletedId);
+    }
+
+    [Fact]
+    public void ConfirmDeleteCommand_DeletesMeasurement() {
+        var deletedId = Guid.Empty;
+        var entry = CreateEntry();
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry,
+            onEdit: _ => { },
+            onDelete: id => deletedId = id
+        );
+
+        viewModel.DeleteCommand.Execute(null);
+        viewModel.ConfirmDeleteCommand.Execute(null);
+
+        Assert.False(viewModel.IsDeleteConfirmationVisible);
+        Assert.True(viewModel.ArePrimaryActionsVisible);
+        Assert.Equal(entry.Id, deletedId);
+    }
+
+    [Fact]
+    public void CancelDeleteCommand_HidesConfirmationWithoutDeleting() {
+        var deleteInvoked = false;
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            CreateEntry(),
+            onEdit: _ => { },
+            onDelete: _ => deleteInvoked = true
+        );
+
+        viewModel.DeleteCommand.Execute(null);
+        viewModel.CancelDeleteCommand.Execute(null);
+
+        Assert.False(viewModel.IsDeleteConfirmationVisible);
+        Assert.True(viewModel.ArePrimaryActionsVisible);
+        Assert.False(deleteInvoked);
+    }
+
+    private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
             Date: new DateOnly(

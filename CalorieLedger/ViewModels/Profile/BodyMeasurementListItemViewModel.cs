@@ -1,8 +1,9 @@
-﻿using System;
+﻿using CalorieLedger.Domain.Profile;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
-using CalorieLedger.Domain.Profile;
-using CommunityToolkit.Mvvm.Input;
 
 namespace CalorieLedger.ViewModels.Profile;
 
@@ -19,9 +20,12 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public string AdditionalValuesSummary { get; }
 
-    public bool HasAdditionalValues =>
-        !string.IsNullOrWhiteSpace(
-            AdditionalValuesSummary);
+    public bool HasAdditionalValues => !string.IsNullOrWhiteSpace(AdditionalValuesSummary);
+
+    [ObservableProperty]
+    private bool isDeleteConfirmationVisible;
+
+    public bool ArePrimaryActionsVisible => !IsDeleteConfirmationVisible;
 
     public BodyMeasurementListItemViewModel(
         BodyMeasurementEntry entry,
@@ -50,7 +54,22 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     [RelayCommand]
     private void Delete() {
+        IsDeleteConfirmationVisible = true;
+    }
+
+    [RelayCommand]
+    private void ConfirmDelete() {
+        IsDeleteConfirmationVisible = false;
         onDelete(Id);
+    }
+
+    [RelayCommand]
+    private void CancelDelete() {
+        IsDeleteConfirmationVisible = false;
+    }
+
+    partial void OnIsDeleteConfirmationVisibleChanged(bool value) {
+        OnPropertyChanged(nameof(ArePrimaryActionsVisible));
     }
 
     private static string BuildAdditionalValuesSummary(BodyMeasurementEntry entry) {
