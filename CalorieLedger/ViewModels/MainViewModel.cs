@@ -43,12 +43,24 @@ public partial class MainViewModel:ViewModelBase {
     private UserNutritionProfileEditorViewModel? profileEditor;
     [ObservableProperty]
     private UserNutritionProfileSummaryViewModel profileSummary;
+    [ObservableProperty]
+    private bool isBodyMeasurementHistoryExpanded;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
+
+    private const int CollapsedBodyMeasurementCount = 5;
+    public ObservableCollection<BodyMeasurementListItemViewModel> VisibleBodyMeasurements { get; } = [];
 
     public bool HasBodyMeasurements => BodyMeasurements.Count > 0;
 
     public bool HasNoBodyMeasurements => BodyMeasurements.Count == 0;
+
+    public bool CanToggleBodyMeasurementHistory => BodyMeasurements.Count > CollapsedBodyMeasurementCount;
+
+    public string BodyMeasurementHistoryToggleText =>
+        IsBodyMeasurementHistoryExpanded
+            ? "Свернуть историю"
+            : $"Показать все измерения ({BodyMeasurements.Count})";
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
@@ -200,6 +212,17 @@ public partial class MainViewModel:ViewModelBase {
             );
     }
 
+    [RelayCommand(CanExecute = nameof(CanToggleBodyMeasurementHistory))]
+    private void ToggleBodyMeasurementHistory() {
+        IsBodyMeasurementHistoryExpanded = !IsBodyMeasurementHistoryExpanded;
+
+        RefreshVisibleBodyMeasurements();
+    }
+
+    partial void OnIsBodyMeasurementHistoryExpandedChanged(bool value) {
+        OnPropertyChanged(nameof(BodyMeasurementHistoryToggleText));
+    }
+
     private void EditBodyMeasurement(Guid id) {
         var draft = bodyMeasurementEditorService.Load(id);
 
@@ -255,6 +278,7 @@ public partial class MainViewModel:ViewModelBase {
         RefreshBodyTrends();
         RefreshProfileSummary();
         RefreshAdaptiveEnergyAssessment();
+        RefreshVisibleBodyMeasurements();
     }
 
     private void RefreshBodyTrends() {
@@ -425,5 +449,32 @@ public partial class MainViewModel:ViewModelBase {
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );
+    }
+
+    private void RefreshVisibleBodyMeasurements() {
+        if(BodyMeasurements.Count <= CollapsedBodyMeasurementCount) {
+            IsBodyMeasurementHistoryExpanded = false;
+        }
+
+        VisibleBodyMeasurements.Clear();
+
+        var visibleCount = 
+            IsBodyMeasurementHistoryExpanded
+                ? BodyMeasurements.Count
+                : Math.Min(
+                    CollapsedBodyMeasurementCount,
+                    BodyMeasurements.Count
+                );
+
+        for(var index = 0; index < visibleCount; index++) {
+            VisibleBodyMeasurements.Add(
+                BodyMeasurements[index]
+            );
+        }
+
+        OnPropertyChanged(nameof(CanToggleBodyMeasurementHistory));
+        OnPropertyChanged(nameof(BodyMeasurementHistoryToggleText));
+
+        ToggleBodyMeasurementHistoryCommand.NotifyCanExecuteChanged();
     }
 }

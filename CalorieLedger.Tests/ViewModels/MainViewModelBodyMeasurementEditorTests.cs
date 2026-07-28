@@ -357,4 +357,129 @@ public sealed class
             viewModel.ProfileSummary.MeasurementWarning
         );
     }
+
+    [Fact]
+    public void Constructor_ManyMeasurements_ShowsFiveNewestEntries() {
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        var store = CreateStoreWithMeasurements(
+            measurementCount: 8,
+            latestDate: currentDate
+        );
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.Equal(
+            8,
+            viewModel.BodyMeasurements.Count
+        );
+
+        Assert.Equal(
+            5,
+            viewModel.VisibleBodyMeasurements.Count
+        );
+
+        Assert.True(viewModel.CanToggleBodyMeasurementHistory);
+
+        Assert.False(viewModel.IsBodyMeasurementHistoryExpanded);
+
+        Assert.Equal(
+            "Показать все измерения (8)",
+            viewModel.BodyMeasurementHistoryToggleText
+        );
+
+        Assert.Equal(
+            viewModel.BodyMeasurements[0].Id,
+            viewModel.VisibleBodyMeasurements[0].Id
+        );
+    }
+
+    [Fact]
+    public void ToggleBodyMeasurementHistory_ExpandsAndCollapsesHistory() {
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        var viewModel = new MainViewModel(
+            CreateStoreWithMeasurements(
+                measurementCount: 8,
+                latestDate: currentDate
+            ),
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        viewModel.ToggleBodyMeasurementHistoryCommand.Execute(null);
+
+        Assert.True(
+            viewModel.IsBodyMeasurementHistoryExpanded
+        );
+
+        Assert.Equal(
+            8,
+            viewModel.VisibleBodyMeasurements.Count
+        );
+
+        Assert.Equal(
+            "Свернуть историю",
+            viewModel.BodyMeasurementHistoryToggleText
+        );
+
+        viewModel.ToggleBodyMeasurementHistoryCommand.Execute(null);
+
+        Assert.False(
+            viewModel.IsBodyMeasurementHistoryExpanded
+        );
+
+        Assert.Equal(
+            5,
+            viewModel.VisibleBodyMeasurements.Count
+        );
+
+        Assert.Equal(
+            "Показать все измерения (8)",
+            viewModel.BodyMeasurementHistoryToggleText
+        );
+    }
+
+    [Fact]
+    public void Constructor_FiveMeasurements_DoesNotShowHistoryToggle() {
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        var viewModel = new MainViewModel(
+            CreateStoreWithMeasurements(
+                measurementCount: 5,
+                latestDate: currentDate
+            ),
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.Equal(
+            5,
+            viewModel.VisibleBodyMeasurements.Count
+        );
+
+        Assert.False(viewModel.CanToggleBodyMeasurementHistory);
+
+        Assert.False(viewModel.ToggleBodyMeasurementHistoryCommand.CanExecute(null));
+    }
+
+    private static InMemoryBodyMeasurementStore CreateStoreWithMeasurements(
+        int measurementCount,
+        DateOnly latestDate)
+    {
+        var store = new InMemoryBodyMeasurementStore();
+
+        for(var index = 0; index < measurementCount; index++) {
+            store.Save(
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: latestDate.AddDays(-index),
+                    WeightKg: 80m - index * 0.1m
+                )
+            );
+        }
+
+        return store;
+    }
 }   
