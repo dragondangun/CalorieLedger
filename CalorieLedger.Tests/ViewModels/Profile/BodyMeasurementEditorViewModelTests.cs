@@ -1,4 +1,7 @@
 ﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Profile;
+using CalorieLedger.Tests.TestDoubles;
+using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
@@ -314,5 +317,46 @@ public sealed class
         Assert.True(viewModel.HasCompositionPreview);
 
         Assert.True(viewModel.HasCompositionWarning);
+    }
+
+    [Fact]
+    public void Constructor_MeasurementsCompareWithPreviousDate() {
+        var store = new InMemoryBodyMeasurementStore();
+        var currentDate = new DateOnly(2026, 7, 26);
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-7),
+                WeightKg: 80m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 79.5m
+            )
+        );
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.Equal(
+            2,
+            viewModel.BodyMeasurements.Count
+        );
+
+        Assert.Contains(
+            "вес −0,5 кг",
+            viewModel.BodyMeasurements[0].ChangesSummary
+        );
+
+        Assert.False(
+            viewModel.BodyMeasurements[1].HasChangesSummary
+        );
     }
 }

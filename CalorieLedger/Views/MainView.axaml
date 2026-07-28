@@ -52,62 +52,29 @@
 
             <ItemsControl
                 IsVisible="{Binding HasBodyMeasurements}"
-                ItemsSource="{Binding BodyMeasurements}">
+                ItemsSource="{Binding VisibleBodyMeasurements}">
 
-              <ItemsControl.ItemTemplate>
-                <DataTemplate
-                    x:DataType="profileVm:BodyMeasurementListItemViewModel">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="8" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
 
-                  <Border
-                      Padding="10"
-                      Margin="0,0,0,8"
-                      BorderThickness="1"
-                      CornerRadius="10">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate
+                        x:DataType="profileVm:BodyMeasurementListItemViewModel">
 
-                    <Grid
-                        ColumnDefinitions="*,Auto"
-                        ColumnSpacing="12">
-
-                      <StackPanel
-                          Grid.Column="0"
-                          Spacing="4">
-
-                        <TextBlock
-                            Text="{Binding DateSummary}"
-                            FontWeight="SemiBold" />
-
-                        <TextBlock
-                            Text="{Binding WeightSummary}"
-                            FontSize="17"
-                            FontWeight="Bold" />
-
-                        <TextBlock
-                            IsVisible="{Binding HasAdditionalValues}"
-                            Text="{Binding AdditionalValuesSummary}"
-                            TextWrapping="Wrap"
-                            Opacity="0.8" />
-                      </StackPanel>
-
-                      <StackPanel
-                          Grid.Column="1"
-                          Spacing="6"
-                          VerticalAlignment="Center">
-
-                        <Button
-                            Content="Изменить"
-                            Command="{Binding EditCommand}"
-                            Padding="10,6" />
-
-                        <Button
-                            Content="Удалить"
-                            Command="{Binding DeleteCommand}"
-                            Padding="10,6" />
-                      </StackPanel>
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
+                        <profileViews:BodyMeasurementListItemView />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <Button
+                IsVisible="{Binding CanToggleBodyMeasurementHistory}"
+                Content="{Binding BodyMeasurementHistoryToggleText}"
+                Command="{Binding ToggleBodyMeasurementHistoryCommand}"
+                HorizontalAlignment="Left"
+                Margin="0,4,0,0" />
           </StackPanel>
         </Border>
 

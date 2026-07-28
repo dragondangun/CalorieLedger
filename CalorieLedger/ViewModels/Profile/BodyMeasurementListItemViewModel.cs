@@ -22,6 +22,10 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public bool HasAdditionalValues => !string.IsNullOrWhiteSpace(AdditionalValuesSummary);
 
+    public string ChangesSummary { get; }
+
+    public bool HasChangesSummary => !string.IsNullOrWhiteSpace(ChangesSummary);
+
     [ObservableProperty]
     private bool isDeleteConfirmationVisible;
 
@@ -30,21 +34,21 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
     public BodyMeasurementListItemViewModel(
         BodyMeasurementEntry entry,
         Action<Guid> onEdit,
-        Action<Guid> onDelete) {
+        Action<Guid> onDelete,
+        BodyMeasurementEntry? previousMeasurement = null)
+    {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(onEdit);
         ArgumentNullException.ThrowIfNull(onDelete);
 
+        Id = entry.Id;
+        DateSummary = FormatDate(entry.Date);
+        WeightSummary = FormatWeight(entry.WeightKg);
+        AdditionalValuesSummary = FormatAdditionalValues(entry);
+        ChangesSummary = FormatChanges(entry, previousMeasurement);
+
         this.onEdit = onEdit;
         this.onDelete = onDelete;
-
-        Id = entry.Id;
-
-        DateSummary = entry.Date.ToString("dd.MM.yyyy");
-
-        WeightSummary = $"{entry.WeightKg.ToString("0.0", RussianCulture)} кг";
-
-        AdditionalValuesSummary = BuildAdditionalValuesSummary(entry);
     }
 
     [RelayCommand]
@@ -106,5 +110,119 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         return string.Join(
             " · ",
             values);
+    }
+
+    private static string FormatChanges(
+        BodyMeasurementEntry entry,
+        BodyMeasurementEntry? previousMeasurement)
+    {
+        if(previousMeasurement is null) {
+            return string.Empty;
+        }
+
+        var values = new List<string> {
+            $"вес {FormatSignedDifference(
+                entry.WeightKg - previousMeasurement.WeightKg,
+                " кг"
+            )}",
+        };
+
+        if(entry.BodyFatPercent is decimal bodyFatPercent
+            && previousMeasurement.BodyFatPercent is decimal previousBodyFatPercent) {
+            values.Add(
+                $"жир {FormatSignedDifference(
+                    bodyFatPercent - previousBodyFatPercent,
+                    " п.п."
+                )}"
+            );
+        }
+
+        if(entry.MuscleMassKg is decimal muscleMassKg
+            && previousMeasurement.MuscleMassKg is decimal previousMuscleMassKg) {
+            values.Add(
+                $"мышцы {FormatSignedDifference(
+                    muscleMassKg - previousMuscleMassKg,
+                    " кг"
+                )}"
+            );
+        }
+        else if(entry.MusclePercent is decimal musclePercent
+            && previousMeasurement.MusclePercent is decimal previousMusclePercent) {
+            values.Add(
+                $"мышцы {FormatSignedDifference(
+                    musclePercent - previousMusclePercent,
+                    " п.п."
+                )}"
+            );
+        }
+
+        if(entry.BoneMassKg is decimal boneMassKg
+            && previousMeasurement.BoneMassKg is decimal previousBoneMassKg) {
+            values.Add(
+                $"кости {FormatSignedDifference(
+                    boneMassKg - previousBoneMassKg,
+                    " кг"
+                )}"
+            );
+        }
+
+        return $"С прошлого измерения: {string.Join(" · ", values)}";
+    }
+
+    private static string FormatSignedDifference(
+        decimal difference,
+        string suffix)
+    {
+        var sign = difference switch {
+            > 0m => "+",
+            < 0m => "−",
+            _ => string.Empty,
+        };
+
+        return $"{sign}{Math.Abs(difference).ToString("0.0", RussianCulture)}{suffix}";
+    }
+
+    private static string FormatDate(DateOnly date) {
+        return date.ToString(
+            "dd.MM.yyyy",
+            RussianCulture
+        );
+    }
+
+    private static string FormatWeight(decimal weightKg) {
+        return $"{weightKg.ToString("0.0", RussianCulture)} кг";
+    }
+
+    private static string FormatAdditionalValues(BodyMeasurementEntry entry) {
+        var values = new List<string>();
+
+        if(entry.BodyFatPercent is decimal bodyFatPercent) {
+            values.Add(
+                $"жир {bodyFatPercent.ToString("0.0", RussianCulture)}%"
+            );
+        }
+
+        if(entry.BoneMassKg is decimal boneMassKg) {
+            values.Add(
+                $"кости {boneMassKg.ToString("0.0", RussianCulture)} кг"
+            );
+        }
+
+        if(entry.MuscleMassKg is decimal muscleMassKg) {
+            values.Add(
+                $"мышцы {muscleMassKg.ToString("0.0", RussianCulture)} кг"
+            );
+        }
+
+        if(entry.MusclePercent is decimal musclePercent) {
+            values.Add(
+                $"мышцы {musclePercent.ToString("0.0", RussianCulture)}%"
+            );
+        }
+
+        return string.Join(
+            " · ",
+            values
+        );
     }
 }

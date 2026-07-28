@@ -34,6 +34,13 @@
           Text="{Binding AdditionalValuesSummary}"
           TextWrapping="Wrap" />
 
+      <TextBlock
+          IsVisible="{Binding HasChangesSummary}"
+          Text="{Binding ChangesSummary}"
+          TextWrapping="Wrap"
+          FontStyle="Italic"
+          Opacity="0.75" />
+
       <StackPanel
           IsVisible="{Binding ArePrimaryActionsVisible}"
           Orientation="Horizontal"

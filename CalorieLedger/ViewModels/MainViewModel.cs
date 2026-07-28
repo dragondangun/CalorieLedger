@@ -14,6 +14,7 @@ using System.Linq;
 namespace CalorieLedger.ViewModels;
 using CalorieLedger.Application.Time;
 using CalorieLedger.Infrastructure;
+using System.Diagnostics.Metrics;
 
 public partial class MainViewModel:ViewModelBase {
     private readonly ITodayDashboardSnapshotProvider todayProvider;
@@ -261,15 +262,23 @@ public partial class MainViewModel:ViewModelBase {
     private void RefreshBodyMeasurements() {
         BodyMeasurements.Clear();
 
-        var entries = bodyMeasurementHistoryService.GetAll();
+        var measurements = bodyMeasurementHistoryService.GetAll();
 
         // Хранилище возвращает записи от старых к новым.
         // На экране показываем новые сверху.
-        for(var index = entries.Count - 1; index >= 0; index--) {
-            BodyMeasurements.Add(new BodyMeasurementListItemViewModel(
-                entry: entries[index],
-                onEdit: EditBodyMeasurement,
-                onDelete: DeleteBodyMeasurement));
+        for(var index = measurements.Count - 1; index >= 0; index--) {
+            var previousMeasurement = index > 0
+            ? measurements[index - 1]
+            : null;
+
+            BodyMeasurements.Add(
+                new BodyMeasurementListItemViewModel(
+                    entry: measurements[index],
+                    onEdit: EditBodyMeasurement,
+                    onDelete: DeleteBodyMeasurement,
+                    previousMeasurement: previousMeasurement
+                )
+            );
         }
 
         OnPropertyChanged(nameof(HasBodyMeasurements));

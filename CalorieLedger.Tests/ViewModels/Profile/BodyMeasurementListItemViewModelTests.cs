@@ -181,6 +181,85 @@ public sealed class
         Assert.False(viewModel.IsDeleteConfirmationVisible);
     }
 
+    [Fact]
+    public void Constructor_WithoutPreviousMeasurement_HidesChanges() {
+        var viewModel =
+        new BodyMeasurementListItemViewModel(
+            entry: CreateEntry(),
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.False(viewModel.HasChangesSummary);
+        Assert.Equal(string.Empty, viewModel.ChangesSummary);
+    }
+
+    [Fact]
+    public void Constructor_WithPreviousMeasurement_FormatsChanges() {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 20),
+            WeightKg: 80m,
+            BodyFatPercent: 20m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35m,
+            MusclePercent: 43.75m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 26),
+            WeightKg: 79.5m,
+            BodyFatPercent: 19.7m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35.2m,
+            MusclePercent: 44.28m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: currentMeasurement,
+            onEdit: _ => { },
+            onDelete: _ => { },
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.True(viewModel.HasChangesSummary);
+
+        Assert.Equal(
+            "С прошлого измерения: вес −0,5 кг · жир −0,3 п.п. · мышцы +0,2 кг · кости 0,0 кг",
+            viewModel.ChangesSummary
+        );
+    }
+
+    [Fact]
+    public void Constructor_WithoutMuscleMass_UsesMusclePercentageChange() {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 20),
+            WeightKg: 80m,
+            MusclePercent: 43.5m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 26),
+            WeightKg: 79.5m,
+            MusclePercent: 44m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: currentMeasurement,
+            onEdit: _ => { },
+            onDelete: _ => { },
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.Contains(
+            "мышцы +0,5 п.п.",
+            viewModel.ChangesSummary
+        );
+    }
+
     private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
