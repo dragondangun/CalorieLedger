@@ -226,7 +226,7 @@ public sealed class
         Assert.True(viewModel.HasChangesSummary);
 
         Assert.Equal(
-            "С прошлого измерения: вес −0,5 кг · жир −0,3 п.п. · мышцы +0,2 кг · кости 0,0 кг",
+            "За 6 дней: вес −0,5 кг · жир −0,3 п.п. · мышцы +0,2 кг",
             viewModel.ChangesSummary
         );
     }
@@ -256,6 +256,72 @@ public sealed class
 
         Assert.Contains(
             "мышцы +0,5 п.п.",
+            viewModel.ChangesSummary
+        );
+    }
+
+    [Fact]
+    public void Constructor_UnchangedMeasurement_ReportsNoChanges() {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 19),
+            WeightKg: 80m,
+            BodyFatPercent: 20m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35m,
+            MusclePercent: 43.75m
+        );
+
+        var currentMeasurement = previousMeasurement with
+        {
+            Id = Guid.NewGuid(),
+            Date = new DateOnly(2026, 7, 26),
+        };
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: currentMeasurement,
+            onEdit: _ => { },
+            onDelete: _ => { },
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.True(viewModel.HasChangesSummary);
+
+        Assert.Equal(
+            "За 7 дней: без изменений",
+            viewModel.ChangesSummary
+        );
+    }
+
+    [Theory]
+    [InlineData(1, "За 1 день")]
+    [InlineData(2, "За 2 дня")]
+    [InlineData(5, "За 5 дней")]
+    [InlineData(11, "За 11 дней")]
+    [InlineData(21, "За 21 день")]
+    [InlineData(24, "За 24 дня")]
+    public void Constructor_FormatsMeasurementInterval(int dayCount, string expectedPrefix) {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 1),
+            WeightKg: 80m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: previousMeasurement.Date.AddDays(dayCount),
+            WeightKg: 79.5m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: currentMeasurement,
+            onEdit: _ => { },
+            onDelete: _ => { },
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.StartsWith(
+            expectedPrefix,
             viewModel.ChangesSummary
         );
     }

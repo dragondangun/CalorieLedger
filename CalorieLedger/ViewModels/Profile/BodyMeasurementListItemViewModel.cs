@@ -112,61 +112,98 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
             values);
     }
 
-    private static string FormatChanges(
-        BodyMeasurementEntry entry,
-        BodyMeasurementEntry? previousMeasurement)
-    {
+    private static string FormatChanges(BodyMeasurementEntry entry, BodyMeasurementEntry? previousMeasurement) {
         if(previousMeasurement is null) {
             return string.Empty;
         }
 
-        var values = new List<string> {
-            $"вес {FormatSignedDifference(
-                entry.WeightKg - previousMeasurement.WeightKg,
-                " кг"
-            )}",
-        };
+        var values = new List<string>();
+
+        AddDifference(
+            values,
+            label: "вес",
+            difference: entry.WeightKg - previousMeasurement.WeightKg,
+            suffix: " кг"
+        );
 
         if(entry.BodyFatPercent is decimal bodyFatPercent
             && previousMeasurement.BodyFatPercent is decimal previousBodyFatPercent) {
-            values.Add(
-                $"жир {FormatSignedDifference(
-                    bodyFatPercent - previousBodyFatPercent,
-                    " п.п."
-                )}"
+            AddDifference(
+                values,
+                label: "жир",
+                difference: bodyFatPercent - previousBodyFatPercent,
+                suffix: " п.п."
             );
         }
 
         if(entry.MuscleMassKg is decimal muscleMassKg
             && previousMeasurement.MuscleMassKg is decimal previousMuscleMassKg) {
-            values.Add(
-                $"мышцы {FormatSignedDifference(
-                    muscleMassKg - previousMuscleMassKg,
-                    " кг"
-                )}"
+            AddDifference(
+                values,
+                label: "мышцы",
+                difference: muscleMassKg - previousMuscleMassKg,
+                suffix: " кг"
             );
         }
         else if(entry.MusclePercent is decimal musclePercent
             && previousMeasurement.MusclePercent is decimal previousMusclePercent) {
-            values.Add(
-                $"мышцы {FormatSignedDifference(
-                    musclePercent - previousMusclePercent,
-                    " п.п."
-                )}"
+            AddDifference(
+                values,
+                label: "мышцы",
+                difference: musclePercent - previousMusclePercent,
+                suffix: " п.п."
             );
         }
 
         if(entry.BoneMassKg is decimal boneMassKg
             && previousMeasurement.BoneMassKg is decimal previousBoneMassKg) {
-            values.Add(
-                $"кости {FormatSignedDifference(
-                    boneMassKg - previousBoneMassKg,
-                    " кг"
-                )}"
+            AddDifference(
+                values,
+                label: "кости",
+                difference: boneMassKg - previousBoneMassKg,
+                suffix: " кг"
             );
         }
 
-        return $"С прошлого измерения: {string.Join(" · ", values)}";
+        var dayCount = Math.Abs(
+            entry.Date.DayNumber
+            - previousMeasurement.Date.DayNumber
+        );
+
+        var periodSummary = $"За {FormatDayCount(dayCount)}";
+
+        return values.Count == 0
+            ? $"{periodSummary}: без изменений"
+            : $"{periodSummary}: {string.Join(" · ", values)}";
+    }
+
+    private static void AddDifference(
+        ICollection<string> values,
+        string label,
+        decimal difference,
+        string suffix)
+    {
+        if(difference == 0m) {
+            return;
+        }
+
+        values.Add(
+            $"{label} {FormatSignedDifference(difference, suffix)}"
+        );
+    }
+
+    private static string FormatDayCount(int dayCount) {
+        var lastTwoDigits = dayCount % 100;
+
+        var suffix = lastTwoDigits is >= 11 and <= 14
+            ? "дней"
+            : (dayCount % 10) switch {
+                1 => "день",
+                2 or 3 or 4 => "дня",
+                _ => "дней",
+            };
+
+        return $"{dayCount} {suffix}";
     }
 
     private static string FormatSignedDifference(
