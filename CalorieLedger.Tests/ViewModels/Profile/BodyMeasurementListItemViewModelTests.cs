@@ -326,6 +326,29 @@ public sealed class
         );
     }
 
+    [Fact]
+    public void Constructor_DefaultMeasurement_IsNotLatest() {
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: CreateEntry(),
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.False(viewModel.IsLatest);
+    }
+
+    [Fact]
+    public void Constructor_LatestMeasurement_IsMarkedAsLatest() {
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: CreateEntry(),
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: true
+        );
+
+        Assert.True(viewModel.IsLatest);
+    }
+
     private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),

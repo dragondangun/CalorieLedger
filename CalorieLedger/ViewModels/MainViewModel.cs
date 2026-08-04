@@ -267,16 +267,17 @@ public partial class MainViewModel:ViewModelBase {
         // Хранилище возвращает записи от старых к новым.
         // На экране показываем новые сверху.
         for(var index = measurements.Count - 1; index >= 0; index--) {
-            var previousMeasurement = index > 0
-            ? measurements[index - 1]
-            : null;
+            BodyMeasurementEntry? previousMeasurement = index > 0
+                    ? measurements[index - 1]
+                    : null;
 
             BodyMeasurements.Add(
                 new BodyMeasurementListItemViewModel(
                     entry: measurements[index],
                     onEdit: EditBodyMeasurement,
                     onDelete: DeleteBodyMeasurement,
-                    previousMeasurement: previousMeasurement
+                    previousMeasurement: previousMeasurement,
+                    isLatest: index == measurements.Count - 1
                 )
             );
         }

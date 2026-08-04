@@ -464,6 +464,46 @@ public sealed class
         Assert.False(viewModel.ToggleBodyMeasurementHistoryCommand.CanExecute(null));
     }
 
+    [Fact]
+    public void Constructor_MarksOnlyNewestMeasurementAsLatest() {
+        var currentDate = new DateOnly(2026, 7, 28);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-2),
+                WeightKg: 80m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 79.5m
+            )
+        );
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.True(
+            viewModel.BodyMeasurements[0].IsLatest
+        );
+
+        Assert.False(
+            viewModel.BodyMeasurements[1].IsLatest
+        );
+
+        Assert.Single(
+            viewModel.BodyMeasurements,
+            measurement => measurement.IsLatest
+        );
+    }
+
     private static InMemoryBodyMeasurementStore CreateStoreWithMeasurements(
         int measurementCount,
         DateOnly latestDate)

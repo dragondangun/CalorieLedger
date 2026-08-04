@@ -26,6 +26,8 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public bool HasChangesSummary => !string.IsNullOrWhiteSpace(ChangesSummary);
 
+    public bool IsLatest { get; }
+
     [ObservableProperty]
     private bool isDeleteConfirmationVisible;
 
@@ -35,7 +37,8 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         BodyMeasurementEntry entry,
         Action<Guid> onEdit,
         Action<Guid> onDelete,
-        BodyMeasurementEntry? previousMeasurement = null)
+        BodyMeasurementEntry? previousMeasurement = null,
+        bool isLatest = false)
     {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(onEdit);
@@ -45,7 +48,12 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         DateSummary = FormatDate(entry.Date);
         WeightSummary = FormatWeight(entry.WeightKg);
         AdditionalValuesSummary = FormatAdditionalValues(entry);
-        ChangesSummary = FormatChanges(entry, previousMeasurement);
+        ChangesSummary = FormatChanges(
+            entry,
+            previousMeasurement
+        );
+
+        IsLatest = isLatest;
 
         this.onEdit = onEdit;
         this.onDelete = onDelete;

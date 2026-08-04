@@ -18,9 +18,27 @@
             Grid.Column="0"
             Spacing="2">
 
-          <TextBlock
-              Text="{Binding DateSummary}"
-              FontWeight="SemiBold" />
+          <StackPanel
+              Orientation="Horizontal"
+              Spacing="8">
+
+              <TextBlock
+                  Text="{Binding DateSummary}"
+                  VerticalAlignment="Center"
+                  FontWeight="SemiBold" />
+
+              <Border
+                  IsVisible="{Binding IsLatest}"
+                  Padding="6,2"
+                  BorderThickness="1"
+                  CornerRadius="6">
+
+                  <TextBlock
+                      Text="Текущее"
+                      FontSize="11"
+                      FontWeight="SemiBold" />
+              </Border>
+          </StackPanel>
 
           <TextBlock
               Text="{Binding WeightSummary}"
