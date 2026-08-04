@@ -535,6 +535,91 @@ public sealed class
         );
     }
 
+    [Fact]
+    public void Constructor_WeightOnly_ShowsCompletenessNotice() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.True(
+            viewModel.HasDataCompletenessNotice
+        );
+
+        Assert.Equal(
+            "Указан только вес",
+            viewModel.DataCompletenessText
+        );
+
+        Assert.False(
+            viewModel.HasAdditionalValues
+        );
+    }
+
+    [Fact]
+    public void Constructor_PartialBodyComposition_ShowsCompletenessNotice() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            BodyFatPercent: 20m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.True(
+            viewModel.HasDataCompletenessNotice
+        );
+
+        Assert.Equal(
+            "Состав тела указан частично",
+            viewModel.DataCompletenessText
+        );
+
+        Assert.True(
+            viewModel.HasAdditionalValues
+        );
+    }
+
+    [Fact]
+    public void Constructor_CompleteBodyComposition_HidesCompletenessNotice() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            BodyFatPercent: 20m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35m,
+            MusclePercent: 43.75m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.False(
+            viewModel.HasDataCompletenessNotice
+        );
+
+        Assert.Equal(
+            string.Empty,
+            viewModel.DataCompletenessText
+        );
+    }
+
     private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),

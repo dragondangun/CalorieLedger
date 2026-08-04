@@ -42,6 +42,10 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public bool CanAddMeasurement => IsLatestMeasurementStale && onAddMeasurement is not null;
 
+    public string DataCompletenessText { get; }
+
+    public bool HasDataCompletenessNotice => !string.IsNullOrWhiteSpace(DataCompletenessText);
+
     public BodyMeasurementListItemViewModel(
         BodyMeasurementEntry entry,
         Action<Guid> onEdit,
@@ -59,6 +63,8 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         DateSummary = FormatDate(entry.Date);
         WeightSummary = FormatWeight(entry.WeightKg);
         AdditionalValuesSummary = FormatAdditionalValues(entry);
+        DataCompletenessText = FormatDataCompleteness(entry);
+
         ChangesSummary = FormatChanges(
             entry,
             previousMeasurement
@@ -262,6 +268,32 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
             " · ",
             values
         );
+    }
+
+    private static string FormatDataCompleteness(BodyMeasurementEntry entry) {
+        var bodyCompositionValueCount = 0;
+
+        if(entry.BodyFatPercent is not null) {
+            bodyCompositionValueCount++;
+        }
+
+        if(entry.BoneMassKg is not null) {
+            bodyCompositionValueCount++;
+        }
+
+        if(entry.MuscleMassKg is not null) {
+            bodyCompositionValueCount++;
+        }
+
+        if(entry.MusclePercent is not null) {
+            bodyCompositionValueCount++;
+        }
+
+        return bodyCompositionValueCount switch {
+            0 => "Указан только вес",
+            < 4 => "Состав тела указан частично",
+            _ => string.Empty,
+        };
     }
 
     private static string FormatLatestBadgeText(
