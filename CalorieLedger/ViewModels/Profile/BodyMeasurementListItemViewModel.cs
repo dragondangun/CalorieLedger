@@ -150,7 +150,7 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
             && previousMeasurement.MusclePercent is decimal previousMusclePercent) {
             AddDifference(
                 values,
-                label: "мышцы",
+                label: "доля мышц",
                 difference: musclePercent - previousMusclePercent,
                 suffix: " п.п."
             );
@@ -254,7 +254,7 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
         if(entry.MusclePercent is decimal musclePercent) {
             values.Add(
-                $"мышцы {musclePercent.ToString("0.0", RussianCulture)}%"
+                $"доля мышц {musclePercent.ToString("0.0", RussianCulture)}%"
             );
         }
 

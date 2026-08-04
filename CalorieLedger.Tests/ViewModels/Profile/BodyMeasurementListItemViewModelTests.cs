@@ -45,7 +45,7 @@ public sealed class
             viewModel.AdditionalValuesSummary);
 
         Assert.Contains(
-            "мышцы 43,8%",
+            "доля мышц 43,8%",
             viewModel.AdditionalValuesSummary);
 
         Assert.True(viewModel.HasAdditionalValues);
@@ -255,7 +255,7 @@ public sealed class
         );
 
         Assert.Contains(
-            "мышцы +0,5 п.п.",
+            "доля мышц +0,5 п.п.",
             viewModel.ChangesSummary
         );
     }
@@ -506,6 +506,33 @@ public sealed class
         Assert.True(viewModel.IsLatestMeasurementStale);
         Assert.False(viewModel.CanAddMeasurement);
         Assert.False(viewModel.AddMeasurementCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void Constructor_FormatsMuscleMassAndPercentageWithDifferentLabels() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            MuscleMassKg: 35.2m,
+            MusclePercent: 44m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.Contains(
+            "мышцы 35,2 кг",
+            viewModel.AdditionalValuesSummary
+        );
+
+        Assert.Contains(
+            "доля мышц 44,0%",
+            viewModel.AdditionalValuesSummary
+        );
     }
 
     private static BodyMeasurementEntry CreateEntry() {
