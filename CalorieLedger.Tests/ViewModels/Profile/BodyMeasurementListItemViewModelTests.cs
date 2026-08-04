@@ -564,35 +564,6 @@ public sealed class
     }
 
     [Fact]
-    public void Constructor_PartialBodyComposition_ShowsCompletenessNotice() {
-        var entry = new BodyMeasurementEntry(
-            Id: Guid.NewGuid(),
-            Date: new DateOnly(2026, 8, 4),
-            WeightKg: 80m,
-            BodyFatPercent: 20m
-        );
-
-        var viewModel = new BodyMeasurementListItemViewModel(
-            entry: entry,
-            onEdit: _ => { },
-            onDelete: _ => { }
-        );
-
-        Assert.True(
-            viewModel.HasDataCompletenessNotice
-        );
-
-        Assert.Equal(
-            "Состав тела указан частично",
-            viewModel.DataCompletenessText
-        );
-
-        Assert.True(
-            viewModel.HasAdditionalValues
-        );
-    }
-
-    [Fact]
     public void Constructor_CompleteBodyComposition_HidesCompletenessNotice() {
         var entry = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
@@ -614,9 +585,109 @@ public sealed class
             viewModel.HasDataCompletenessNotice
         );
 
+        Assert.Equal(   
+            string.Empty,
+            viewModel.DataCompletenessText
+        );
+    }
+
+    [Fact]
+    public void Constructor_PartialBodyComposition_ListsMissingValues() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            BodyFatPercent: 20m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.True(
+            viewModel.HasDataCompletenessNotice
+        );
+
+        Assert.Equal(
+            "Не указаны: кости, мышцы",
+            viewModel.DataCompletenessText
+        );
+    }
+
+    [Fact]
+    public void Constructor_OneMissingBodyCompositionValue_UsesSingularText() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.True(
+            viewModel.HasDataCompletenessNotice
+        );
+
+        Assert.Equal(
+            "Не указано: жир",
+            viewModel.DataCompletenessText
+        );
+    }
+
+    [Fact]
+    public void Constructor_MuscleMassWithoutPercentage_CanBeComplete() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            BodyFatPercent: 20m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 35m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.False(
+            viewModel.HasDataCompletenessNotice
+        );
+
         Assert.Equal(
             string.Empty,
             viewModel.DataCompletenessText
+        );
+    }
+
+    [Fact]
+    public void Constructor_MusclePercentageWithoutMass_CanBeComplete() {
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 4),
+            WeightKg: 80m,
+            BodyFatPercent: 20m,
+            BoneMassKg: 3.2m,
+            MusclePercent: 43.75m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { }
+        );
+
+        Assert.False(
+            viewModel.HasDataCompletenessNotice
         );
     }
 

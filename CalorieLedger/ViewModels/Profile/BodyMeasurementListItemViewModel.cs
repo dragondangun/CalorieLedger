@@ -270,29 +270,28 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         );
     }
 
-    private static string FormatDataCompleteness(BodyMeasurementEntry entry) {
-        var bodyCompositionValueCount = 0;
+    private static string FormatDataCompleteness( BodyMeasurementEntry entry) {
+        var missingValues = new List<string>();
 
-        if(entry.BodyFatPercent is not null) {
-            bodyCompositionValueCount++;
+        if(entry.BodyFatPercent is null) {
+            missingValues.Add("жир");
         }
 
-        if(entry.BoneMassKg is not null) {
-            bodyCompositionValueCount++;
+        if(entry.BoneMassKg is null) {
+            missingValues.Add("кости");
         }
 
-        if(entry.MuscleMassKg is not null) {
-            bodyCompositionValueCount++;
+        if(entry.MuscleMassKg is null
+            && entry.MusclePercent is null) {
+            missingValues.Add("мышцы");
         }
 
-        if(entry.MusclePercent is not null) {
-            bodyCompositionValueCount++;
-        }
-
-        return bodyCompositionValueCount switch {
-            0 => "Указан только вес",
-            < 4 => "Состав тела указан частично",
-            _ => string.Empty,
+        return missingValues.Count switch
+        {
+            0 => string.Empty,
+            3 => "Указан только вес",
+            1 => $"Не указано: {missingValues[0]}",
+            _ => $"Не указаны: {string.Join(", ", missingValues)}",
         };
     }
 
