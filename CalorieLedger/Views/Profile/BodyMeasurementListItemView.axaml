@@ -39,13 +39,28 @@
                       FontWeight="SemiBold" />
               </Border>
           </StackPanel>
-          <TextBlock
+          <Border
               IsVisible="{Binding IsLatestMeasurementStale}"
-              Text="Последнее измерение сделано более 14 дней назад."
-              TextWrapping="Wrap"
-              FontSize="12"
-              FontStyle="Italic"
-              Opacity="0.75" />
+              Padding="10"
+              BorderThickness="1"
+              CornerRadius="8">
+
+              <StackPanel Spacing="8">
+
+                  <TextBlock
+                      Text="Последнее измерение сделано более 14 дней назад."
+                      TextWrapping="Wrap"
+                      FontSize="12"
+                      FontStyle="Italic"
+                      Opacity="0.75" />
+
+                  <Button
+                      IsVisible="{Binding CanAddMeasurement}"
+                      Content="Добавить новое измерение"
+                      Command="{Binding AddMeasurementCommand}"
+                      HorizontalAlignment="Left" />
+              </StackPanel>
+          </Border>
 
           <TextBlock
               Text="{Binding WeightSummary}"

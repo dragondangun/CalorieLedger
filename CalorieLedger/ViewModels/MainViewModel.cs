@@ -279,7 +279,8 @@ public partial class MainViewModel:ViewModelBase {
                     onDelete: DeleteBodyMeasurement,
                     previousMeasurement: previousMeasurement,
                     isLatest: index == measurements.Count - 1,
-                    currentDate: currentDate
+                    currentDate: currentDate,
+                    onAddMeasurement: AddBodyMeasurement
                 )
             );
         }

@@ -437,6 +437,77 @@ public sealed class
         );
     }
 
+    [Fact]
+    public void AddMeasurementCommand_StaleLatestMeasurement_InvokesCallback() {
+        var addInvoked = false;
+        var currentDate = new DateOnly(2026, 8, 4);
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry:
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate.AddDays(-15),
+                    WeightKg: 80m
+                ),
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: true,
+            currentDate: currentDate,
+            onAddMeasurement: () => addInvoked = true
+        );
+
+        Assert.True(viewModel.CanAddMeasurement);
+        Assert.True(viewModel.AddMeasurementCommand.CanExecute(null));
+
+        viewModel.AddMeasurementCommand.Execute(null);
+
+        Assert.True(addInvoked);
+    }
+
+    [Fact]
+    public void AddMeasurementCommand_FreshMeasurement_IsUnavailable() {
+        var currentDate = new DateOnly(2026, 8, 4);
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry:
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate,
+                    WeightKg: 80m
+                ),
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: true,
+            currentDate: currentDate,
+            onAddMeasurement: () => { }
+        );
+
+        Assert.False(viewModel.CanAddMeasurement);
+        Assert.False(viewModel.AddMeasurementCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void AddMeasurementCommand_WithoutCallback_IsUnavailable() {
+        var currentDate = new DateOnly(2026, 8, 4);
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry:
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate.AddDays(-30),
+                    WeightKg: 80m
+                ),
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: true,
+            currentDate: currentDate
+        );
+
+        Assert.True(viewModel.IsLatestMeasurementStale);
+        Assert.False(viewModel.CanAddMeasurement);
+        Assert.False(viewModel.AddMeasurementCommand.CanExecute(null));
+    }
+
     private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),

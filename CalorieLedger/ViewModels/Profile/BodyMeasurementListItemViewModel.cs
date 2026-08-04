@@ -11,6 +11,7 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
     private readonly Action<Guid> onEdit;
     private readonly Action<Guid> onDelete;
+    private readonly Action? onAddMeasurement;
 
     public Guid Id { get; }
 
@@ -39,13 +40,16 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public bool ArePrimaryActionsVisible => !IsDeleteConfirmationVisible;
 
+    public bool CanAddMeasurement => IsLatestMeasurementStale && onAddMeasurement is not null;
+
     public BodyMeasurementListItemViewModel(
         BodyMeasurementEntry entry,
         Action<Guid> onEdit,
         Action<Guid> onDelete,
         BodyMeasurementEntry? previousMeasurement = null,
         bool isLatest = false,
-        DateOnly? currentDate = null) 
+        DateOnly? currentDate = null,
+        Action? onAddMeasurement = null)
     {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(onEdit);
@@ -61,6 +65,7 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         );
 
         IsLatest = isLatest;
+
         LatestBadgeText = FormatLatestBadgeText(
             measurementDate: entry.Date,
             currentDate: currentDate,
@@ -76,6 +81,7 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
         this.onEdit = onEdit;
         this.onDelete = onDelete;
+        this.onAddMeasurement = onAddMeasurement;
     }
 
     [RelayCommand]
@@ -97,6 +103,11 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
     [RelayCommand]
     private void CancelDelete() {
         IsDeleteConfirmationVisible = false;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAddMeasurement))]
+    private void AddMeasurement() {
+        onAddMeasurement?.Invoke();
     }
 
     partial void OnIsDeleteConfirmationVisibleChanged(bool value) {
