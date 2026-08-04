@@ -263,13 +263,14 @@ public partial class MainViewModel:ViewModelBase {
         BodyMeasurements.Clear();
 
         var measurements = bodyMeasurementHistoryService.GetAll();
-
+        var currentDate = currentDateProvider.GetCurrentDate();
         // Хранилище возвращает записи от старых к новым.
         // На экране показываем новые сверху.
+
         for(var index = measurements.Count - 1; index >= 0; index--) {
             BodyMeasurementEntry? previousMeasurement = index > 0
-                    ? measurements[index - 1]
-                    : null;
+                ? measurements[index - 1]
+                : null;
 
             BodyMeasurements.Add(
                 new BodyMeasurementListItemViewModel(
@@ -277,7 +278,8 @@ public partial class MainViewModel:ViewModelBase {
                     onEdit: EditBodyMeasurement,
                     onDelete: DeleteBodyMeasurement,
                     previousMeasurement: previousMeasurement,
-                    isLatest: index == measurements.Count - 1
+                    isLatest: index == measurements.Count - 1,
+                    currentDate: currentDate
                 )
             );
         }

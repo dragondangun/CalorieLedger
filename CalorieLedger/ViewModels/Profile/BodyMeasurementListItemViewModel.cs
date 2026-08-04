@@ -28,6 +28,12 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public bool IsLatest { get; }
 
+    private const int MeasurementFreshnessWarningDayCount = 14;
+
+    public string LatestBadgeText { get; }
+
+    public bool IsLatestMeasurementStale { get; }
+
     [ObservableProperty]
     private bool isDeleteConfirmationVisible;
 
@@ -38,7 +44,8 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         Action<Guid> onEdit,
         Action<Guid> onDelete,
         BodyMeasurementEntry? previousMeasurement = null,
-        bool isLatest = false)
+        bool isLatest = false,
+        DateOnly? currentDate = null) 
     {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(onEdit);
@@ -54,6 +61,18 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         );
 
         IsLatest = isLatest;
+        LatestBadgeText = FormatLatestBadgeText(
+            measurementDate: entry.Date,
+            currentDate: currentDate,
+            isLatest: isLatest
+        );
+
+        IsLatestMeasurementStale =
+            IsMeasurementStale(
+                measurementDate: entry.Date,
+                currentDate: currentDate,
+                isLatest: isLatest
+            );
 
         this.onEdit = onEdit;
         this.onDelete = onDelete;
@@ -269,5 +288,42 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
             " · ",
             values
         );
+    }
+
+    private static string FormatLatestBadgeText(
+        DateOnly measurementDate,
+        DateOnly? currentDate,
+        bool isLatest)
+    {
+        if(!isLatest) {
+            return string.Empty;
+        }
+
+        if(currentDate is null) {
+            return "Последнее";
+        }
+
+        var dayCount = currentDate.Value.DayNumber - measurementDate.DayNumber;
+
+        return dayCount switch {
+            < 0 => "Последнее · будущая дата",
+            0 => "Последнее · сегодня",
+            1 => "Последнее · вчера",
+            _ => $"Последнее · {FormatDayCount(dayCount)} назад",
+        };
+    }
+
+    private static bool IsMeasurementStale(
+        DateOnly measurementDate,
+        DateOnly? currentDate,
+        bool isLatest)
+    {
+        if(!isLatest || currentDate is null) {
+            return false;
+        }
+
+        var dayCount = currentDate.Value.DayNumber - measurementDate.DayNumber;
+
+        return dayCount > MeasurementFreshnessWarningDayCount;
     }
 }

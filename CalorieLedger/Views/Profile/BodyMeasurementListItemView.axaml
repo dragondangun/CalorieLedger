@@ -34,11 +34,18 @@
                   CornerRadius="6">
 
                   <TextBlock
-                      Text="Текущее"
+                      Text="{Binding LatestBadgeText}"
                       FontSize="11"
                       FontWeight="SemiBold" />
               </Border>
           </StackPanel>
+          <TextBlock
+              IsVisible="{Binding IsLatestMeasurementStale}"
+              Text="Последнее измерение сделано более 14 дней назад."
+              TextWrapping="Wrap"
+              FontSize="12"
+              FontStyle="Italic"
+              Opacity="0.75" />
 
           <TextBlock
               Text="{Binding WeightSummary}"

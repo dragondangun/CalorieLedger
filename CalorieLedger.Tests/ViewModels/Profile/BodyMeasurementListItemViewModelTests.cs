@@ -349,6 +349,94 @@ public sealed class
         Assert.True(viewModel.IsLatest);
     }
 
+    [Theory]
+    [InlineData(0, "Последнее · сегодня")]
+    [InlineData(1, "Последнее · вчера")]
+    [InlineData(2, "Последнее · 2 дня назад")]
+    [InlineData(5, "Последнее · 5 дней назад")]
+    [InlineData(21, "Последнее · 21 день назад")]
+    public void Constructor_LatestMeasurement_FormatsFreshness(
+        int dayCount,
+        string expectedText)
+    {
+        var currentDate = new DateOnly(2026, 8, 4);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-dayCount),
+            WeightKg: 80m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: true,
+            currentDate: currentDate
+        );
+
+        Assert.Equal(
+            expectedText,
+            viewModel.LatestBadgeText
+        );
+    }
+
+    [Theory]
+    [InlineData(14, false)]
+    [InlineData(15, true)]
+    public void Constructor_LatestMeasurement_DetectsStaleData(
+        int dayCount,
+        bool expectedIsStale)
+    {
+        var currentDate = new DateOnly(2026, 8, 4);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-dayCount),
+            WeightKg: 80m
+        );
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry: entry,
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: true,
+            currentDate: currentDate
+        );
+
+        Assert.Equal(
+            expectedIsStale,
+            viewModel.IsLatestMeasurementStale
+        );
+    }
+
+    [Fact]
+    public void Constructor_OlderMeasurement_HasNoLatestStatus() {
+        var currentDate = new DateOnly(2026, 8, 4);
+
+        var viewModel = new BodyMeasurementListItemViewModel(
+            entry:
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate.AddDays(-30),
+                    WeightKg: 80m
+                ),
+            onEdit: _ => { },
+            onDelete: _ => { },
+            isLatest: false,
+            currentDate: currentDate
+        );
+
+        Assert.Equal(
+            string.Empty,
+            viewModel.LatestBadgeText
+        );
+
+        Assert.False(
+            viewModel.IsLatestMeasurementStale
+        );
+    }
+
     private static BodyMeasurementEntry CreateEntry() {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
