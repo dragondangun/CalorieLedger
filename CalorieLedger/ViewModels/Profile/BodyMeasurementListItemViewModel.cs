@@ -72,12 +72,11 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
             isLatest: isLatest
         );
 
-        IsLatestMeasurementStale =
-            IsMeasurementStale(
-                measurementDate: entry.Date,
-                currentDate: currentDate,
-                isLatest: isLatest
-            );
+        IsLatestMeasurementStale = IsMeasurementStale(
+            measurementDate: entry.Date,
+            currentDate: currentDate,
+            isLatest: isLatest
+        );
 
         this.onEdit = onEdit;
         this.onDelete = onDelete;
@@ -112,42 +111,6 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     partial void OnIsDeleteConfirmationVisibleChanged(bool value) {
         OnPropertyChanged(nameof(ArePrimaryActionsVisible));
-    }
-
-    private static string BuildAdditionalValuesSummary(BodyMeasurementEntry entry) {
-        var values = new List<string>();
-
-        if(entry.BodyFatPercent is not null) {
-            values.Add(
-                $"жир {entry.BodyFatPercent.Value.ToString(
-                    "0.0",
-                    RussianCulture)}%");
-        }
-
-        if(entry.BoneMassKg is not null) {
-            values.Add(
-                $"кости {entry.BoneMassKg.Value.ToString(
-                    "0.0",
-                    RussianCulture)} кг");
-        }
-
-        if(entry.MuscleMassKg is not null) {
-            values.Add(
-                $"мышцы {entry.MuscleMassKg.Value.ToString(
-                    "0.0",
-                    RussianCulture)} кг");
-        }
-
-        if(entry.MusclePercent is not null) {
-            values.Add(
-                $"мышцы {entry.MusclePercent.Value.ToString(
-                    "0.0",
-                    RussianCulture)}%");
-        }
-
-        return string.Join(
-            " · ",
-            values);
     }
 
     private static string FormatChanges(BodyMeasurementEntry entry, BodyMeasurementEntry? previousMeasurement) {
