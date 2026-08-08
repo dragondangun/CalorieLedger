@@ -1,17 +1,16 @@
-﻿using System;
+using System;
 
 namespace CalorieLedger.ViewModels.Adaptive;
 
 public static class AdaptiveEnergyAssessmentViewModelFactory {
     public static AdaptiveEnergyAssessmentViewModel Create(
         AdaptiveEnergyAssessmentPresentation presentation,
-        Action<AdaptiveEnergyStrategySuggestion> openGoalEditor)
-    {
+        Action<AdaptiveEnergyStrategySuggestion> openGoalEditor
+    ) {
         ArgumentNullException.ThrowIfNull(presentation);
         ArgumentNullException.ThrowIfNull(openGoalEditor);
 
-        return presentation.State switch
-        {
+        return presentation.State switch {
             AdaptiveEnergyAssessmentState.Unavailable =>
                 AdaptiveEnergyAssessmentViewModel.CreateUnavailable(
                     presentation.Details

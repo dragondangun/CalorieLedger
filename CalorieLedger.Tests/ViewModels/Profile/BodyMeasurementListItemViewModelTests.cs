@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
@@ -356,7 +356,7 @@ public sealed class BodyMeasurementListItemViewModelTests {
             viewModel.HasDataCompletenessNotice
         );
 
-        Assert.Equal(   
+        Assert.Equal(
             string.Empty,
             viewModel.DataCompletenessText
         );

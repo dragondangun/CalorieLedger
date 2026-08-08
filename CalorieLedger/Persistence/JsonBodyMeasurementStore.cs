@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Linq;
 namespace CalorieLedger.Persistence;
 
 public sealed class JsonBodyMeasurementStore:IBodyMeasurementStore {
-    private static readonly JsonSerializerOptions serializerOptions = new() {
+    private static readonly JsonSerializerOptions SerializerOptions = new() {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
@@ -20,7 +20,7 @@ public sealed class JsonBodyMeasurementStore:IBodyMeasurementStore {
     public JsonBodyMeasurementStore(string filePath) {
         jsonFile = new AtomicJsonFile<List<BodyMeasurementEntry>>(
             filePath,
-            serializerOptions
+            SerializerOptions
         );
     }
 

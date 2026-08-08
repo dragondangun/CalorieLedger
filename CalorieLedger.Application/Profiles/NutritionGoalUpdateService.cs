@@ -1,28 +1,27 @@
-﻿using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Adaptive;
 using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
 public sealed class NutritionGoalUpdateService {
-    private readonly IUserNutritionProfileStore _profileStore;
+    private readonly IUserNutritionProfileStore profileStore;
 
-    private readonly IAdaptiveEnergyHistoryResetter? _adaptiveEnergyHistoryResetter;
+    private readonly IAdaptiveEnergyHistoryResetter? adaptiveEnergyHistoryResetter;
 
-    public NutritionGoalUpdateService(IUserNutritionProfileStore profileStore)
-        : this(
+    public NutritionGoalUpdateService(IUserNutritionProfileStore profileStore) : this(
             profileStore,
-            adaptiveEnergyHistoryResetter: null) {
-    }
+            adaptiveEnergyHistoryResetter: null
+    ) { }
 
     public NutritionGoalUpdateService(
         IUserNutritionProfileStore profileStore,
-        IAdaptiveEnergyHistoryResetter?
-            adaptiveEnergyHistoryResetter) {
+        IAdaptiveEnergyHistoryResetter? adaptiveEnergyHistoryResetter
+    ) {
         ArgumentNullException.ThrowIfNull(profileStore);
 
-        _profileStore = profileStore;
+        this.profileStore = profileStore;
 
-        _adaptiveEnergyHistoryResetter = adaptiveEnergyHistoryResetter;
+        this.adaptiveEnergyHistoryResetter = adaptiveEnergyHistoryResetter;
     }
 
     public NutritionGoalUpdateResult UpdateGoal(NutritionGoal goal) {
@@ -36,16 +35,16 @@ public sealed class NutritionGoalUpdateService {
                 Errors: validationResult.Errors);
         }
 
-        var previousGoal = _profileStore.GetCurrentProfile().Goal;
+        var previousGoal = profileStore.GetCurrentProfile().Goal;
 
         var shouldResetAdaptiveHistory = AdaptiveEnergyHistoryResetPolicy.ShouldReset(
             previousGoal,
             goal);
 
-        _profileStore.UpdateGoal(goal);
+        profileStore.UpdateGoal(goal);
 
         if(shouldResetAdaptiveHistory) {
-            _adaptiveEnergyHistoryResetter?.ResetHistory();
+            adaptiveEnergyHistoryResetter?.ResetHistory();
         }
 
         return new NutritionGoalUpdateResult(

@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
@@ -12,8 +12,7 @@ public sealed class SampleUserNutritionProfileProvider
     }
 
     public void UpdateGoal(NutritionGoal goal) {
-        currentProfile = currentProfile with
-        {
+        currentProfile = currentProfile with {
             Goal = goal
         };
     }

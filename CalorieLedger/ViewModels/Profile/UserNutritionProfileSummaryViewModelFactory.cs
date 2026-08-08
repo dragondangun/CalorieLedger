@@ -1,28 +1,26 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using CalorieLedger.Domain.Profile;
-
-namespace CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Common;
 
-public static class UserNutritionProfileSummaryViewModelFactory {
-    private const int FreshMeasurementMaximumAgeDays = 14;
+namespace CalorieLedger.ViewModels.Profile;
 
-    private static readonly CultureInfo russianCulture = CultureInfo.GetCultureInfo("ru-RU");
+public static class UserNutritionProfileSummaryViewModelFactory {
+    private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     public static UserNutritionProfileSummaryViewModel Create(
         UserNutritionProfile profile,
         BodyMeasurementEntry? latestMeasurement,
         DateOnly currentDate,
         Action editProfile,
-        Action addBodyMeasurement)
-    {
+        Action addBodyMeasurement
+    ) {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(editProfile);
         ArgumentNullException.ThrowIfNull(addBodyMeasurement);
 
-        var personalDataSummary = $"{FormatSex(profile.Body.Sex)} · {FormatAge(profile.Body.AgeYears)} · {profile.Body.HeightCm.ToString("0.0", russianCulture)} см";
+        var personalDataSummary = $"{FormatSex(profile.Body.Sex)} · {FormatAge(profile.Body.AgeYears)} · {profile.Body.HeightCm.ToString("0.0", RussianCulture)} см";
 
         var weightSourceSummary = FormatWeightSource(latestMeasurement);
 
@@ -35,7 +33,7 @@ public static class UserNutritionProfileSummaryViewModelFactory {
             displayName: profile.DisplayName,
             personalDataSummary: personalDataSummary,
             activitySummary: $"Активность: {FormatActivity(profile.LifestyleActivityLevel)}",
-            weightSummary: $"Вес: {profile.Body.WeightKg.ToString("0.0", russianCulture)} кг",
+            weightSummary: $"Вес: {profile.Body.WeightKg.ToString("0.0", RussianCulture)} кг",
             weightSourceSummary: weightSourceSummary,
             bodyCompositionSummary: FormatBodyComposition(profile.Body),
             measurementWarning: measurementWarning,
@@ -51,7 +49,7 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
         var measurementDate = latestMeasurement.Date.ToString(
             "dd.MM.yyyy",
-            russianCulture
+            RussianCulture
         );
 
         return $"Последнее измерение: {measurementDate}";
@@ -59,8 +57,8 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
     private static string FormatMeasurementWarning(
         BodyMeasurementEntry? latestMeasurement,
-        DateOnly currentDate)
-    {
+        DateOnly currentDate
+    ) {
         if(latestMeasurement is null) {
             return "Добавьте измерение тела, чтобы вес и состав тела обновлялись по истории измерений.";
         }
@@ -82,25 +80,25 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
         if(body.BodyFatPercent is decimal bodyFatPercent) {
             values.Add(
-                $"жир {bodyFatPercent.ToString("0.0", russianCulture)}%"
+                $"жир {bodyFatPercent.ToString("0.0", RussianCulture)}%"
             );
         }
 
         if(body.MuscleMassKg is decimal muscleMassKg) {
             values.Add(
-                $"мышцы {muscleMassKg.ToString("0.0", russianCulture)} кг"
+                $"мышцы {muscleMassKg.ToString("0.0", RussianCulture)} кг"
             );
         }
 
         if(body.MusclePercent is decimal musclePercent) {
             values.Add(
-                $"{musclePercent.ToString("0.0", russianCulture)}%"
+                $"{musclePercent.ToString("0.0", RussianCulture)}%"
             );
         }
 
         if(body.BoneMassKg is decimal boneMassKg) {
             values.Add(
-                $"кости {boneMassKg.ToString("0.0", russianCulture)} кг"
+                $"кости {boneMassKg.ToString("0.0", RussianCulture)} кг"
             );
         }
 
@@ -124,8 +122,8 @@ public static class UserNutritionProfileSummaryViewModelFactory {
         int value,
         string singular,
         string paucal,
-        string plural)
-    {
+        string plural
+    ) {
         var lastTwoDigits = value % 100;
 
         if(lastTwoDigits is >= 11 and <= 14) {

@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
@@ -50,8 +50,8 @@ public sealed class UserNutritionProfileEditorService {
 
     private static IReadOnlyList<UserNutritionProfileValidationError> Validate(
         UserNutritionProfileDraft draft,
-        UserNutritionProfile currentProfile)
-    {
+        UserNutritionProfile currentProfile
+    ) {
         var errors = new List<UserNutritionProfileValidationError>();
 
         if(draft.Id == Guid.Empty) {

@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Application.Adaptive;
 
@@ -75,8 +75,7 @@ public sealed class NutritionGoalUpdateServiceTests {
         }
 
         public void UpdateGoal(NutritionGoal goal) {
-            currentProfile = currentProfile with
-            {
+            currentProfile = currentProfile with {
                 Goal = goal
             };
         }

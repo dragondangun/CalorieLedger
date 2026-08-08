@@ -10,11 +10,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-namespace CalorieLedger.ViewModels;
 using CalorieLedger.Application.Time;
 using CalorieLedger.Infrastructure;
-using System.Diagnostics.Metrics;
+
+namespace CalorieLedger.ViewModels;
 
 public partial class MainViewModel:ViewModelBase {
     private readonly ITodayDashboardSnapshotProvider todayProvider;
@@ -65,45 +64,45 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
-    public MainViewModel():this(
+    public MainViewModel() : this(
         JsonBodyMeasurementStore.CreateDefault(),
         JsonUserNutritionProfileStore.CreateDefault(),
         new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
         new SystemCurrentDateProvider()
-    ) {}
+    ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore):this(
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
         new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
         new SystemCurrentDateProvider()
-    ) {}
+    ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, ICurrentDateProvider currentDateProvider):this(
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, ICurrentDateProvider currentDateProvider) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
         new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
         currentDateProvider
-    ) {}
+    ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider):this(
+    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
         adaptiveEnergyAssessmentPresentationProvider,
         new SystemCurrentDateProvider()
-    ) {}
+    ) { }
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
         IAdaptiveEnergyAssessmentPresentationProvider
         adaptiveEnergyAssessmentPresentationProvider)
-    :this(
+    : this(
         bodyMeasurementStore,
         profileStore,
         adaptiveEnergyAssessmentPresentationProvider,
         new SystemCurrentDateProvider()
-    ) {}
+    ) { }
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
@@ -471,13 +470,12 @@ public partial class MainViewModel:ViewModelBase {
 
         VisibleBodyMeasurements.Clear();
 
-        var visibleCount = 
-            IsBodyMeasurementHistoryExpanded
-                ? BodyMeasurements.Count
-                : Math.Min(
-                    CollapsedBodyMeasurementCount,
-                    BodyMeasurements.Count
-                );
+        var visibleCount = IsBodyMeasurementHistoryExpanded
+            ? BodyMeasurements.Count
+            : Math.Min(
+                CollapsedBodyMeasurementCount,
+                BodyMeasurements.Count
+            );
 
         for(var index = 0; index < visibleCount; index++) {
             VisibleBodyMeasurements.Add(

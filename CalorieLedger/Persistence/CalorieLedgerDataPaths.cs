@@ -1,26 +1,23 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace CalorieLedger.Persistence;
 
 internal static class CalorieLedgerDataPaths {
-    private static readonly string applicationDirectory =
-        Path.Combine(
-            Environment.GetFolderPath(
-                Environment.SpecialFolder.LocalApplicationData
-            ),
-            "CalorieLedger"
-        );
+    private static readonly string ApplicationDirectory = Path.Combine(
+        Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData
+        ),
+        "CalorieLedger"
+    );
 
-    public static string BodyMeasurementsFilePath =>
-        Path.Combine(
-            applicationDirectory,
-            "body-measurements.json"
-        );
+    public static string BodyMeasurementsFilePath => Path.Combine(
+        ApplicationDirectory,
+        "body-measurements.json"
+    );
 
-    public static string UserProfileFilePath =>
-        Path.Combine(
-            applicationDirectory,
-            "user-profile.json"
-        );
+    public static string UserProfileFilePath => Path.Combine(
+        ApplicationDirectory,
+        "user-profile.json"
+    );
 }

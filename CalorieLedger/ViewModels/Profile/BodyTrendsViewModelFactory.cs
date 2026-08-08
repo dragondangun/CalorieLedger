@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -68,8 +68,7 @@ public static class BodyTrendsViewModelFactory {
     }
 
     private static BodyTrendDirection GetDirection(decimal weeklyChange) {
-        return weeklyChange switch
-        {
+        return weeklyChange switch {
             < 0m => BodyTrendDirection.Decreasing,
             > 0m => BodyTrendDirection.Increasing,
             _ => BodyTrendDirection.Stable
@@ -77,8 +76,7 @@ public static class BodyTrendsViewModelFactory {
     }
 
     private static string GetDirectionSummary(BodyTrendDirection direction) {
-        return direction switch
-        {
+        return direction switch {
             BodyTrendDirection.Decreasing => "Направление: снижение",
             BodyTrendDirection.Increasing => "Направление: рост",
             BodyTrendDirection.Stable => "Направление: без изменения",

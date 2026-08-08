@@ -1,4 +1,4 @@
-﻿using CalorieLedger.ViewModels.Profile;
+using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
 
@@ -9,10 +9,7 @@ public sealed class BodyMeasurementFreshnessPolicyTests {
     [InlineData(14, false)]
     [InlineData(15, true)]
     [InlineData(30, true)]
-    public void IsStale_ReturnsExpectedValue(
-        int ageInDays,
-        bool expectedIsStale)
-    {
+    public void IsStale_ReturnsExpectedValue(int ageInDays, bool expectedIsStale) {
         var currentDate = new DateOnly(2026, 8, 8);
         var measurementDate = currentDate.AddDays(-ageInDays);
 

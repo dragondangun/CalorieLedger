@@ -79,7 +79,7 @@ public partial class BodyMeasurementEditorViewModel:ViewModelBase {
         measurementId = draft.Id;
 
         isSynchronizingMuscleValues = true;
-        
+
         MeasurementDate = new DateTimeOffset(
             draft.Date.ToDateTime(TimeOnly.MinValue),
             TimeSpan.Zero);
@@ -314,7 +314,7 @@ public partial class BodyMeasurementEditorViewModel:ViewModelBase {
             BodyMeasurementValidationError.InvalidWeight =>
                 "Укажите положительное значение веса.",
 
-            BodyMeasurementValidationError .InvalidBodyFatPercent =>
+            BodyMeasurementValidationError.InvalidBodyFatPercent =>
                 "Процент жира должен быть больше 0 и меньше 100.",
 
             BodyMeasurementValidationError.InvalidBoneMass =>

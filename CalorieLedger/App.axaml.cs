@@ -9,30 +9,22 @@ using CalorieLedger.Views;
 
 namespace CalorieLedger;
 
-public partial class App : Avalonia.Application
-{
-    public override void Initialize()
-    {
+public partial class App:Avalonia.Application {
+    public override void Initialize() {
         AvaloniaXamlLoader.Load(this);
     }
 
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.MainWindow = new MainWindow
-            {
+    public override void OnFrameworkInitializationCompleted() {
+        if(ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+            desktop.MainWindow = new MainWindow {
                 DataContext = new MainViewModel()
             };
         }
-        else if (ApplicationLifetime is IActivityApplicationLifetime singleViewFactoryApplicationLifetime)
-        {
+        else if(ApplicationLifetime is IActivityApplicationLifetime singleViewFactoryApplicationLifetime) {
             singleViewFactoryApplicationLifetime.MainViewFactory = () => new MainView { DataContext = new MainViewModel() };
         }
-        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
-        {
-            singleViewPlatform.MainView = new MainView
-            {
+        else if(ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform) {
+            singleViewPlatform.MainView = new MainView {
                 DataContext = new MainViewModel()
             };
         }

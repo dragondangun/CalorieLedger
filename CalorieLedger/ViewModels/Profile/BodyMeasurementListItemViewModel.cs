@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -48,8 +48,8 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         BodyMeasurementEntry? previousMeasurement = null,
         bool isLatest = false,
         DateOnly? currentDate = null,
-        Action? onAddMeasurement = null)
-    {
+        Action? onAddMeasurement = null
+    ) {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(onEdit);
         ArgumentNullException.ThrowIfNull(onDelete);

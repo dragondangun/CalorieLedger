@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.Json;
 
@@ -10,8 +10,8 @@ internal sealed class AtomicJsonFile<T> where T : class {
 
     public AtomicJsonFile(
         string filePath,
-        JsonSerializerOptions serializerOptions)
-    {
+        JsonSerializerOptions serializerOptions
+    ) {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(serializerOptions);
 

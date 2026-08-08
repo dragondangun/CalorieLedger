@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
@@ -18,8 +18,8 @@ public static class UserNutritionProfileDraftMapper {
 
     public static UserNutritionProfile ApplyToProfile(
         UserNutritionProfileDraft draft,
-        UserNutritionProfile currentProfile)
-    {
+        UserNutritionProfile currentProfile
+    ) {
         ArgumentNullException.ThrowIfNull(draft);
         ArgumentNullException.ThrowIfNull(currentProfile);
 

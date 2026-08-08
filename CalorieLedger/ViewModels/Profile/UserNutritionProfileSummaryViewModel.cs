@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using CommunityToolkit.Mvvm.Input;
 
 namespace CalorieLedger.ViewModels.Profile;
@@ -36,8 +36,8 @@ public sealed partial class UserNutritionProfileSummaryViewModel:ViewModelBase {
         string bodyCompositionSummary,
         string measurementWarning,
         Action editProfile,
-        Action addBodyMeasurement)
-    {
+        Action addBodyMeasurement
+    ) {
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
         ArgumentException.ThrowIfNullOrWhiteSpace(personalDataSummary);
         ArgumentException.ThrowIfNullOrWhiteSpace(activitySummary);

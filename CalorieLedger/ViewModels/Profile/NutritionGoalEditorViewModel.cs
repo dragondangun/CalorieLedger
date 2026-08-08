@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Common;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -78,8 +78,7 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             "Изменение веса в неделю")
     ];
 
-    public decimal StrategyValueMaximum => StrategyMode switch
-    {
+    public decimal StrategyValueMaximum => StrategyMode switch {
         EnergyStrategyMode.BalancePercent => 99.9m,
         EnergyStrategyMode.WeightChangePerWeek => 5m,
 
@@ -89,8 +88,7 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             null)
     };
 
-    public decimal StrategyValueIncrement => StrategyMode switch
-    {
+    public decimal StrategyValueIncrement => StrategyMode switch {
         EnergyStrategyMode.BalancePercent => 0.5m,
         EnergyStrategyMode.WeightChangePerWeek => 0.05m,
 
@@ -100,14 +98,12 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             null)
     };
 
-    public string StrategyValueLabel => GoalType switch
-    {
+    public string StrategyValueLabel => GoalType switch {
         WeightGoalType.Maintain =>
             "Энергетический баланс, %",
 
         WeightGoalType.LoseWeight =>
-            StrategyMode switch
-            {
+            StrategyMode switch {
                 EnergyStrategyMode.BalancePercent =>
                     "Величина дефицита, %",
 
@@ -121,8 +117,7 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
             },
 
         WeightGoalType.GainWeight =>
-            StrategyMode switch
-            {
+            StrategyMode switch {
                 EnergyStrategyMode.BalancePercent =>
                     "Величина профицита, %",
 
@@ -350,8 +345,7 @@ public partial class NutritionGoalEditorViewModel:ViewModelBase {
     }
 
     private static string FormatValidationError(NutritionGoalValidationError error) {
-        return error switch
-        {
+        return error switch {
             NutritionGoalValidationError.InvalidTargetWeight =>
                 "Целевой вес должен быть больше нуля.",
 

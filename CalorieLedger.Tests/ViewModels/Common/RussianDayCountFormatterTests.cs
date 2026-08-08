@@ -1,4 +1,4 @@
-﻿using CalorieLedger.ViewModels.Common;
+using CalorieLedger.ViewModels.Common;
 
 namespace CalorieLedger.Tests.ViewModels.Common;
 
@@ -17,10 +17,7 @@ public sealed class RussianDayCountFormatterTests {
     [InlineData(25, "25 дней")]
     [InlineData(101, "101 день")]
     [InlineData(111, "111 дней")]
-    public void Format_ReturnsRussianDayForm(
-        int dayCount,
-        string expected)
-    {
+    public void Format_ReturnsRussianDayForm(int dayCount, string expected) {
         Assert.Equal(
             expected,
             RussianDayCountFormatter.Format(dayCount)

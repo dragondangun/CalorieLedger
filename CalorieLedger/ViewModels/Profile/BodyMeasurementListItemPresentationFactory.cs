@@ -1,10 +1,10 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using CalorieLedger.ViewModels.Common;
 
 namespace CalorieLedger.ViewModels.Profile;
-using CalorieLedger.ViewModels.Common;
 
 public static class BodyMeasurementListItemPresentationFactory {
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
@@ -13,8 +13,8 @@ public static class BodyMeasurementListItemPresentationFactory {
         BodyMeasurementEntry entry,
         BodyMeasurementEntry? previousMeasurement = null,
         bool isLatest = false,
-        DateOnly? currentDate = null)
-    {
+        DateOnly? currentDate = null
+    ) {
         ArgumentNullException.ThrowIfNull(entry);
 
         return new BodyMeasurementListItemPresentation(
@@ -99,8 +99,8 @@ public static class BodyMeasurementListItemPresentationFactory {
 
     private static string FormatChanges(
         BodyMeasurementEntry entry,
-        BodyMeasurementEntry? previousMeasurement)
-    {
+        BodyMeasurementEntry? previousMeasurement
+    ) {
         if(previousMeasurement is null) {
             return string.Empty;
         }
@@ -115,8 +115,7 @@ public static class BodyMeasurementListItemPresentationFactory {
         );
 
         if(entry.BodyFatPercent is decimal bodyFatPercent
-           && previousMeasurement.BodyFatPercent is decimal previousBodyFatPercent)
-        {
+           && previousMeasurement.BodyFatPercent is decimal previousBodyFatPercent) {
             AddDifference(
                 values,
                 label: "жир",
@@ -126,8 +125,7 @@ public static class BodyMeasurementListItemPresentationFactory {
         }
 
         if(entry.MuscleMassKg is decimal muscleMassKg
-           && previousMeasurement.MuscleMassKg is decimal previousMuscleMassKg)
-        {
+           && previousMeasurement.MuscleMassKg is decimal previousMuscleMassKg) {
             AddDifference(
                 values,
                 label: "мышцы",
@@ -136,8 +134,7 @@ public static class BodyMeasurementListItemPresentationFactory {
             );
         }
         else if(entry.MusclePercent is decimal musclePercent
-                && previousMeasurement.MusclePercent is decimal previousMusclePercent)
-        {
+                && previousMeasurement.MusclePercent is decimal previousMusclePercent) {
             AddDifference(
                 values,
                 label: "доля мышц",
@@ -147,8 +144,7 @@ public static class BodyMeasurementListItemPresentationFactory {
         }
 
         if(entry.BoneMassKg is decimal boneMassKg
-           && previousMeasurement.BoneMassKg is decimal previousBoneMassKg)
-        {
+           && previousMeasurement.BoneMassKg is decimal previousBoneMassKg) {
             AddDifference(
                 values,
                 label: "кости",
@@ -170,8 +166,8 @@ public static class BodyMeasurementListItemPresentationFactory {
         ICollection<string> values,
         string label,
         decimal difference,
-        string suffix)
-    {
+        string suffix
+    ) {
         var roundedDifference = decimal.Round(
             difference,
             decimals: 1,
@@ -187,8 +183,8 @@ public static class BodyMeasurementListItemPresentationFactory {
 
     private static string FormatSignedDifference(
         decimal difference,
-        string suffix)
-    {
+        string suffix
+    ) {
         var sign = difference switch {
             > 0m => "+",
             < 0m => "−",
@@ -201,8 +197,8 @@ public static class BodyMeasurementListItemPresentationFactory {
     private static string FormatLatestBadgeText(
         DateOnly measurementDate,
         DateOnly? currentDate,
-        bool isLatest)
-    {
+        bool isLatest
+    ) {
         if(!isLatest) {
             return string.Empty;
         }
@@ -216,8 +212,7 @@ public static class BodyMeasurementListItemPresentationFactory {
             currentDate.Value
         );
 
-        return dayCount switch
-        {
+        return dayCount switch {
             < 0 => "Последнее · будущая дата",
             0 => "Последнее · сегодня",
             1 => "Последнее · вчера",
@@ -228,8 +223,8 @@ public static class BodyMeasurementListItemPresentationFactory {
     private static bool IsMeasurementStale(
         DateOnly measurementDate,
         DateOnly? currentDate,
-        bool isLatest)
-    {
+        bool isLatest
+    ) {
         return isLatest
             && currentDate is not null
             && BodyMeasurementFreshnessPolicy.IsStale(

@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Adaptive;
 
@@ -272,8 +272,7 @@ public sealed class AdaptiveEnergyAssessmentViewModelFactoryTests {
         }
 
         public void UpdateGoal(NutritionGoal goal) {
-            currentProfile = currentProfile with
-            {
+            currentProfile = currentProfile with {
                 Goal = goal
             };
         }

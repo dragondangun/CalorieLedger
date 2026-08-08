@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using System;
 using System.Text.Json;
@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 namespace CalorieLedger.Persistence;
 
 public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore, IUserNutritionProfileWriter {
-    private static readonly JsonSerializerOptions serializerOptions = new() {
+    private static readonly JsonSerializerOptions SerializerOptions = new() {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
@@ -22,13 +22,13 @@ public sealed class JsonUserNutritionProfileStore:IUserNutritionProfileStore, IU
 
     public JsonUserNutritionProfileStore(
         string filePath,
-        IUserNutritionProfileProvider fallbackProfileProvider)
-    {
+        IUserNutritionProfileProvider fallbackProfileProvider
+    ) {
         ArgumentNullException.ThrowIfNull(fallbackProfileProvider);
 
         jsonFile = new AtomicJsonFile<UserNutritionProfile>(
             filePath,
-            serializerOptions
+            SerializerOptions
         );
 
         this.fallbackProfileProvider = fallbackProfileProvider;

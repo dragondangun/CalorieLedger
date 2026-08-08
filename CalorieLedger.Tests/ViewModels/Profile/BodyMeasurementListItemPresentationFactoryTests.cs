@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
@@ -191,10 +191,7 @@ public sealed class BodyMeasurementListItemPresentationFactoryTests {
     [InlineData(2, "Последнее · 2 дня назад")]
     [InlineData(5, "Последнее · 5 дней назад")]
     [InlineData(21, "Последнее · 21 день назад")]
-    public void Create_LatestMeasurement_FormatsFreshness(
-        int dayCount,
-        string expectedText)
-    {
+    public void Create_LatestMeasurement_FormatsFreshness(int dayCount, string expectedText) {
         var currentDate = new DateOnly(2026, 8, 4);
 
         var entry = new BodyMeasurementEntry(
@@ -218,10 +215,7 @@ public sealed class BodyMeasurementListItemPresentationFactoryTests {
     [Theory]
     [InlineData(14, false)]
     [InlineData(15, true)]
-    public void Create_LatestMeasurement_DetectsStaleData(
-        int dayCount,
-        bool expectedIsStale)
-    {
+    public void Create_LatestMeasurement_DetectsStaleData(int dayCount, bool expectedIsStale) {
         var currentDate = new DateOnly(2026, 8, 4);
 
         var entry = new BodyMeasurementEntry(

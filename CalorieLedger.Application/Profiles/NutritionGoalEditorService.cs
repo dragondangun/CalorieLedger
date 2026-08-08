@@ -1,12 +1,12 @@
-﻿using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
 public sealed class NutritionGoalEditorService(
     IUserNutritionProfileProvider profileProvider,
-    NutritionGoalUpdateService goalUpdateService)
-{
+    NutritionGoalUpdateService goalUpdateService
+) {
     public NutritionGoalDraft LoadCurrentGoal() {
         var profile = profileProvider.GetCurrentProfile();
 
@@ -15,8 +15,8 @@ public sealed class NutritionGoalEditorService(
 
     public NutritionGoalDraft LoadCurrentGoalWithSuggestedStrategy(
         EnergyStrategyMode strategyMode,
-        decimal strategyValue)
-    {
+        decimal strategyValue
+    ) {
         if(strategyValue <= 0m) {
             throw new ArgumentOutOfRangeException(
                 nameof(strategyValue),
@@ -40,8 +40,7 @@ public sealed class NutritionGoalEditorService(
             return draft;
         }
 
-        return draft with
-        {
+        return draft with {
             StrategyMode = strategyMode,
             StrategyValue = strategyValue
         };

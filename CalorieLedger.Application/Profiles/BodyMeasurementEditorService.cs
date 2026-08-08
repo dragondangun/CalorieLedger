@@ -1,34 +1,30 @@
-﻿using System.Linq;
+using System.Linq;
 
 namespace CalorieLedger.Application.Profiles;
 
 public sealed class BodyMeasurementEditorService {
-    private readonly BodyMeasurementHistoryService
-        _historyService;
+    private readonly BodyMeasurementHistoryService historyService;
 
-    public BodyMeasurementEditorService(
-        BodyMeasurementHistoryService historyService) {
-        ArgumentNullException.ThrowIfNull(
-            historyService);
+    public BodyMeasurementEditorService(BodyMeasurementHistoryService historyService) {
+        ArgumentNullException.ThrowIfNull(historyService);
 
-        _historyService = historyService;
+        this.historyService = historyService;
     }
 
-    public BodyMeasurementDraft CreateNew(
-        DateOnly currentDate) {
+    public BodyMeasurementDraft CreateNew(DateOnly currentDate) {
         return new BodyMeasurementDraft(
             Id: Guid.NewGuid(),
-            Date: currentDate);
+            Date: currentDate
+        );
     }
 
-    public BodyMeasurementDraft? Load(
-        Guid id) {
+    public BodyMeasurementDraft? Load(Guid id) {
         if(id == Guid.Empty) {
             return null;
         }
 
         var entry =
-            _historyService
+            historyService
                 .GetAll()
                 .FirstOrDefault(
                     existing =>
@@ -57,13 +53,13 @@ public sealed class BodyMeasurementEditorService {
             BodyMeasurementDraftMapper
                 .ToEntry(draft);
 
-        return _historyService.Save(
+        return historyService.Save(
             entry,
             currentDate);
     }
 
     public bool Delete(
         Guid id) {
-        return _historyService.Delete(id);
+        return historyService.Delete(id);
     }
 }

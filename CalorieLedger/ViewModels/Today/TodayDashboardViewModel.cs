@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Today;
+using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -113,18 +113,17 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
                 DurationSummary: FormatDuration(activity.Duration)));
         }
 
-        GoalStatusSummary =
-            FormatGoalDecisionStatus(snapshot.GoalDecision.Status);
+        GoalStatusSummary = FormatGoalDecisionStatus(snapshot.GoalDecision.Status);
 
-                GoalDetailsSummary =
-                    FormatGoalDecisionDetails(snapshot.GoalDecision);
+        GoalDetailsSummary = FormatGoalDecisionDetails(snapshot.GoalDecision);
 
-                foreach(var action in snapshot.GoalDecision.AvailableActions) {
-                    GoalActions.Add(new TodayGoalActionViewModel(
-                        action: action,
-                        title: FormatGoalAction(action),
-                        onSelected: SelectGoalAction));
-                }
+        foreach(var action in snapshot.GoalDecision.AvailableActions) {
+            GoalActions.Add(new TodayGoalActionViewModel(
+                action: action,
+                title: FormatGoalAction(action),
+                onSelected: SelectGoalAction)
+            );
+        }
     }
 
     [RelayCommand]
@@ -249,8 +248,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         get {
             var balance = weeklySummary.AverageCaloriesKcal - TargetCaloriesKcal;
 
-            return balance switch
-            {
+            return balance switch {
                 > 100m => $"Средний профицит: +{balance:0} ккал/день",
                 < -100m => $"Средний дефицит: {balance:0} ккал/день",
                 _ => "В среднем около цели"
@@ -270,10 +268,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         return $"{duration.Value.TotalMinutes:0} мин";
     }
 
-    private static string FormatGoalDecisionStatus(
-    NutritionGoalDecisionStatus status) {
-        return status switch
-        {
+    private static string FormatGoalDecisionStatus(NutritionGoalDecisionStatus status) {
+        return status switch {
             NutritionGoalDecisionStatus.NotConfigured =>
                 "Цель не настроена",
 
@@ -299,10 +295,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         };
     }
 
-    private static string FormatGoalDecisionDetails(
-        NutritionGoalDecision decision) {
-        return decision.Status switch
-        {
+    private static string FormatGoalDecisionDetails(NutritionGoalDecision decision) {
+        return decision.Status switch {
             NutritionGoalDecisionStatus.NotConfigured =>
                 "Задайте желаемый вес, процент жира или мышечные показатели.",
 
@@ -340,10 +334,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             "Выберите дальнейший режим.";
     }
 
-    private static string FormatGoalAction(
-        GoalNextAction action) {
-        return action switch
-        {
+    private static string FormatGoalAction(GoalNextAction action) {
+        return action switch {
             GoalNextAction.ContinueCurrentGoal =>
                 "Продолжить текущую цель",
 
@@ -366,17 +358,15 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
                 nameof(action),
                 action,
                 null)
-        };   
+        };
     }
 
-    private void SelectGoalAction(
-    GoalNextAction action) {
+    private void SelectGoalAction(GoalNextAction action) {
         if(tryExecuteGoalAction(action)) {
             return;
         }
 
-        GoalActionSelectionSummary = action switch
-        {
+        GoalActionSelectionSummary = action switch {
             GoalNextAction.ContinueCurrentGoal =>
                 "Текущая цель оставлена без изменений.",
 

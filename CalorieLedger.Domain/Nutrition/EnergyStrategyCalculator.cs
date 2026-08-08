@@ -49,8 +49,7 @@ public static class EnergyStrategyCalculator {
 
         var direction = GetDirection(goalType);
 
-        return strategy.Mode switch
-        {
+        return strategy.Mode switch {
             EnergyStrategyMode.BalancePercent =>
                 CalculateFromBalancePercent(
                     maintenanceCaloriesKcal,
@@ -121,10 +120,8 @@ public static class EnergyStrategyCalculator {
             PredictedWeightChangeKgPerWeek: signedWeightChange);
     }
 
-    private static decimal GetDirection(
-        WeightGoalType goalType) {
-        return goalType switch
-        {
+    private static decimal GetDirection(WeightGoalType goalType) {
+        return goalType switch {
             WeightGoalType.LoseWeight => -1m,
             WeightGoalType.Maintain => 0m,
             WeightGoalType.GainWeight => 1m,

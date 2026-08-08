@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 
@@ -282,10 +282,8 @@ public sealed class NutritionGoalEditorViewModelTests {
             return currentProfile;
         }
 
-        public void UpdateGoal(
-            NutritionGoal goal) {
-            currentProfile = currentProfile with
-            {
+        public void UpdateGoal(NutritionGoal goal) {
+            currentProfile = currentProfile with {
                 Goal = goal
             };
         }

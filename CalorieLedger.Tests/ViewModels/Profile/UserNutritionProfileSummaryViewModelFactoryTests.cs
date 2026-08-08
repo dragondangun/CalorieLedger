@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
@@ -58,10 +58,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     [InlineData(22, "22 года")]
     [InlineData(25, "25 лет")]
     [InlineData(111, "111 лет")]
-    public void Create_FormatsAgeEndingCorrectly(
-        int ageYears,
-        string expectedAge)
-    {
+    public void Create_FormatsAgeEndingCorrectly(int ageYears, string expectedAge) {
         var profile = CreateProfile() with{
             Body = CreateProfile().Body with {
                 AgeYears = ageYears,

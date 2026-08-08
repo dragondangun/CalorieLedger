@@ -1,4 +1,4 @@
-﻿namespace CalorieLedger.Domain.Profile;
+namespace CalorieLedger.Domain.Profile;
 
 public static class NutritionGoalDecisionEvaluator {
     public static NutritionGoalDecision Evaluate(
@@ -67,9 +67,9 @@ public static class NutritionGoalDecisionEvaluator {
 
     private static IReadOnlyList<GoalNextAction> GetAvailableActions(
         NutritionGoalDecisionStatus status,
-        WeightGoalType goalType) {
-        return status switch
-        {
+        WeightGoalType goalType
+    ) {
+        return status switch {
             NutritionGoalDecisionStatus.NotConfigured =>
             [
                 GoalNextAction.SetNewGoal
@@ -114,9 +114,9 @@ public static class NutritionGoalDecisionEvaluator {
     }
 
     private static IReadOnlyList<GoalNextAction> GetReachedGoalActions(
-        WeightGoalType goalType) {
-        return goalType switch
-        {
+        WeightGoalType goalType
+    ) {
+        return goalType switch {
             WeightGoalType.LoseWeight =>
             [
                 GoalNextAction.SwitchToMaintenance,

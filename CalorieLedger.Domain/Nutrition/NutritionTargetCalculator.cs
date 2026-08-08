@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Domain.Nutrition;
 
@@ -43,8 +43,7 @@ public static class NutritionTargetCalculator {
             return 370m + 21.6m * leanBodyMassKg;
         }
 
-        return body.Sex switch
-        {
+        return body.Sex switch {
             BiologicalSex.Male =>
                 10m * body.WeightKg + 6.25m * body.HeightCm - 5m * body.AgeYears + 5m,
 
@@ -59,8 +58,7 @@ public static class NutritionTargetCalculator {
     }
 
     private static decimal GetActivityMultiplier(LifestyleActivityLevel activityLevel) {
-        return activityLevel switch
-        {
+        return activityLevel switch {
             LifestyleActivityLevel.Sedentary => 1.2m,
             LifestyleActivityLevel.LightlyActive => 1.375m,
             LifestyleActivityLevel.ModeratelyActive => 1.55m,
@@ -72,7 +70,8 @@ public static class NutritionTargetCalculator {
 
     private static decimal CalculateGoalAdjustment(
         NutritionGoal goal,
-        decimal maintenanceCalories) {
+        decimal maintenanceCalories
+    ) {
         if(goal.Strategy is null) {
             throw new InvalidOperationException(
                 "Nutrition goal must have an energy strategy.");

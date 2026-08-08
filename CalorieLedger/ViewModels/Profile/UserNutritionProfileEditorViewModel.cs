@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -84,8 +84,8 @@ public partial class UserNutritionProfileEditorViewModel:ViewModelBase {
         UserNutritionProfileEditorService editorService,
         UserNutritionProfileDraft draft,
         Action onSaved,
-        Action onCancelled)
-    {
+        Action onCancelled
+    ) {
         ArgumentNullException.ThrowIfNull(editorService);
         ArgumentNullException.ThrowIfNull(draft);
         ArgumentNullException.ThrowIfNull(onSaved);
