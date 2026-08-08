@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Tests.Profiles;
@@ -567,4 +567,49 @@ public sealed class BodyMeasurementHistoryServiceTests {
             store.GetAll().Count
         );
     }
-} 
+
+    [Fact]
+    public void Save_FutureDate_ReturnsValidationError() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(
+            store
+        );
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 80m
+        );
+
+        var result = service.Save(entry, currentDate);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(
+            BodyMeasurementValidationError.FutureDate,
+            result.Errors
+        );
+
+        Assert.Empty(store.GetAll());
+    }
+
+    [Fact]
+    public void Save_CurrentDate_AllowsMeasurement() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m
+        );
+
+        var result = service.Save(entry, currentDate);
+
+        Assert.True(result.IsSuccess);
+        Assert.Single(store.GetAll());
+    }
+}

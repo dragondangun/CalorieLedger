@@ -1,13 +1,12 @@
-﻿using CalorieLedger.ViewModels;
-
-namespace CalorieLedger.Tests.ViewModels;
+using CalorieLedger.ViewModels;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.Tests.TestDoubles;
 
-public sealed class
-    MainViewModelBodyMeasurementEditorTests {
+namespace CalorieLedger.Tests.ViewModels;
+
+public sealed class MainViewModelBodyMeasurementEditorTests {
     [Fact]
     public void AddBodyMeasurementCommand_OpensEditor() {
         var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
@@ -506,8 +505,8 @@ public sealed class
 
     private static InMemoryBodyMeasurementStore CreateStoreWithMeasurements(
         int measurementCount,
-        DateOnly latestDate)
-    {
+        DateOnly latestDate
+    ) {
         var store = new InMemoryBodyMeasurementStore();
 
         for(var index = 0; index < measurementCount; index++) {
@@ -522,4 +521,4 @@ public sealed class
 
         return store;
     }
-}   
+}

@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Adaptive;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Profile;
@@ -109,8 +109,8 @@ public partial class MainViewModel:ViewModelBase {
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
         IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider,
-        ICurrentDateProvider currentDateProvider) 
-    {
+        ICurrentDateProvider currentDateProvider
+    ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);

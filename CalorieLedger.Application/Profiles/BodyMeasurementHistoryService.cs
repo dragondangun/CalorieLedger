@@ -1,31 +1,31 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Profiles;
 
 public sealed class BodyMeasurementHistoryService {
-    private readonly IBodyMeasurementStore
-        _store;
+    private readonly IBodyMeasurementStore store;
 
     public BodyMeasurementHistoryService(
-        IBodyMeasurementStore store) {
+        IBodyMeasurementStore store
+    ) {
         ArgumentNullException.ThrowIfNull(store);
 
-        _store = store;
+        this.store = store;
     }
 
     public IReadOnlyList<BodyMeasurementEntry>
         GetAll() {
-        return _store.GetAll();
+        return store.GetAll();
     }
 
     public BodyMeasurementSaveResult Save(
         BodyMeasurementEntry entry,
-        DateOnly currentDate)
-    {
+        DateOnly currentDate
+    ) {
         ArgumentNullException.ThrowIfNull(entry);
 
         var errors = Validate(entry, currentDate).ToList();
-        
+
         if(HasConflictingDate(entry)) {
             errors.Add(
                 BodyMeasurementValidationError.DuplicateDate
@@ -35,16 +35,18 @@ public sealed class BodyMeasurementHistoryService {
         if(errors.Count > 0) {
             return new BodyMeasurementSaveResult(
                 IsSuccess: false,
-                Errors: errors);
+                Errors: errors
+            );
         }
 
         var normalizedEntry = BodyMeasurementMuscleValueNormalizer.Normalize(entry);
 
-        _store.Save(normalizedEntry);
+        store.Save(normalizedEntry);
 
         return new BodyMeasurementSaveResult(
             IsSuccess: true,
-            Errors: Array.Empty<BodyMeasurementValidationError>());
+            Errors: Array.Empty<BodyMeasurementValidationError>()
+        );
     }
 
     public bool Delete(
@@ -53,7 +55,7 @@ public sealed class BodyMeasurementHistoryService {
             return false;
         }
 
-        return _store.Delete(id);
+        return store.Delete(id);
     }
 
     private static IReadOnlyList<BodyMeasurementValidationError> Validate(
@@ -130,7 +132,7 @@ public sealed class BodyMeasurementHistoryService {
     }
 
     private bool HasConflictingDate(BodyMeasurementEntry entry) {
-        var measurements = _store.GetAll();
+        var measurements = store.GetAll();
 
         foreach(var existingEntry in measurements) {
             if(existingEntry.Id != entry.Id

@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Application.Tests.Profiles;
@@ -60,7 +60,7 @@ public sealed class BodyMeasurementMuscleValueNormalizerTests {
     [InlineData(43.6, true)]
     [InlineData(43.5, false)]
     [InlineData(40.0, false)]
-    public void AreValuesConsistent_ChecksTolerance(double musclePercent,bool expected) {
+    public void AreValuesConsistent_ChecksTolerance(double musclePercent, bool expected) {
         var entry = CreateEntry(
             weightKg: 80m,
             muscleMassKg: 35m,
@@ -76,8 +76,8 @@ public sealed class BodyMeasurementMuscleValueNormalizerTests {
     private static BodyMeasurementEntry CreateEntry(
         decimal weightKg,
         decimal? muscleMassKg,
-        decimal? musclePercent)
-    {
+        decimal? musclePercent
+    ) {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
             Date: new DateOnly(

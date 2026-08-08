@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Adaptive;
@@ -76,8 +76,7 @@ public sealed class MainViewModelGoalEditorTests {
 
         var changedProperties = new List<string>();
 
-        viewModel.PropertyChanged += (_, args) =>
-        {
+        viewModel.PropertyChanged += (_, args) => {
             if(args.PropertyName is not null) {
                 changedProperties.Add(args.PropertyName);
             }

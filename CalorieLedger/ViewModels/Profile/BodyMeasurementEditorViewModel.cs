@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using CalorieLedger.Application.Profiles;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -304,8 +304,7 @@ public partial class BodyMeasurementEditorViewModel:ViewModelBase {
     }
 
     private static string GetValidationMessage(BodyMeasurementValidationError error) {
-        return error switch
-        {
+        return error switch {
             BodyMeasurementValidationError.MissingId =>
                 "Не удалось определить запись измерения.",
 
