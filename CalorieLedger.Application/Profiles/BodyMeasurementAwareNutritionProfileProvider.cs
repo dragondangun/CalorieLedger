@@ -1,5 +1,5 @@
-﻿using System.Linq;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.Application.Time;
 
 namespace CalorieLedger.Application.Profiles;
 
@@ -7,23 +7,26 @@ public sealed class BodyMeasurementAwareNutritionProfileProvider:IUserNutritionP
     private readonly IUserNutritionProfileProvider baseProfileProvider;
 
     private readonly BodyMeasurementHistoryService measurementHistoryService;
+    private readonly ICurrentDateProvider currentDateProvider;
 
     public BodyMeasurementAwareNutritionProfileProvider(
         IUserNutritionProfileProvider baseProfileProvider,
-        BodyMeasurementHistoryService measurementHistoryService) {
+        BodyMeasurementHistoryService measurementHistoryService,
+        ICurrentDateProvider currentDateProvider
+    ) {
         ArgumentNullException.ThrowIfNull(baseProfileProvider);
-
         ArgumentNullException.ThrowIfNull(measurementHistoryService);
+        ArgumentNullException.ThrowIfNull(currentDateProvider);
 
         this.baseProfileProvider = baseProfileProvider;
-
         this.measurementHistoryService = measurementHistoryService;
+        this.currentDateProvider = currentDateProvider;
     }
 
     public UserNutritionProfile GetCurrentProfile() {
         var baseProfile = baseProfileProvider.GetCurrentProfile();
 
-        var latestMeasurement = measurementHistoryService.GetLatest();
+        var latestMeasurement = measurementHistoryService.GetLatest(currentDateProvider.GetCurrentDate());
 
         if(latestMeasurement is null) {
             return baseProfile;

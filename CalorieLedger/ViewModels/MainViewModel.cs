@@ -136,7 +136,8 @@ public partial class MainViewModel:ViewModelBase {
 
         currentProfileProvider = new BodyMeasurementAwareNutritionProfileProvider(
             baseProfileProvider: profileStore,
-            measurementHistoryService: bodyMeasurementHistoryService
+            measurementHistoryService: bodyMeasurementHistoryService,
+            currentDateProvider: currentDateProvider
         );
 
         todayProvider = new SampleTodayDashboardSnapshotProvider(
