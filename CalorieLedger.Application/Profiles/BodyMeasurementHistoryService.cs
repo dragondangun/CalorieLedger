@@ -119,10 +119,8 @@ public sealed class BodyMeasurementHistoryService {
         return errors.Distinct().ToArray();
     }
 
-    private static bool IsValidOptionalPercentage(
-        decimal? value) {
-        return value is null
-            || value is > 0m and < 100m;
+    private static bool IsValidOptionalPercentage(decimal? value) {
+        return value is null || value is > 0m and < 100m;
     }
 
     public BodyMeasurementEntry? GetLatestByDate() {
@@ -170,5 +168,15 @@ public sealed class BodyMeasurementHistoryService {
         }
 
         return false;
+    }
+
+    public bool HasMeasurementsAfter(DateOnly date) {
+        var measurements = GetAll();
+
+        if(measurements.Count == 0) {
+            return false;
+        }
+
+        return measurements[^1].Date > date;
     }
 }

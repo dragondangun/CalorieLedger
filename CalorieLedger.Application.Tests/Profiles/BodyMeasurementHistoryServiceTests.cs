@@ -844,4 +844,95 @@ public sealed class BodyMeasurementHistoryServiceTests {
             measurements[1].Id
         );
     }
+
+    [Fact]
+    public void HasMeasurementsAfter_FutureMeasurement_ReturnsTrue() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 80m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(1),
+                WeightKg: 81m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var hasFutureMeasurements =
+        service.HasMeasurementsAfter(currentDate);
+
+        Assert.True(hasFutureMeasurements);
+    }
+
+    [Fact]
+    public void HasMeasurementsAfter_CurrentDateMeasurement_ReturnsFalse() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 80m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var hasFutureMeasurements =
+        service.HasMeasurementsAfter(currentDate);
+
+        Assert.False(hasFutureMeasurements);
+    }
+
+    [Fact]
+    public void HasMeasurementsAfter_OnlyPastMeasurements_ReturnsFalse() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-2),
+                WeightKg: 79m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-1),
+                WeightKg: 80m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var hasFutureMeasurements =
+        service.HasMeasurementsAfter(currentDate);
+
+        Assert.False(hasFutureMeasurements);
+    }
+
+    [Fact]
+    public void HasMeasurementsAfter_EmptyHistory_ReturnsFalse() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var service = new BodyMeasurementHistoryService(
+            new InMemoryBodyMeasurementStore()
+        );
+
+        var hasFutureMeasurements = service.HasMeasurementsAfter(currentDate);
+
+        Assert.False(hasFutureMeasurements);
+    }
 }
