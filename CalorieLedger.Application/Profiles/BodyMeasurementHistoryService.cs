@@ -5,17 +5,29 @@ namespace CalorieLedger.Application.Profiles;
 public sealed class BodyMeasurementHistoryService {
     private readonly IBodyMeasurementStore store;
 
-    public BodyMeasurementHistoryService(
-        IBodyMeasurementStore store
-    ) {
+    public BodyMeasurementHistoryService(IBodyMeasurementStore store) {
         ArgumentNullException.ThrowIfNull(store);
 
         this.store = store;
     }
 
-    public IReadOnlyList<BodyMeasurementEntry>
-        GetAll() {
+    public IReadOnlyList<BodyMeasurementEntry> GetAll() {
         return store.GetAll();
+    }
+
+    public IReadOnlyList<BodyMeasurementEntry> GetAllOnOrBefore(DateOnly date) {
+        var measurements = GetAll();
+        var result = new List<BodyMeasurementEntry>();
+
+        foreach(var measurement in measurements) {
+            if(measurement.Date > date) {
+                break;
+            }
+
+            result.Add(measurement);
+        }
+
+        return result;
     }
 
     public BodyMeasurementSaveResult Save(

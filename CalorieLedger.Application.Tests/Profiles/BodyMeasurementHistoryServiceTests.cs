@@ -735,4 +735,113 @@ public sealed class BodyMeasurementHistoryServiceTests {
             latestEffective.Id
         );
     }
+
+    [Fact]
+    public void GetAllOnOrBefore_FutureMeasurements_ExcludesFutureMeasurements() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        var earlierMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 79m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m
+        );
+
+        store.Save(earlierMeasurement);
+        store.Save(currentMeasurement);
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(1),
+                WeightKg: 81m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var measurements =
+        service.GetAllOnOrBefore(currentDate);
+
+        Assert.Equal(2, measurements.Count);
+        Assert.Equal(
+            earlierMeasurement.Id,
+            measurements[0].Id
+        );
+        Assert.Equal(
+            currentMeasurement.Id,
+            measurements[1].Id
+        );
+    }
+
+    [Fact]
+    public void GetAllOnOrBefore_OnlyFutureMeasurements_ReturnsEmptyCollection() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(1),
+                WeightKg: 80m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(2),
+                WeightKg: 81m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var measurements =
+        service.GetAllOnOrBefore(currentDate);
+
+        Assert.Empty(measurements);
+    }
+
+    [Fact]
+    public void GetAllOnOrBefore_NoFutureMeasurements_ReturnsEntireHistory() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        var firstMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-2),
+            WeightKg: 79m
+        );
+
+        var secondMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 80m
+        );
+
+        store.Save(firstMeasurement);
+        store.Save(secondMeasurement);
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var measurements =
+        service.GetAllOnOrBefore(currentDate);
+
+        Assert.Equal(2, measurements.Count);
+        Assert.Equal(
+            firstMeasurement.Id,
+            measurements[0].Id
+        );
+        Assert.Equal(
+            secondMeasurement.Id,
+            measurements[1].Id
+        );
+    }
 }
