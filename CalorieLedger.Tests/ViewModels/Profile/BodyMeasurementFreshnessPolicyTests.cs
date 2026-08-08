@@ -52,4 +52,27 @@ public sealed class BodyMeasurementFreshnessPolicyTests {
             )
         );
     }
+
+    [Theory]
+    [InlineData(-1, BodyMeasurementFreshnessState.Future)]
+    [InlineData(0, BodyMeasurementFreshnessState.Fresh)]
+    [InlineData(14, BodyMeasurementFreshnessState.Fresh)]
+    [InlineData(15, BodyMeasurementFreshnessState.Stale)]
+    public void GetState_ReturnsExpectedState(
+        int ageInDays,
+        BodyMeasurementFreshnessState expectedState
+    ) {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var measurementDate = currentDate.AddDays(-ageInDays);
+
+        var state = BodyMeasurementFreshnessPolicy.GetState(
+            measurementDate,
+            currentDate
+        );
+
+        Assert.Equal(
+            expectedState,
+            state
+        );
+    }
 }

@@ -16,6 +16,17 @@ public static class BodyMeasurementListItemPresentationFactory {
         DateOnly? currentDate = null
     ) {
         ArgumentNullException.ThrowIfNull(entry);
+        var freshnessState = GetFreshnessState(
+            entry.Date,
+            currentDate,
+            isLatest
+        );
+
+        var measurementAgeDays = GetMeasurementAgeInDays(
+            entry.Date,
+            currentDate,
+            isLatest
+        );
 
         return new BodyMeasurementListItemPresentation(
             DateSummary: FormatDate(entry.Date),
@@ -28,20 +39,11 @@ public static class BodyMeasurementListItemPresentationFactory {
             DataCompletenessText: FormatDataCompleteness(entry),
             IsLatest: isLatest,
             LatestBadgeText: FormatLatestBadgeText(
-                measurementDate: entry.Date,
-                currentDate: currentDate,
-                isLatest: isLatest
+                freshnessState,
+                measurementAgeDays
             ),
-            IsLatestMeasurementStale: IsMeasurementStale(
-                measurementDate: entry.Date,
-                currentDate: currentDate,
-                isLatest: isLatest
-            ),
-            MeasurementFreshnessWarning: FormatMeasurementFreshnessWarning(
-                measurementDate: entry.Date,
-                currentDate: currentDate,
-                isLatest: isLatest
-            )
+            IsLatestMeasurementStale: freshnessState == BodyMeasurementFreshnessState.Stale,
+            MeasurementFreshnessWarning: FormatMeasurementFreshnessWarning(freshnessState)
         );
     }
 
@@ -200,58 +202,53 @@ public static class BodyMeasurementListItemPresentationFactory {
     }
 
     private static string FormatLatestBadgeText(
-        DateOnly measurementDate,
-        DateOnly? currentDate,
-        bool isLatest
+        BodyMeasurementFreshnessState freshnessState,
+        int? measurementAgeDays
     ) {
-        if(!isLatest) {
-            return string.Empty;
-        }
-
-        if(currentDate is null) {
-            return "Последнее";
-        }
-
-        var dayCount = BodyMeasurementFreshnessPolicy.GetAgeInDays(
-            measurementDate,
-            currentDate.Value
-        );
-
-        return dayCount switch {
-            < 0 => "Последнее · будущая дата",
-            0 => "Последнее · сегодня",
-            1 => "Последнее · вчера",
-            _ => $"Последнее · {RussianDayCountFormatter.Format(dayCount)} назад",
+        return freshnessState switch {
+            BodyMeasurementFreshnessState.NotApplicable => string.Empty,
+            BodyMeasurementFreshnessState.Future => "Последнее · будущая дата",
+            _ when measurementAgeDays == 0 => "Последнее · сегодня",
+            _ when measurementAgeDays == 1 => "Последнее · вчера",
+            _ => $"Последнее · {RussianDayCountFormatter.Format(measurementAgeDays!.Value)} назад",
         };
     }
 
-    private static bool IsMeasurementStale(
-        DateOnly measurementDate,
-        DateOnly? currentDate,
-        bool isLatest
-    ) {
-        return isLatest
-            && currentDate is not null
-            && BodyMeasurementFreshnessPolicy.IsStale(
-                measurementDate,
-                currentDate.Value
-            );
-    }
-
-    private static string FormatMeasurementFreshnessWarning(
-        DateOnly measurementDate,
-        DateOnly? currentDate,
-        bool isLatest
-    ) {
-        if(!isLatest
-            || currentDate is null
-            || !BodyMeasurementFreshnessPolicy.IsStale(
-                measurementDate,
-                currentDate.Value
-            )) {
+    private static string FormatMeasurementFreshnessWarning(BodyMeasurementFreshnessState freshnessState) {
+        if(freshnessState != BodyMeasurementFreshnessState.Stale) {
             return string.Empty;
         }
 
         return $"Последнее измерение сделано более {RussianDayCountFormatter.Format(BodyMeasurementFreshnessPolicy.WarningDayCount)} назад.";
+    }
+
+    private static BodyMeasurementFreshnessState GetFreshnessState(
+        DateOnly measurementDate,
+        DateOnly? currentDate,
+        bool isLatest
+    ) {
+        if(!isLatest || currentDate is null) {
+            return BodyMeasurementFreshnessState.NotApplicable;
+        }
+
+        return BodyMeasurementFreshnessPolicy.GetState(
+            measurementDate,
+            currentDate.Value
+        );
+    }
+
+    private static int? GetMeasurementAgeInDays(
+        DateOnly measurementDate,
+        DateOnly? currentDate,
+        bool isLatest
+    ) {
+        if(!isLatest || currentDate is null) {
+            return null;
+        }
+
+        return BodyMeasurementFreshnessPolicy.GetAgeInDays(
+            measurementDate,
+            currentDate.Value
+        );
     }
 }
