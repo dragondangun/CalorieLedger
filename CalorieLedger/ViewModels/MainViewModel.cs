@@ -167,13 +167,12 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         var currentDate = currentDateProvider.GetCurrentDate();
-        var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
-        var hasFutureMeasurements = bodyMeasurementHistoryService.HasMeasurementsAfter(currentDate);
+        var measurementSnapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
 
-        profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
-             profile: currentProfileProvider.GetCurrentProfile(),
-            effectiveMeasurement: effectiveMeasurement,
-            hasFutureMeasurements: hasFutureMeasurements,
+        UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: currentProfileProvider.GetCurrentProfile(),
+            effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
+            hasFutureMeasurements: measurementSnapshot.HasFutureMeasurements,
             currentDate: currentDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
@@ -301,7 +300,8 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshBodyTrends() {
         var currentDate = currentDateProvider.GetCurrentDate();
-        var measurements = bodyMeasurementHistoryService.GetAllOnOrBefore(currentDate);
+        var measurementSnapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
+        var measurements = measurementSnapshot.EffectiveMeasurements;
         BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
     }
 
@@ -461,13 +461,12 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshProfileSummary() {
         var currentDate = currentDateProvider.GetCurrentDate();
-        var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
-        var hasFutureMeasurements = bodyMeasurementHistoryService.HasMeasurementsAfter(currentDate);
+        var measurementSnapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
 
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
-            effectiveMeasurement: effectiveMeasurement,
-            hasFutureMeasurements: hasFutureMeasurements,
+            effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
+            hasFutureMeasurements: measurementSnapshot.HasFutureMeasurements,
             currentDate: currentDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement

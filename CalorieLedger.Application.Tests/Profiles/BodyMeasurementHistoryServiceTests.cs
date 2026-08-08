@@ -361,54 +361,6 @@ public sealed class BodyMeasurementHistoryServiceTests {
     }
 
     [Fact]
-    public void GetLatestOnOrBefore_EmptyHistory_ReturnsNull() {
-        var currentDate = new DateOnly(2026, 8, 8);
-
-        var service = new BodyMeasurementHistoryService(
-            new InMemoryBodyMeasurementStore()
-        );
-
-        var result =service.GetLatestOnOrBefore(currentDate);
-
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void GetLatestOnOrBefore_ReturnsMeasurementWithLatestAllowedDate() {
-        var store = new InMemoryBodyMeasurementStore();
-        var service = new BodyMeasurementHistoryService(store);
-
-        var currentDate = new DateOnly(2026, 7, 26);
-
-        var latestMeasurement = new BodyMeasurementEntry(
-            Id: Guid.NewGuid(),
-            Date: currentDate,
-            WeightKg: 79m
-        );
-
-        service.Save(
-            latestMeasurement,
-            currentDate
-        );
-
-        service.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(-5),
-                WeightKg: 80m
-            ),
-            currentDate
-        );
-
-        var result = service.GetLatestOnOrBefore(currentDate);
-
-        Assert.Equal(
-            latestMeasurement,
-            result
-        );
-    }
-
-    [Fact]
     public void GetByDate_ExistingMeasurement_ReturnsMeasurement() {
         var store = new InMemoryBodyMeasurementStore();
         var service = new BodyMeasurementHistoryService(store);
@@ -611,97 +563,13 @@ public sealed class BodyMeasurementHistoryServiceTests {
     }
 
     [Fact]
-    public void GetLatestOnOrBefore_FutureMeasurement_IgnoresFutureMeasurement() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(-1),
-                WeightKg: 80m
-            )
-        );
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(1),
-                WeightKg: 81m
-            )
-        );
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var latestMeasurement = service.GetLatestOnOrBefore(currentDate);
-
-        Assert.NotNull(latestMeasurement);
-        Assert.Equal(
-            currentDate.AddDays(-1),
-            latestMeasurement.Date
-        );
-    }
-
-    [Fact]
-    public void GetLatestOnOrBefore_OnlyFutureMeasurements_ReturnsNull() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(1),
-                WeightKg: 80m
-            )
-        );
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var latestMeasurement = service.GetLatestOnOrBefore(currentDate);
-
-        Assert.Null(latestMeasurement);
-    }
-
-    [Fact]
-    public void GetLatestOnOrBefore_CurrentDateMeasurement_IncludesMeasurement() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(-1),
-                WeightKg: 79m
-            )
-        );
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate,
-                WeightKg: 80m
-            )
-        );
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var latestMeasurement = service.GetLatestOnOrBefore(currentDate);
-
-        Assert.NotNull(latestMeasurement);
-        Assert.Equal(
-            currentDate,
-            latestMeasurement.Date
-        );
-    }
-
-    [Fact]
-    public void GetAllOnOrBefore_FutureMeasurements_ExcludesFutureMeasurements() {
+    public void GetSnapshot_MixedHistory_ReturnsConsistentEffectiveState() {
         var currentDate = new DateOnly(2026, 8, 8);
         var store = new InMemoryBodyMeasurementStore();
 
         var earlierMeasurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(-1),
+            Date: currentDate.AddDays(-2),
             WeightKg: 79m
         );
 
@@ -711,35 +579,45 @@ public sealed class BodyMeasurementHistoryServiceTests {
             WeightKg: 80m
         );
 
+        var futureMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 81m
+        );
+
         store.Save(earlierMeasurement);
         store.Save(currentMeasurement);
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(1),
-                WeightKg: 81m
-            )
-        );
+        store.Save(futureMeasurement);
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var measurements =
-        service.GetAllOnOrBefore(currentDate);
+        var snapshot = service.GetSnapshot(currentDate);
 
-        Assert.Equal(2, measurements.Count);
         Assert.Equal(
-            earlierMeasurement.Id,
-            measurements[0].Id
+            2,
+            snapshot.EffectiveMeasurements.Count
         );
+
         Assert.Equal(
-            currentMeasurement.Id,
-            measurements[1].Id
+            earlierMeasurement,
+            snapshot.EffectiveMeasurements[0]
         );
+
+        Assert.Equal(
+            currentMeasurement,
+            snapshot.EffectiveMeasurements[1]
+        );
+
+        Assert.Equal(
+            currentMeasurement,
+            snapshot.LatestEffectiveMeasurement
+        );
+
+        Assert.True(snapshot.HasFutureMeasurements);
     }
 
     [Fact]
-    public void GetAllOnOrBefore_OnlyFutureMeasurements_ReturnsEmptyCollection() {
+    public void GetSnapshot_OnlyFutureMeasurements_ReturnsEmptyEffectiveState() {
         var currentDate = new DateOnly(2026, 8, 8);
         var store = new InMemoryBodyMeasurementStore();
 
@@ -761,136 +639,62 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var measurements =
-        service.GetAllOnOrBefore(currentDate);
+        var snapshot = service.GetSnapshot(currentDate);
 
-        Assert.Empty(measurements);
+        Assert.Empty(snapshot.EffectiveMeasurements);
+        Assert.Null(snapshot.LatestEffectiveMeasurement);
+        Assert.True(snapshot.HasFutureMeasurements);
     }
 
     [Fact]
-    public void GetAllOnOrBefore_NoFutureMeasurements_ReturnsEntireHistory() {
+    public void GetSnapshot_NoFutureMeasurements_ReturnsEntireHistory() {
         var currentDate = new DateOnly(2026, 8, 8);
         var store = new InMemoryBodyMeasurementStore();
 
-        var firstMeasurement = new BodyMeasurementEntry(
+        var earlierMeasurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(-2),
+            Date: currentDate.AddDays(-1),
             WeightKg: 79m
         );
 
-        var secondMeasurement = new BodyMeasurementEntry(
+        var currentMeasurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(-1),
+            Date: currentDate,
             WeightKg: 80m
         );
 
-        store.Save(firstMeasurement);
-        store.Save(secondMeasurement);
+        store.Save(earlierMeasurement);
+        store.Save(currentMeasurement);
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var measurements =
-        service.GetAllOnOrBefore(currentDate);
+        var snapshot = service.GetSnapshot(currentDate);
 
-        Assert.Equal(2, measurements.Count);
         Assert.Equal(
-            firstMeasurement.Id,
-            measurements[0].Id
+            2,
+            snapshot.EffectiveMeasurements.Count
         );
+
         Assert.Equal(
-            secondMeasurement.Id,
-            measurements[1].Id
+            currentMeasurement,
+            snapshot.LatestEffectiveMeasurement
         );
+
+        Assert.False(snapshot.HasFutureMeasurements);
     }
 
     [Fact]
-    public void HasMeasurementsAfter_FutureMeasurement_ReturnsTrue() {
+    public void GetSnapshot_EmptyHistory_ReturnsEmptyState() {
         var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
 
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate,
-                WeightKg: 80m
-            )
-        );
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(1),
-                WeightKg: 81m
-            )
-        );
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var hasFutureMeasurements =
-        service.HasMeasurementsAfter(currentDate);
-
-        Assert.True(hasFutureMeasurements);
-    }
-
-    [Fact]
-    public void HasMeasurementsAfter_CurrentDateMeasurement_ReturnsFalse() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate,
-                WeightKg: 80m
-            )
-        );
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var hasFutureMeasurements =
-        service.HasMeasurementsAfter(currentDate);
-
-        Assert.False(hasFutureMeasurements);
-    }
-
-    [Fact]
-    public void HasMeasurementsAfter_OnlyPastMeasurements_ReturnsFalse() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(-2),
-                WeightKg: 79m
-            )
-        );
-
-        store.Save(
-            new BodyMeasurementEntry(
-                Id: Guid.NewGuid(),
-                Date: currentDate.AddDays(-1),
-                WeightKg: 80m
-            )
-        );
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var hasFutureMeasurements =
-        service.HasMeasurementsAfter(currentDate);
-
-        Assert.False(hasFutureMeasurements);
-    }
-
-    [Fact]
-    public void HasMeasurementsAfter_EmptyHistory_ReturnsFalse() {
-        var currentDate = new DateOnly(2026, 8, 8);
         var service = new BodyMeasurementHistoryService(
             new InMemoryBodyMeasurementStore()
         );
 
-        var hasFutureMeasurements = service.HasMeasurementsAfter(currentDate);
+        var snapshot = service.GetSnapshot(currentDate);
 
-        Assert.False(hasFutureMeasurements);
+        Assert.Empty(snapshot.EffectiveMeasurements);
+        Assert.Null(snapshot.LatestEffectiveMeasurement);
+        Assert.False(snapshot.HasFutureMeasurements);
     }
 }

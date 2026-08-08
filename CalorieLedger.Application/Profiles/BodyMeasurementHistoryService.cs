@@ -15,21 +15,6 @@ public sealed class BodyMeasurementHistoryService {
         return store.GetAll();
     }
 
-    public IReadOnlyList<BodyMeasurementEntry> GetAllOnOrBefore(DateOnly date) {
-        var measurements = GetAll();
-        var result = new List<BodyMeasurementEntry>();
-
-        foreach(var measurement in measurements) {
-            if(measurement.Date > date) {
-                break;
-            }
-
-            result.Add(measurement);
-        }
-
-        return result;
-    }
-
     public BodyMeasurementSaveResult Save(
         BodyMeasurementEntry entry,
         DateOnly currentDate
@@ -123,18 +108,6 @@ public sealed class BodyMeasurementHistoryService {
         return value is null || value is > 0m and < 100m;
     }
 
-    public BodyMeasurementEntry? GetLatestOnOrBefore(DateOnly date) {
-        var measurements = GetAll();
-
-        for(var index = measurements.Count - 1; index >= 0; index--) {
-            if(measurements[index].Date <= date) {
-                return measurements[index];
-            }
-        }
-
-        return null;
-    }
-
     public BodyMeasurementEntry? GetByDate(DateOnly date) {
         var measurements = GetAll();
 
@@ -160,13 +133,28 @@ public sealed class BodyMeasurementHistoryService {
         return false;
     }
 
-    public bool HasMeasurementsAfter(DateOnly date) {
+    public BodyMeasurementHistorySnapshot GetSnapshot(DateOnly currentDate) {
         var measurements = GetAll();
+        var effectiveMeasurements = new List<BodyMeasurementEntry>();
 
-        if(measurements.Count == 0) {
-            return false;
+        foreach(var measurement in measurements) {
+            if(measurement.Date > currentDate) {
+                break;
+            }
+
+            effectiveMeasurements.Add(measurement);
         }
 
-        return measurements[^1].Date > date;
+        BodyMeasurementEntry? latestEffectiveMeasurement = effectiveMeasurements.Count == 0
+            ? null
+            : effectiveMeasurements[^1];
+
+        var hasFutureMeasurements = effectiveMeasurements.Count < measurements.Count;
+
+        return new BodyMeasurementHistorySnapshot(
+            EffectiveMeasurements: effectiveMeasurements,
+            LatestEffectiveMeasurement: latestEffectiveMeasurement,
+            HasFutureMeasurements: hasFutureMeasurements
+        );
     }
 }
