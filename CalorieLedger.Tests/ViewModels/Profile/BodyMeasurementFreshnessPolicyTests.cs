@@ -75,4 +75,22 @@ public sealed class BodyMeasurementFreshnessPolicyTests {
             state
         );
     }
+
+    [Theory]
+    [InlineData(-1, BodyMeasurementFreshnessState.Future)]
+    [InlineData(0, BodyMeasurementFreshnessState.Fresh)]
+    [InlineData(1, BodyMeasurementFreshnessState.Fresh)]
+    [InlineData(14, BodyMeasurementFreshnessState.Fresh)]
+    [InlineData(15, BodyMeasurementFreshnessState.Stale)]
+    public void GetState_AgeInDays_ReturnsExpectedState(
+    int ageInDays,
+    BodyMeasurementFreshnessState expectedState) {
+        var state =
+        BodyMeasurementFreshnessPolicy.GetState(ageInDays);
+
+        Assert.Equal(
+            expectedState,
+            state
+        );
+    }
 }

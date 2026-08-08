@@ -16,17 +16,15 @@ public static class BodyMeasurementListItemPresentationFactory {
         DateOnly? currentDate = null
     ) {
         ArgumentNullException.ThrowIfNull(entry);
-        var freshnessState = GetFreshnessState(
-            entry.Date,
-            currentDate,
-            isLatest
-        );
-
         var measurementAgeDays = GetMeasurementAgeInDays(
             entry.Date,
             currentDate,
             isLatest
         );
+
+        var freshnessState = measurementAgeDays is null
+            ? BodyMeasurementFreshnessState.NotApplicable
+            : BodyMeasurementFreshnessPolicy.GetState(measurementAgeDays.Value);
 
         return new BodyMeasurementListItemPresentation(
             DateSummary: FormatDate(entry.Date),
@@ -220,21 +218,6 @@ public static class BodyMeasurementListItemPresentationFactory {
         }
 
         return $"Последнее измерение сделано более {RussianDayCountFormatter.Format(BodyMeasurementFreshnessPolicy.WarningDayCount)} назад.";
-    }
-
-    private static BodyMeasurementFreshnessState GetFreshnessState(
-        DateOnly measurementDate,
-        DateOnly? currentDate,
-        bool isLatest
-    ) {
-        if(!isLatest || currentDate is null) {
-            return BodyMeasurementFreshnessState.NotApplicable;
-        }
-
-        return BodyMeasurementFreshnessPolicy.GetState(
-            measurementDate,
-            currentDate.Value
-        );
     }
 
     private static int? GetMeasurementAgeInDays(
