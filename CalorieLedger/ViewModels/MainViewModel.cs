@@ -167,13 +167,13 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         var currentDate = currentDateProvider.GetCurrentDate();
-        var latestMeasurement = bodyMeasurementHistoryService.GetLatestByDate();
         var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
+        var hasFutureMeasurements = bodyMeasurementHistoryService.HasMeasurementsAfter(currentDate);
 
         profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: currentProfileProvider.GetCurrentProfile(),
-            latestMeasurement: latestMeasurement,
+             profile: currentProfileProvider.GetCurrentProfile(),
             effectiveMeasurement: effectiveMeasurement,
+            hasFutureMeasurements: hasFutureMeasurements,
             currentDate: currentDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
@@ -461,13 +461,13 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshProfileSummary() {
         var currentDate = currentDateProvider.GetCurrentDate();
-        var latestMeasurement = bodyMeasurementHistoryService.GetLatestByDate();
         var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
+        var hasFutureMeasurements = bodyMeasurementHistoryService.HasMeasurementsAfter(currentDate);
 
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
-            latestMeasurement: latestMeasurement,
             effectiveMeasurement: effectiveMeasurement,
+            hasFutureMeasurements: hasFutureMeasurements,
             currentDate: currentDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement

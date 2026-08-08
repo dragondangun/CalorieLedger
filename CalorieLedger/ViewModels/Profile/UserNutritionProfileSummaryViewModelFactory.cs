@@ -11,8 +11,8 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
     public static UserNutritionProfileSummaryViewModel Create(
         UserNutritionProfile profile,
-        BodyMeasurementEntry? latestMeasurement,
         BodyMeasurementEntry? effectiveMeasurement,
+        bool hasFutureMeasurements,
         DateOnly currentDate,
         Action editProfile,
         Action addBodyMeasurement
@@ -26,7 +26,8 @@ public static class UserNutritionProfileSummaryViewModelFactory {
         var weightSourceSummary = FormatWeightSource(effectiveMeasurement);
 
         var measurementWarning = FormatMeasurementWarning(
-            latestMeasurement,
+            effectiveMeasurement,
+            hasFutureMeasurements,
             currentDate
         );
 
@@ -57,26 +58,30 @@ public static class UserNutritionProfileSummaryViewModelFactory {
     }
 
     private static string FormatMeasurementWarning(
-        BodyMeasurementEntry? latestMeasurement,
+        BodyMeasurementEntry? effectiveMeasurement,
+        bool hasFutureMeasurements,
         DateOnly currentDate
     ) {
-        if(latestMeasurement is null) {
+        if(hasFutureMeasurements) {
+            return "В истории есть измерение с будущей датой. Проверьте дату измерения.";
+        }
+
+        if(effectiveMeasurement is null) {
             return "Добавьте измерение тела, чтобы вес и состав тела обновлялись по истории измерений.";
         }
 
         var measurementAgeDays = BodyMeasurementFreshnessPolicy.GetAgeInDays(
-            latestMeasurement.Date,
+            effectiveMeasurement.Date,
             currentDate
         );
 
         var freshnessState = BodyMeasurementFreshnessPolicy.GetState(measurementAgeDays);
 
-        return freshnessState switch {
-            BodyMeasurementFreshnessState.Future => "В истории есть измерение с будущей датой. Проверьте дату измерения.",
-            BodyMeasurementFreshnessState.Stale =>
-                $"Последнему измерению {RussianDayCountFormatter.Format(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.",
-            _ => string.Empty,
-        };
+        if(freshnessState != BodyMeasurementFreshnessState.Stale) {
+            return string.Empty;
+        }
+
+        return $"Последнему измерению {RussianDayCountFormatter.Format(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.";
     }
 
     private static string FormatBodyComposition(BodyProfile body) {

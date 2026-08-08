@@ -361,27 +361,24 @@ public sealed class BodyMeasurementHistoryServiceTests {
     }
 
     [Fact]
-    public void GetLatest_EmptyHistory_ReturnsNull() {
+    public void GetLatestOnOrBefore_EmptyHistory_ReturnsNull() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
         var service = new BodyMeasurementHistoryService(
             new InMemoryBodyMeasurementStore()
         );
 
-        var result = service.GetLatestByDate();
+        var result =service.GetLatestOnOrBefore(currentDate);
 
         Assert.Null(result);
     }
 
     [Fact]
-    public void GetLatest_ReturnsMeasurementWithLatestDate() {
+    public void GetLatestOnOrBefore_ReturnsMeasurementWithLatestAllowedDate() {
         var store = new InMemoryBodyMeasurementStore();
-
         var service = new BodyMeasurementHistoryService(store);
 
-        var currentDate = new DateOnly(
-            2026,
-            7,
-            26
-        );
+        var currentDate = new DateOnly(2026, 7, 26);
 
         var latestMeasurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
@@ -403,7 +400,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
             currentDate
         );
 
-        var result = service.GetLatestByDate();
+        var result = service.GetLatestOnOrBefore(currentDate);
 
         Assert.Equal(
             latestMeasurement,
@@ -694,45 +691,6 @@ public sealed class BodyMeasurementHistoryServiceTests {
         Assert.Equal(
             currentDate,
             latestMeasurement.Date
-        );
-    }
-
-    [Fact]
-    public void LatestLookups_FutureMeasurement_DistinguishStoredFromEffective() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var store = new InMemoryBodyMeasurementStore();
-
-        var currentMeasurement = new BodyMeasurementEntry(
-            Id: Guid.NewGuid(),
-            Date: currentDate,
-            WeightKg: 80m
-        );
-
-        var futureMeasurement = new BodyMeasurementEntry(
-            Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(1),
-            WeightKg: 81m
-        );
-
-        store.Save(currentMeasurement);
-        store.Save(futureMeasurement);
-
-        var service = new BodyMeasurementHistoryService(store);
-
-        var latestStored = service.GetLatestByDate();
-
-        var latestEffective = service.GetLatestOnOrBefore(currentDate);
-
-        Assert.NotNull(latestStored);
-        Assert.Equal(
-            futureMeasurement.Id,
-            latestStored.Id
-        );
-
-        Assert.NotNull(latestEffective);
-        Assert.Equal(
-            currentMeasurement.Id,
-            latestEffective.Id
         );
     }
 

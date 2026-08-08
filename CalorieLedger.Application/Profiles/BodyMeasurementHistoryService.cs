@@ -123,16 +123,6 @@ public sealed class BodyMeasurementHistoryService {
         return value is null || value is > 0m and < 100m;
     }
 
-    public BodyMeasurementEntry? GetLatestByDate() {
-        var measurements = GetAll();
-
-        if(measurements.Count == 0) {
-            return null;
-        }
-
-        return measurements[^1];
-    }
-
     public BodyMeasurementEntry? GetLatestOnOrBefore(DateOnly date) {
         var measurements = GetAll();
 

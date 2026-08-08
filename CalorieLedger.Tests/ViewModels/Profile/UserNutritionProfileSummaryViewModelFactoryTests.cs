@@ -12,7 +12,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile,
-            latestMeasurement: null,
+            hasFutureMeasurements: false,
             effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => editInvoked = true,
@@ -69,7 +69,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile,
-            latestMeasurement: null,
+            hasFutureMeasurements: false,
             effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
@@ -109,7 +109,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var viewModel =
         UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            latestMeasurement: null,
+            hasFutureMeasurements: false,
             effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
@@ -139,7 +139,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            latestMeasurement: measurement,
+            hasFutureMeasurements: false,
             effectiveMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
@@ -160,7 +160,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            latestMeasurement: null,
+            hasFutureMeasurements: false,
             effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
@@ -185,7 +185,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            latestMeasurement: measurement,
+            hasFutureMeasurements: false,
             effectiveMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
@@ -211,7 +211,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
-            latestMeasurement: measurement,
+            hasFutureMeasurements: false,
             effectiveMeasurement: measurement,
             currentDate: currentDate,
             editProfile: () => { },
@@ -240,7 +240,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
 
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
-            latestMeasurement: measurement,
+            hasFutureMeasurements: false,
             effectiveMeasurement: measurement,
             currentDate: currentDate,
             editProfile: () => { },
@@ -261,10 +261,9 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             WeightKg: 70.5m
         );
 
-        var viewModel =
-        UserNutritionProfileSummaryViewModelFactory.Create(
+        var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            latestMeasurement: measurement,
+            hasFutureMeasurements: false,
             effectiveMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
@@ -284,18 +283,10 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     public void Create_FutureMeasurement_HasDateWarning() {
         var currentDate = new DateOnly(2026, 8, 8);
 
-        var measurement = new BodyMeasurementEntry(
-            Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(1),
-            WeightKg: 80m
-        );
-
-        var profile = CreateProfile();
-
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: profile,
-            latestMeasurement: measurement,
+            profile: CreateProfile(),
             effectiveMeasurement: null,
+            hasFutureMeasurements: true,
             currentDate: currentDate,
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -322,16 +313,65 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             WeightKg: 79m
         );
 
-        var futureMeasurement = new BodyMeasurementEntry(
+        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            effectiveMeasurement: effectiveMeasurement,
+            hasFutureMeasurements: true,
+            currentDate: currentDate,
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            "Источник веса: измерение от 07.08.2026",
+            summary.WeightSourceSummary
+        );
+
+        Assert.Equal(
+            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
+            summary.MeasurementWarning
+        );
+    }
+
+    [Fact]
+    public void Create_FutureMeasurement_ShowsWarningAndUsesProfileSource() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var profile = CreateProfile();
+
+        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: profile,
+            effectiveMeasurement: null,
+            hasFutureMeasurements: true,
+            currentDate: currentDate,
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            "Источник веса: исходные данные профиля",
+            summary.WeightSourceSummary
+        );
+
+        Assert.Equal(
+            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
+            summary.MeasurementWarning
+        );
+    }
+
+    [Fact]
+    public void Create_FutureMeasurementWithEarlierEffectiveMeasurement_ShowsEffectiveSourceAndWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var effectiveMeasurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(1),
-            WeightKg: 80m
+            Date: currentDate.AddDays(-1),
+            WeightKg: 79m
         );
 
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            latestMeasurement: futureMeasurement,
             effectiveMeasurement: effectiveMeasurement,
+            hasFutureMeasurements: true,
             currentDate: currentDate,
             editProfile: () => { },
             addBodyMeasurement: () => { }
