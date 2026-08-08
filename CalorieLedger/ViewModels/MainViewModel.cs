@@ -167,7 +167,7 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         var currentDate = currentDateProvider.GetCurrentDate();
-        var latestMeasurement = bodyMeasurementHistoryService.GetLatestStored();
+        var latestMeasurement = bodyMeasurementHistoryService.GetLatestByDate();
         var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
 
         profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
@@ -461,7 +461,7 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshProfileSummary() {
         var currentDate = currentDateProvider.GetCurrentDate();
-        var latestMeasurement = bodyMeasurementHistoryService.GetLatestStored();
+        var latestMeasurement = bodyMeasurementHistoryService.GetLatestByDate();
         var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
 
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(

@@ -113,7 +113,7 @@ public sealed class BodyMeasurementHistoryService {
             || value is > 0m and < 100m;
     }
 
-    public BodyMeasurementEntry? GetLatestStored() {
+    public BodyMeasurementEntry? GetLatestByDate() {
         var measurements = GetAll();
 
         if(measurements.Count == 0) {

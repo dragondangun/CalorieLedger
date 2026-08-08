@@ -366,7 +366,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
             new InMemoryBodyMeasurementStore()
         );
 
-        var result = service.GetLatestStored();
+        var result = service.GetLatestByDate();
 
         Assert.Null(result);
     }
@@ -403,7 +403,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
             currentDate
         );
 
-        var result = service.GetLatestStored();
+        var result = service.GetLatestByDate();
 
         Assert.Equal(
             latestMeasurement,
@@ -719,10 +719,9 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var latestStored = service.GetLatestStored();
+        var latestStored = service.GetLatestByDate();
 
-        var latestEffective =
-        service.GetLatestOnOrBefore(currentDate);
+        var latestEffective = service.GetLatestOnOrBefore(currentDate);
 
         Assert.NotNull(latestStored);
         Assert.Equal(
