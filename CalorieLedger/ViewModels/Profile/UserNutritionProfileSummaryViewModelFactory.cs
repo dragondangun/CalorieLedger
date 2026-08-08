@@ -63,16 +63,19 @@ public static class UserNutritionProfileSummaryViewModelFactory {
             return "Добавьте измерение тела, чтобы вес и состав тела обновлялись по истории измерений.";
         }
 
-        if(!BodyMeasurementFreshnessPolicy.IsStale(latestMeasurement.Date, currentDate)) {
-            return string.Empty;
-        }
-
         var measurementAgeDays = BodyMeasurementFreshnessPolicy.GetAgeInDays(
             latestMeasurement.Date,
             currentDate
         );
 
-        return $"Последнему измерению {RussianDayCountFormatter.Format(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.";
+        var freshnessState = BodyMeasurementFreshnessPolicy.GetState(measurementAgeDays);
+
+        return freshnessState switch {
+            BodyMeasurementFreshnessState.Future => "Последнее измерение датировано будущим числом. Проверьте дату измерения.",
+            BodyMeasurementFreshnessState.Stale =>
+                $"Последнему измерению {RussianDayCountFormatter.Format(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.",
+            _ => string.Empty,
+        };
     }
 
     private static string FormatBodyComposition(BodyProfile body) {

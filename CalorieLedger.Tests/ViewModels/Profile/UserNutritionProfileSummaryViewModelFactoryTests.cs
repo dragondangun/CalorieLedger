@@ -1,5 +1,7 @@
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Common;
 using CalorieLedger.ViewModels.Profile;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
 
@@ -215,5 +217,85 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         Assert.False(viewModel.HasMeasurementWarning);
         Assert.False(viewModel.CanAddBodyMeasurement);
         Assert.False(viewModel.AddBodyMeasurementCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void Create_MeasurementExactlyAtFreshnessBoundary_HasNoWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-BodyMeasurementFreshnessPolicy.WarningDayCount),
+            WeightKg: 80m
+        );
+
+        var profile = CreateProfile();
+
+        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: profile,
+            latestMeasurement: measurement,
+            currentDate: currentDate,
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            string.Empty,
+            summary.MeasurementWarning
+        );
+    }
+
+    [Fact]
+    public void Create_StaleMeasurement_HasWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(
+                -BodyMeasurementFreshnessPolicy.WarningDayCount - 1
+            ),
+            WeightKg: 80m
+        );
+
+        var profile = CreateProfile();
+
+        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: profile,
+            latestMeasurement: measurement,
+            currentDate: currentDate,
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            $"Последнему измерению {RussianDayCountFormatter.Format(BodyMeasurementFreshnessPolicy.WarningDayCount + 1)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.",
+            summary.MeasurementWarning
+        );
+    }
+
+    [Fact]
+    public void Create_FutureMeasurement_HasDateWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 80m
+        );
+
+        var profile = CreateProfile();
+
+        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: profile,
+            latestMeasurement: measurement,
+            currentDate: currentDate,
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            "Последнее измерение датировано будущим числом. Проверьте дату измерения.",
+            summary.MeasurementWarning
+        );
     }
 }
