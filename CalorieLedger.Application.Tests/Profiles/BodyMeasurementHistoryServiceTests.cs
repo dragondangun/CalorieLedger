@@ -612,4 +612,88 @@ public sealed class BodyMeasurementHistoryServiceTests {
         Assert.True(result.IsSuccess);
         Assert.Single(store.GetAll());
     }
+
+    [Fact]
+    public void GetLatest_CurrentDate_IgnoresFutureMeasurements() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-1),
+                WeightKg: 80m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(1),
+                WeightKg: 81m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var latestMeasurement = service.GetLatest(currentDate);
+
+        Assert.NotNull(latestMeasurement);
+        Assert.Equal(
+            currentDate.AddDays(-1),
+            latestMeasurement.Date
+        );
+    }
+
+    [Fact]
+    public void GetLatest_CurrentDate_OnlyFutureMeasurements_ReturnsNull() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(1),
+                WeightKg: 80m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var latestMeasurement = service.GetLatest(currentDate);
+
+        Assert.Null(latestMeasurement);
+    }
+
+    [Fact]
+    public void GetLatest_CurrentDate_IncludesCurrentDateMeasurement() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-1),
+                WeightKg: 79m
+            )
+        );
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate,
+                WeightKg: 80m
+            )
+        );
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var latestMeasurement = service.GetLatest(currentDate);
+
+        Assert.NotNull(latestMeasurement);
+        Assert.Equal(
+            currentDate,
+            latestMeasurement.Date
+        );
+    }
 }
