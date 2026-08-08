@@ -119,11 +119,11 @@ public sealed class BodyMeasurementHistoryService {
         return measurements.Count == 0 ? null : measurements[^1];
     }
 
-    public BodyMeasurementEntry? GetLatest(DateOnly currentDate) {
+    public BodyMeasurementEntry? GetLatestOnOrBefore(DateOnly date) {
         var measurements = GetAll();
 
         for(var index = measurements.Count - 1; index >= 0; index--) {
-            if(measurements[index].Date <= currentDate) {
+            if(measurements[index].Date <= date) {
                 return measurements[index];
             }
         }

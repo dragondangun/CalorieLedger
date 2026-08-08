@@ -614,7 +614,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
     }
 
     [Fact]
-    public void GetLatest_CurrentDate_IgnoresFutureMeasurements() {
+    public void GetLatestOnOrBefore_FutureMeasurement_IgnoresFutureMeasurement() {
         var currentDate = new DateOnly(2026, 8, 8);
         var store = new InMemoryBodyMeasurementStore();
 
@@ -636,7 +636,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var latestMeasurement = service.GetLatest(currentDate);
+        var latestMeasurement = service.GetLatestOnOrBefore(currentDate);
 
         Assert.NotNull(latestMeasurement);
         Assert.Equal(
@@ -646,7 +646,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
     }
 
     [Fact]
-    public void GetLatest_CurrentDate_OnlyFutureMeasurements_ReturnsNull() {
+    public void GetLatestOnOrBefore_OnlyFutureMeasurements_ReturnsNull() {
         var currentDate = new DateOnly(2026, 8, 8);
         var store = new InMemoryBodyMeasurementStore();
 
@@ -660,13 +660,13 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var latestMeasurement = service.GetLatest(currentDate);
+        var latestMeasurement = service.GetLatestOnOrBefore(currentDate);
 
         Assert.Null(latestMeasurement);
     }
 
     [Fact]
-    public void GetLatest_CurrentDate_IncludesCurrentDateMeasurement() {
+    public void GetLatestOnOrBefore_CurrentDateMeasurement_IncludesMeasurement() {
         var currentDate = new DateOnly(2026, 8, 8);
         var store = new InMemoryBodyMeasurementStore();
 
@@ -688,7 +688,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var service = new BodyMeasurementHistoryService(store);
 
-        var latestMeasurement = service.GetLatest(currentDate);
+        var latestMeasurement = service.GetLatestOnOrBefore(currentDate);
 
         Assert.NotNull(latestMeasurement);
         Assert.Equal(

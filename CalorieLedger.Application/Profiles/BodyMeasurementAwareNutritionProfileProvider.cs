@@ -26,7 +26,9 @@ public sealed class BodyMeasurementAwareNutritionProfileProvider:IUserNutritionP
     public UserNutritionProfile GetCurrentProfile() {
         var baseProfile = baseProfileProvider.GetCurrentProfile();
 
-        var latestMeasurement = measurementHistoryService.GetLatest(currentDateProvider.GetCurrentDate());
+        var latestMeasurement = measurementHistoryService.GetLatestOnOrBefore(
+            currentDateProvider.GetCurrentDate()
+        );
 
         if(latestMeasurement is null) {
             return baseProfile;
