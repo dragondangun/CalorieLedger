@@ -366,7 +366,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
             new InMemoryBodyMeasurementStore()
         );
 
-        var result = service.GetLatest();
+        var result = service.GetLatestStored();
 
         Assert.Null(result);
     }
@@ -403,7 +403,7 @@ public sealed class BodyMeasurementHistoryServiceTests {
             currentDate
         );
 
-        var result = service.GetLatest();
+        var result = service.GetLatestStored();
 
         Assert.Equal(
             latestMeasurement,
@@ -694,6 +694,46 @@ public sealed class BodyMeasurementHistoryServiceTests {
         Assert.Equal(
             currentDate,
             latestMeasurement.Date
+        );
+    }
+
+    [Fact]
+    public void LatestLookups_FutureMeasurement_DistinguishStoredFromEffective() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m
+        );
+
+        var futureMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 81m
+        );
+
+        store.Save(currentMeasurement);
+        store.Save(futureMeasurement);
+
+        var service = new BodyMeasurementHistoryService(store);
+
+        var latestStored = service.GetLatestStored();
+
+        var latestEffective =
+        service.GetLatestOnOrBefore(currentDate);
+
+        Assert.NotNull(latestStored);
+        Assert.Equal(
+            futureMeasurement.Id,
+            latestStored.Id
+        );
+
+        Assert.NotNull(latestEffective);
+        Assert.Equal(
+            currentMeasurement.Id,
+            latestEffective.Id
         );
     }
 }
