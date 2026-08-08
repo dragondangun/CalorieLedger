@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 
 namespace CalorieLedger.ViewModels.Profile;
+using CalorieLedger.ViewModels.Common;
 
 public static class BodyMeasurementListItemPresentationFactory {
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
@@ -158,7 +159,7 @@ public static class BodyMeasurementListItemPresentationFactory {
 
         var dayCount = Math.Abs(entry.Date.DayNumber - previousMeasurement.Date.DayNumber);
 
-        var periodSummary = $"За {FormatDayCount(dayCount)}";
+        var periodSummary = $"За {RussianDayCountFormatter.Format(dayCount)}";
 
         return values.Count == 0
             ? $"{periodSummary}: без изменений"
@@ -197,20 +198,6 @@ public static class BodyMeasurementListItemPresentationFactory {
         return $"{sign}{Math.Abs(difference).ToString("0.0", RussianCulture)}{suffix}";
     }
 
-    private static string FormatDayCount(int dayCount) {
-        var lastTwoDigits = dayCount % 100;
-
-        var suffix = lastTwoDigits is >= 11 and <= 14
-            ? "дней"
-            : (dayCount % 10) switch {
-                1 => "день",
-                2 or 3 or 4 => "дня",
-                _ => "дней",
-            };
-
-        return $"{dayCount} {suffix}";
-    }
-
     private static string FormatLatestBadgeText(
         DateOnly measurementDate,
         DateOnly? currentDate,
@@ -234,7 +221,7 @@ public static class BodyMeasurementListItemPresentationFactory {
             < 0 => "Последнее · будущая дата",
             0 => "Последнее · сегодня",
             1 => "Последнее · вчера",
-            _ => $"Последнее · {FormatDayCount(dayCount)} назад",
+            _ => $"Последнее · {RussianDayCountFormatter.Format(dayCount)} назад",
         };
     }
 

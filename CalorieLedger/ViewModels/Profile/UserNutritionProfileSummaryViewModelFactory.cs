@@ -4,6 +4,7 @@ using System.Globalization;
 using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.ViewModels.Profile;
+using CalorieLedger.ViewModels.Common;
 
 public static class UserNutritionProfileSummaryViewModelFactory {
     private const int FreshMeasurementMaximumAgeDays = 14;
@@ -73,7 +74,7 @@ public static class UserNutritionProfileSummaryViewModelFactory {
             currentDate
         );
 
-        return $"Последнему измерению {FormatDays(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.";
+        return $"Последнему измерению {RussianDayCountFormatter.Format(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.";
     }
 
     private static string FormatBodyComposition(BodyProfile body) {
@@ -117,10 +118,6 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
     private static string FormatAge(int ageYears) {
         return $"{ageYears} {GetCountSuffix(ageYears, "год", "года", "лет")}";
-    }
-
-    private static string FormatDays(int dayCount) {
-        return $"{dayCount} {GetCountSuffix(dayCount, "день", "дня", "дней")}";
     }
 
     private static string GetCountSuffix(
