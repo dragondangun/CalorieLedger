@@ -1,4 +1,4 @@
-﻿namespace CalorieLedger.ViewModels.Profile;
+namespace CalorieLedger.ViewModels.Profile;
 
 public sealed record BodyMeasurementListItemPresentation(
     string DateSummary,
@@ -8,5 +8,6 @@ public sealed record BodyMeasurementListItemPresentation(
     string DataCompletenessText,
     bool IsLatest,
     string LatestBadgeText,
-    bool IsLatestMeasurementStale
+    bool IsLatestMeasurementStale,
+    string MeasurementFreshnessWarning
 );

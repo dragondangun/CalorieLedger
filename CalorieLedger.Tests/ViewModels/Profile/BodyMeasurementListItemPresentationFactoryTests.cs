@@ -1,4 +1,5 @@
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Common;
 using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
@@ -336,6 +337,50 @@ public sealed class BodyMeasurementListItemPresentationFactoryTests {
         Assert.Equal(
             "За 1 день: вес −0,1 кг",
             presentation.ChangesSummary
+        );
+    }
+
+    [Fact]
+    public void Create_StaleLatestMeasurement_FormatsFreshnessWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-15),
+            WeightKg: 80m
+        );
+
+        var presentation = BodyMeasurementListItemPresentationFactory.Create(
+            entry: entry,
+            isLatest: true,
+            currentDate: currentDate
+        );
+
+        Assert.Equal(
+            $"Последнее измерение сделано более {RussianDayCountFormatter.Format(BodyMeasurementFreshnessPolicy.WarningDayCount)} назад.",
+            presentation.MeasurementFreshnessWarning
+        );
+    }
+
+    [Fact]
+    public void Create_FreshLatestMeasurement_HasNoFreshnessWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var entry = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-14),
+            WeightKg: 80m
+        );
+
+        var presentation = BodyMeasurementListItemPresentationFactory.Create(
+            entry: entry,
+            isLatest: true,
+            currentDate: currentDate
+        );
+
+        Assert.Equal(
+            string.Empty,
+            presentation.MeasurementFreshnessWarning
         );
     }
 }

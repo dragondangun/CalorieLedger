@@ -48,7 +48,7 @@
               <StackPanel Spacing="8">
 
                   <TextBlock
-                      Text="Последнее измерение сделано более 14 дней назад."
+                      Text="{Binding MeasurementFreshnessWarning}"
                       TextWrapping="Wrap"
                       FontSize="12"
                       FontStyle="Italic"

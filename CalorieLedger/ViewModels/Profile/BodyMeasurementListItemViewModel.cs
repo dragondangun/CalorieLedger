@@ -41,6 +41,8 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
 
     public bool HasDataCompletenessNotice => !string.IsNullOrWhiteSpace(DataCompletenessText);
 
+    public string MeasurementFreshnessWarning { get; }
+
     public BodyMeasurementListItemViewModel(
         BodyMeasurementEntry entry,
         Action<Guid> onEdit,
@@ -70,6 +72,7 @@ public partial class BodyMeasurementListItemViewModel:ViewModelBase {
         IsLatest = presentation.IsLatest;
         LatestBadgeText = presentation.LatestBadgeText;
         IsLatestMeasurementStale = presentation.IsLatestMeasurementStale;
+        MeasurementFreshnessWarning = presentation.MeasurementFreshnessWarning;
 
         this.onEdit = onEdit;
         this.onDelete = onDelete;

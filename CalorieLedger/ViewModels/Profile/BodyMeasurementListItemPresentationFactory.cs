@@ -36,6 +36,11 @@ public static class BodyMeasurementListItemPresentationFactory {
                 measurementDate: entry.Date,
                 currentDate: currentDate,
                 isLatest: isLatest
+            ),
+            MeasurementFreshnessWarning: FormatMeasurementFreshnessWarning(
+                measurementDate: entry.Date,
+                currentDate: currentDate,
+                isLatest: isLatest
             )
         );
     }
@@ -231,5 +236,22 @@ public static class BodyMeasurementListItemPresentationFactory {
                 measurementDate,
                 currentDate.Value
             );
+    }
+
+    private static string FormatMeasurementFreshnessWarning(
+        DateOnly measurementDate,
+        DateOnly? currentDate,
+        bool isLatest
+    ) {
+        if(!isLatest
+            || currentDate is null
+            || !BodyMeasurementFreshnessPolicy.IsStale(
+                measurementDate,
+                currentDate.Value
+            )) {
+            return string.Empty;
+        }
+
+        return $"Последнее измерение сделано более {RussianDayCountFormatter.Format(BodyMeasurementFreshnessPolicy.WarningDayCount)} назад.";
     }
 }
