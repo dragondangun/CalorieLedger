@@ -64,11 +64,14 @@ public static class UserNutritionProfileSummaryViewModelFactory {
             return "Добавьте измерение тела, чтобы вес и состав тела обновлялись по истории измерений.";
         }
 
-        var measurementAgeDays = Math.Max(0, currentDate.DayNumber - latestMeasurement.Date.DayNumber);
-
-        if(measurementAgeDays <= FreshMeasurementMaximumAgeDays) {
+        if(!BodyMeasurementFreshnessPolicy.IsStale(latestMeasurement.Date, currentDate)) {
             return string.Empty;
         }
+
+        var measurementAgeDays = BodyMeasurementFreshnessPolicy.GetAgeInDays(
+            latestMeasurement.Date,
+            currentDate
+        );
 
         return $"Последнему измерению {FormatDays(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.";
     }

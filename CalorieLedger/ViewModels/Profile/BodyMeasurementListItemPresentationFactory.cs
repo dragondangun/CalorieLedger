@@ -6,8 +6,6 @@ using System.Globalization;
 namespace CalorieLedger.ViewModels.Profile;
 
 public static class BodyMeasurementListItemPresentationFactory {
-    private const int MeasurementFreshnessWarningDayCount = 14;
-
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     public static BodyMeasurementListItemPresentation Create(
@@ -226,7 +224,10 @@ public static class BodyMeasurementListItemPresentationFactory {
             return "Последнее";
         }
 
-        var dayCount = currentDate.Value.DayNumber - measurementDate.DayNumber;
+        var dayCount = BodyMeasurementFreshnessPolicy.GetAgeInDays(
+            measurementDate,
+            currentDate.Value
+        );
 
         return dayCount switch
         {
@@ -242,12 +243,11 @@ public static class BodyMeasurementListItemPresentationFactory {
         DateOnly? currentDate,
         bool isLatest)
     {
-        if(!isLatest || currentDate is null) {
-            return false;
-        }
-
-        var dayCount = currentDate.Value.DayNumber - measurementDate.DayNumber;
-
-        return dayCount > MeasurementFreshnessWarningDayCount;
+        return isLatest
+            && currentDate is not null
+            && BodyMeasurementFreshnessPolicy.IsStale(
+                measurementDate,
+                currentDate.Value
+            );
     }
 }
