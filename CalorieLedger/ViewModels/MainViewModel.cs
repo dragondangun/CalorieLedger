@@ -301,7 +301,7 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshBodyTrends() {
         var currentDate = currentDateProvider.GetCurrentDate();
-        var measurements = bodyMeasurementHistoryService.GetAll();
+        var measurements = bodyMeasurementHistoryService.GetAllOnOrBefore(currentDate);
         BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
     }
 
