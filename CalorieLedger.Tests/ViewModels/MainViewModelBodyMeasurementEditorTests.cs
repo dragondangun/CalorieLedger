@@ -248,8 +248,8 @@ public sealed class MainViewModelBodyMeasurementEditorTests {
         editor.WeightKg = 70m;
         editor.SaveCommand.Execute(null);
 
-        Assert.Contains(
-            "Последнее измерение:",
+        Assert.Equal(
+            "Источник веса: измерение от 08.08.2026",
             viewModel.ProfileSummary.WeightSourceSummary
         );
 

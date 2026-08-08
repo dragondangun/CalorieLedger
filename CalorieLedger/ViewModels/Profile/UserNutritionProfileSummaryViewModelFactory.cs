@@ -43,17 +43,17 @@ public static class UserNutritionProfileSummaryViewModelFactory {
         );
     }
 
-    private static string FormatWeightSource(BodyMeasurementEntry? latestMeasurement) {
-        if(latestMeasurement is null) {
+    private static string FormatWeightSource(BodyMeasurementEntry? effectiveMeasurement) {
+        if(effectiveMeasurement is null) {
             return "Источник веса: исходные данные профиля";
         }
 
-        var measurementDate = latestMeasurement.Date.ToString(
+        var measurementDate = effectiveMeasurement.Date.ToString(
             "dd.MM.yyyy",
             RussianCulture
         );
 
-        return $"Последнее измерение: {measurementDate}";
+        return $"Источник веса: измерение от {measurementDate}";
     }
 
     private static string FormatMeasurementWarning(
@@ -72,7 +72,7 @@ public static class UserNutritionProfileSummaryViewModelFactory {
         var freshnessState = BodyMeasurementFreshnessPolicy.GetState(measurementAgeDays);
 
         return freshnessState switch {
-            BodyMeasurementFreshnessState.Future => "Последнее измерение датировано будущим числом. Проверьте дату измерения.",
+            BodyMeasurementFreshnessState.Future => "В истории есть измерение с будущей датой. Проверьте дату измерения.",
             BodyMeasurementFreshnessState.Stale =>
                 $"Последнему измерению {RussianDayCountFormatter.Format(measurementAgeDays)}. Добавьте новое измерение, чтобы расчёты использовали свежие данные.",
             _ => string.Empty,

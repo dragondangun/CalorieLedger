@@ -130,34 +130,6 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     }
 
     [Fact]
-    public void Create_WithRecentMeasurement_ShowsDateWithoutWarning() {
-        var measurement =
-        new BodyMeasurementEntry(
-            Id: Guid.NewGuid(),
-            Date: new DateOnly(2026, 7, 20),
-            WeightKg: 70.5m
-        );
-
-        var viewModel =
-        UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: CreateProfile(),
-            latestMeasurement: measurement,
-            effectiveMeasurement: measurement,
-            currentDate: new DateOnly(2026, 7, 26),
-            editProfile: () => { },
-            addBodyMeasurement: () => { }
-        );
-
-        Assert.Equal(
-            "Последнее измерение: 20.07.2026",
-            viewModel.WeightSourceSummary
-        );
-
-        Assert.False(viewModel.HasMeasurementWarning);
-        Assert.Equal(string.Empty, viewModel.MeasurementWarning);
-    }
-
-    [Fact]
     public void Create_WithStaleMeasurement_ShowsAgeWarning() {
         var measurement = new BodyMeasurementEntry(
             Id: Guid.NewGuid(),
@@ -282,6 +254,33 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     }
 
     [Fact]
+    public void Create_WithRecentMeasurement_ShowsDateWithoutWarning() {
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 7, 20),
+            WeightKg: 70.5m
+        );
+
+        var viewModel =
+        UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: measurement,
+            effectiveMeasurement: measurement,
+            currentDate: new DateOnly(2026, 7, 26),
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            "Источник веса: измерение от 20.07.2026",
+            viewModel.WeightSourceSummary
+        );
+
+        Assert.False(viewModel.HasMeasurementWarning);
+        Assert.Equal(string.Empty, viewModel.MeasurementWarning);
+    }
+
+    [Fact]
     public void Create_FutureMeasurement_HasDateWarning() {
         var currentDate = new DateOnly(2026, 8, 8);
 
@@ -308,7 +307,43 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         );
 
         Assert.Equal(
-            "Последнее измерение датировано будущим числом. Проверьте дату измерения.",
+            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
+            summary.MeasurementWarning
+        );
+    }
+
+    [Fact]
+    public void Create_FutureLatestWithEarlierEffectiveMeasurement_ShowsEffectiveSourceAndFutureWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var effectiveMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 79m
+        );
+
+        var futureMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 80m
+        );
+
+        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
+            profile: CreateProfile(),
+            latestMeasurement: futureMeasurement,
+            effectiveMeasurement: effectiveMeasurement,
+            currentDate: currentDate,
+            editProfile: () => { },
+            addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            "Источник веса: измерение от 07.08.2026",
+            summary.WeightSourceSummary
+        );
+
+        Assert.Equal(
+            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
             summary.MeasurementWarning
         );
     }
