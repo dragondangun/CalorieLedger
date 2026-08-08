@@ -145,16 +145,12 @@ public sealed class BodyMeasurementHistoryService {
             effectiveMeasurements.Add(measurement);
         }
 
-        BodyMeasurementEntry? latestEffectiveMeasurement = effectiveMeasurements.Count == 0
-            ? null
-            : effectiveMeasurements[^1];
-
         var hasFutureMeasurements = effectiveMeasurements.Count < measurements.Count;
 
         return new BodyMeasurementHistorySnapshot(
-            EffectiveMeasurements: effectiveMeasurements,
-            LatestEffectiveMeasurement: latestEffectiveMeasurement,
-            HasFutureMeasurements: hasFutureMeasurements
+            asOfDate: currentDate,
+            effectiveMeasurements: effectiveMeasurements,
+            hasFutureMeasurements: hasFutureMeasurements
         );
     }
 }

@@ -594,6 +594,11 @@ public sealed class BodyMeasurementHistoryServiceTests {
         var snapshot = service.GetSnapshot(currentDate);
 
         Assert.Equal(
+            currentDate,
+            snapshot.AsOfDate
+        );
+
+        Assert.Equal(
             2,
             snapshot.EffectiveMeasurements.Count
         );
@@ -641,6 +646,10 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var snapshot = service.GetSnapshot(currentDate);
 
+        Assert.Equal(
+            currentDate,
+            snapshot.AsOfDate
+        );
         Assert.Empty(snapshot.EffectiveMeasurements);
         Assert.Null(snapshot.LatestEffectiveMeasurement);
         Assert.True(snapshot.HasFutureMeasurements);
@@ -671,6 +680,11 @@ public sealed class BodyMeasurementHistoryServiceTests {
         var snapshot = service.GetSnapshot(currentDate);
 
         Assert.Equal(
+            currentDate,
+            snapshot.AsOfDate
+        );
+
+        Assert.Equal(
             2,
             snapshot.EffectiveMeasurements.Count
         );
@@ -693,6 +707,10 @@ public sealed class BodyMeasurementHistoryServiceTests {
 
         var snapshot = service.GetSnapshot(currentDate);
 
+        Assert.Equal(
+            currentDate,
+            snapshot.AsOfDate
+        );
         Assert.Empty(snapshot.EffectiveMeasurements);
         Assert.Null(snapshot.LatestEffectiveMeasurement);
         Assert.False(snapshot.HasFutureMeasurements);

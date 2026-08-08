@@ -166,22 +166,9 @@ public partial class MainViewModel:ViewModelBase {
             "Адаптивная оценка ещё не рассчитана."
         );
 
-        var currentDate = currentDateProvider.GetCurrentDate();
-        var measurementSnapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
-
-        UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: currentProfileProvider.GetCurrentProfile(),
-            effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
-            hasFutureMeasurements: measurementSnapshot.HasFutureMeasurements,
-            currentDate: currentDate,
-            editProfile: EditProfile,
-            addBodyMeasurement: AddBodyMeasurement
-        );
-
         today = CreateTodayDashboardViewModel();
 
-        RefreshBodyMeasurements();
-        RefreshProfileSummary();
+        RefreshAfterBodyMeasurementChange();
     }
 
     public bool IsGoalEditorOpen => GoalEditor is not null;
@@ -200,10 +187,7 @@ public partial class MainViewModel:ViewModelBase {
             ? bodyMeasurementEditorService.CreateNew(currentDate)
             : BodyMeasurementDraftMapper.FromEntry(existingMeasurement);
 
-        OpenBodyMeasurementEditor(
-            draft,
-            currentDate
-        );
+        OpenBodyMeasurementEditor(draft, currentDate);
     }
 
     [RelayCommand]
@@ -237,9 +221,7 @@ public partial class MainViewModel:ViewModelBase {
 
         var currentDate = currentDateProvider.GetCurrentDate();
 
-        OpenBodyMeasurementEditor(
-            draft,
-            currentDate);
+        OpenBodyMeasurementEditor(draft, currentDate);
     }
 
     private void DeleteBodyMeasurement(Guid id) {
@@ -249,7 +231,7 @@ public partial class MainViewModel:ViewModelBase {
             return;
         }
 
-        RefreshBodyMeasurements();
+        RefreshAfterBodyMeasurementChange();
 
         Today = CreateTodayDashboardViewModel("Измерение удалено. Текущий профиль и дневная норма КБЖУ обновлены.");
     }
@@ -260,7 +242,8 @@ public partial class MainViewModel:ViewModelBase {
             draft: draft,
             currentDate: currentDate,
             onSaved: OnBodyMeasurementSaved,
-            onCancelled: CloseBodyMeasurementEditor);
+            onCancelled: CloseBodyMeasurementEditor
+        );
     }
 
     private void RefreshBodyMeasurements() {
@@ -292,20 +275,13 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasBodyMeasurements));
         OnPropertyChanged(nameof(HasNoBodyMeasurements));
 
-        RefreshBodyMeasurementDerivedState();
-        RefreshAdaptiveEnergyAssessment();
         RefreshVisibleBodyMeasurements();
     }
 
-    private void RefreshBodyTrends(
-        DateOnly currentDate,
-        BodyMeasurementHistorySnapshot measurementSnapshot
-    ) {
-        var measurements = measurementSnapshot.EffectiveMeasurements;
-
+    private void RefreshBodyTrends(BodyMeasurementHistorySnapshot measurementSnapshot) {
         BodyTrends = BodyTrendsViewModelFactory.Create(
-            measurements,
-            currentDate
+            measurementSnapshot.EffectiveMeasurements,
+            measurementSnapshot.AsOfDate
         );
     }
 
@@ -406,7 +382,7 @@ public partial class MainViewModel:ViewModelBase {
     private void OnBodyMeasurementSaved() {
         BodyMeasurementEditor = null;
 
-        RefreshBodyMeasurements();
+        RefreshAfterBodyMeasurementChange();
 
         Today = CreateTodayDashboardViewModel("Измерение сохранено. Текущий профиль и дневная норма КБЖУ обновлены.");
     }
@@ -464,20 +440,15 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshProfileSummary() {
-        var measurementState = GetCurrentBodyMeasurementState();
-
-        RefreshProfileSummary(measurementState.CurrentDate, measurementState.Snapshot);
+        RefreshProfileSummary(GetCurrentBodyMeasurementSnapshot());
     }
 
-    private void RefreshProfileSummary(
-        DateOnly currentDate,
-        BodyMeasurementHistorySnapshot measurementSnapshot
-    ) {
+    private void RefreshProfileSummary(BodyMeasurementHistorySnapshot measurementSnapshot) {
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
             effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
             hasFutureMeasurements: measurementSnapshot.HasFutureMeasurements,
-            currentDate: currentDate,
+            currentDate: measurementSnapshot.AsOfDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );
@@ -509,19 +480,23 @@ public partial class MainViewModel:ViewModelBase {
         ToggleBodyMeasurementHistoryCommand.NotifyCanExecuteChanged();
     }
 
-    private void RefreshBodyMeasurementDerivedState() {
-        var measurementState = GetCurrentBodyMeasurementState();
-
-        RefreshProfileSummary(measurementState.CurrentDate, measurementState.Snapshot);
-
-        RefreshBodyTrends(measurementState.CurrentDate, measurementState.Snapshot);
+    private void RefreshAfterBodyMeasurementChange() {
+        RefreshBodyMeasurements();
+        RefreshBodyMeasurementDerivedState();
+        RefreshAdaptiveEnergyAssessment();
     }
 
-    private (DateOnly CurrentDate, BodyMeasurementHistorySnapshot Snapshot) GetCurrentBodyMeasurementState() {
-        var currentDate = currentDateProvider.GetCurrentDate();
+    private void RefreshBodyMeasurementDerivedState() {
+        var measurementSnapshot = GetCurrentBodyMeasurementSnapshot();
 
-        var snapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
+        RefreshProfileSummary(measurementSnapshot);
 
-        return (currentDate, snapshot);
+        RefreshBodyTrends(measurementSnapshot);
+    }
+
+    private BodyMeasurementHistorySnapshot GetCurrentBodyMeasurementSnapshot() {
+        return bodyMeasurementHistoryService.GetSnapshot(
+            currentDateProvider.GetCurrentDate()
+        );
     }
 }
