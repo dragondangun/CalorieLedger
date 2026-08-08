@@ -425,4 +425,71 @@ public sealed class
             return profile;
         }
     }
+
+    [Fact]
+    public void GetCurrentProfile_PastAndFutureMeasurements_UsesLatestEffectiveMeasurement() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+        var historyService = new BodyMeasurementHistoryService(store);
+
+        var effectiveMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 79m,
+            BodyFatPercent: 18m,
+            BoneMassKg: 3.1m,
+            MuscleMassKg: 36m,
+            MusclePercent: 45.57m
+        );
+
+        var futureMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 81m,
+            BodyFatPercent: 19m,
+            BoneMassKg: 3.2m,
+            MuscleMassKg: 37m,
+            MusclePercent: 45.68m
+        );
+
+        store.Save(effectiveMeasurement);
+        store.Save(futureMeasurement);
+
+        var baseProfileProvider = new FixedUserNutritionProfileProvider(
+            CreateBaseProfile()
+        );
+
+        var provider = new BodyMeasurementAwareNutritionProfileProvider(
+            baseProfileProvider,
+            historyService,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        var result = provider.GetCurrentProfile();
+
+        Assert.Equal(
+            effectiveMeasurement.WeightKg,
+            result.Body.WeightKg
+        );
+
+        Assert.Equal(
+            effectiveMeasurement.BodyFatPercent,
+            result.Body.BodyFatPercent
+        );
+
+        Assert.Equal(
+            effectiveMeasurement.BoneMassKg,
+            result.Body.BoneMassKg
+        );
+
+        Assert.Equal(
+            effectiveMeasurement.MuscleMassKg,
+            result.Body.MuscleMassKg
+        );
+
+        Assert.Equal(
+            effectiveMeasurement.MusclePercent,
+            result.Body.MusclePercent
+        );
+    }
 }

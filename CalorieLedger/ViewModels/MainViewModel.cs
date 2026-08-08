@@ -42,7 +42,7 @@ public partial class MainViewModel:ViewModelBase {
     [ObservableProperty]
     private UserNutritionProfileEditorViewModel? profileEditor;
     [ObservableProperty]
-    private UserNutritionProfileSummaryViewModel profileSummary;
+    private UserNutritionProfileSummaryViewModel profileSummary = null!;
     [ObservableProperty]
     private bool isBodyMeasurementHistoryExpanded;
 
