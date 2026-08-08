@@ -269,4 +269,79 @@ public sealed class BodyMeasurementListItemPresentationFactoryTests {
             presentation.ChangesSummary
         );
     }
+
+    [Fact]
+    public void Create_ChangeBelowDisplayPrecision_ReportsNoChanges() {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 1),
+            WeightKg: 80m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 2),
+            WeightKg: 80.04m
+        );
+
+        var presentation = BodyMeasurementListItemPresentationFactory.Create(
+            entry: currentMeasurement,
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.Equal(
+            "За 1 день: без изменений",
+            presentation.ChangesSummary
+        );
+    }
+
+    [Fact]
+    public void Create_ChangeAtRoundingBoundary_ShowsRoundedChange() {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 1),
+            WeightKg: 80m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 2),
+            WeightKg: 80.05m
+        );
+
+        var presentation = BodyMeasurementListItemPresentationFactory.Create(
+            entry: currentMeasurement,
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.Equal(
+            "За 1 день: вес +0,1 кг",
+            presentation.ChangesSummary
+        );
+    }
+
+    [Fact]
+    public void Create_NegativeChangeAtRoundingBoundary_ShowsRoundedChange() {
+        var previousMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 1),
+            WeightKg: 80m
+        );
+
+        var currentMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 2),
+            WeightKg: 79.95m
+        );
+
+        var presentation = BodyMeasurementListItemPresentationFactory.Create(
+            entry: currentMeasurement,
+            previousMeasurement: previousMeasurement
+        );
+
+        Assert.Equal(
+            "За 1 день: вес −0,1 кг",
+            presentation.ChangesSummary
+        );
+    }
 }

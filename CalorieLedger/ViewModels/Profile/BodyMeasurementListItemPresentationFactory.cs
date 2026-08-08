@@ -173,11 +173,17 @@ public static class BodyMeasurementListItemPresentationFactory {
         decimal difference,
         string suffix)
     {
-        if(difference == 0m) {
+        var roundedDifference = decimal.Round(
+            difference,
+            decimals: 1,
+            mode: MidpointRounding.AwayFromZero
+        );
+
+        if(roundedDifference == 0m) {
             return;
         }
 
-        values.Add($"{label} {FormatSignedDifference(difference, suffix)}");
+        values.Add($"{label} {FormatSignedDifference(roundedDifference, suffix)}");
     }
 
     private static string FormatSignedDifference(
