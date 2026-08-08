@@ -1,7 +1,6 @@
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Common;
 using CalorieLedger.ViewModels.Profile;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
 
@@ -14,6 +13,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile,
             latestMeasurement: null,
+            effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => editInvoked = true,
             addBodyMeasurement: () => { }
@@ -70,6 +70,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile,
             latestMeasurement: null,
+            effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -109,6 +110,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
             latestMeasurement: null,
+            effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -140,6 +142,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
             latestMeasurement: measurement,
+            effectiveMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -165,6 +168,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
             latestMeasurement: measurement,
+            effectiveMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -185,6 +189,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
             latestMeasurement: null,
+            effectiveMeasurement: null,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
             addBodyMeasurement: () => addMeasurementInvoked = true
@@ -209,6 +214,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
             latestMeasurement: measurement,
+            effectiveMeasurement: measurement,
             currentDate: new DateOnly(2026, 7, 26),
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -234,6 +240,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
             latestMeasurement: measurement,
+            effectiveMeasurement: measurement,
             currentDate: currentDate,
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -262,6 +269,7 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
             latestMeasurement: measurement,
+            effectiveMeasurement: measurement,
             currentDate: currentDate,
             editProfile: () => { },
             addBodyMeasurement: () => { }
@@ -288,9 +296,15 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
             latestMeasurement: measurement,
+            effectiveMeasurement: null,
             currentDate: currentDate,
             editProfile: () => { },
             addBodyMeasurement: () => { }
+        );
+
+        Assert.Equal(
+            "Источник веса: исходные данные профиля",
+            summary.WeightSourceSummary
         );
 
         Assert.Equal(

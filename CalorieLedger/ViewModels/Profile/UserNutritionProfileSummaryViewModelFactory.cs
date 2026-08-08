@@ -12,6 +12,7 @@ public static class UserNutritionProfileSummaryViewModelFactory {
     public static UserNutritionProfileSummaryViewModel Create(
         UserNutritionProfile profile,
         BodyMeasurementEntry? latestMeasurement,
+        BodyMeasurementEntry? effectiveMeasurement,
         DateOnly currentDate,
         Action editProfile,
         Action addBodyMeasurement
@@ -22,7 +23,7 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
         var personalDataSummary = $"{FormatSex(profile.Body.Sex)} · {FormatAge(profile.Body.AgeYears)} · {profile.Body.HeightCm.ToString("0.0", RussianCulture)} см";
 
-        var weightSourceSummary = FormatWeightSource(latestMeasurement);
+        var weightSourceSummary = FormatWeightSource(effectiveMeasurement);
 
         var measurementWarning = FormatMeasurementWarning(
             latestMeasurement,

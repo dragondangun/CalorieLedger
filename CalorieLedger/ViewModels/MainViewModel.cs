@@ -166,10 +166,15 @@ public partial class MainViewModel:ViewModelBase {
             "Адаптивная оценка ещё не рассчитана."
         );
 
+        var currentDate = currentDateProvider.GetCurrentDate();
+        var latestMeasurement = bodyMeasurementHistoryService.GetLatest();
+        var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
+
         profileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
-            latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
-            currentDate: currentDateProvider.GetCurrentDate(),
+            latestMeasurement: latestMeasurement,
+            effectiveMeasurement: effectiveMeasurement,
+            currentDate: currentDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );
@@ -455,10 +460,15 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshProfileSummary() {
+        var currentDate = currentDateProvider.GetCurrentDate();
+        var latestMeasurement = bodyMeasurementHistoryService.GetLatest();
+        var effectiveMeasurement = bodyMeasurementHistoryService.GetLatestOnOrBefore(currentDate);
+
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
-            latestMeasurement: bodyMeasurementHistoryService.GetLatest(),
-            currentDate: currentDateProvider.GetCurrentDate(),
+            latestMeasurement: latestMeasurement,
+            effectiveMeasurement: effectiveMeasurement,
+            currentDate: currentDate,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );
