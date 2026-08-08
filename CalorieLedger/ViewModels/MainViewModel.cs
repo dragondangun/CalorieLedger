@@ -292,17 +292,21 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasBodyMeasurements));
         OnPropertyChanged(nameof(HasNoBodyMeasurements));
 
-        RefreshBodyTrends();
-        RefreshProfileSummary();
+        RefreshBodyMeasurementDerivedState();
         RefreshAdaptiveEnergyAssessment();
         RefreshVisibleBodyMeasurements();
     }
 
-    private void RefreshBodyTrends() {
-        var currentDate = currentDateProvider.GetCurrentDate();
-        var measurementSnapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
+    private void RefreshBodyTrends(
+        DateOnly currentDate,
+        BodyMeasurementHistorySnapshot measurementSnapshot
+    ) {
         var measurements = measurementSnapshot.EffectiveMeasurements;
-        BodyTrends = BodyTrendsViewModelFactory.Create(measurements, currentDate);
+
+        BodyTrends = BodyTrendsViewModelFactory.Create(
+            measurements,
+            currentDate
+        );
     }
 
     private TodayDashboardViewModel CreateTodayDashboardViewModel(
@@ -460,9 +464,15 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshProfileSummary() {
-        var currentDate = currentDateProvider.GetCurrentDate();
-        var measurementSnapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
+        var measurementState = GetCurrentBodyMeasurementState();
 
+        RefreshProfileSummary(measurementState.CurrentDate, measurementState.Snapshot);
+    }
+
+    private void RefreshProfileSummary(
+        DateOnly currentDate,
+        BodyMeasurementHistorySnapshot measurementSnapshot
+    ) {
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: currentProfileProvider.GetCurrentProfile(),
             effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
@@ -497,5 +507,21 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(BodyMeasurementHistoryToggleText));
 
         ToggleBodyMeasurementHistoryCommand.NotifyCanExecuteChanged();
+    }
+
+    private void RefreshBodyMeasurementDerivedState() {
+        var measurementState = GetCurrentBodyMeasurementState();
+
+        RefreshProfileSummary(measurementState.CurrentDate, measurementState.Snapshot);
+
+        RefreshBodyTrends(measurementState.CurrentDate, measurementState.Snapshot);
+    }
+
+    private (DateOnly CurrentDate, BodyMeasurementHistorySnapshot Snapshot) GetCurrentBodyMeasurementState() {
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        var snapshot = bodyMeasurementHistoryService.GetSnapshot(currentDate);
+
+        return (currentDate, snapshot);
     }
 }
