@@ -3,8 +3,10 @@ using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
-namespace CalorieLedger.Tests.ViewModels;
+using CalorieLedger.Application.Profiles;
+using CalorieLedger.ViewModels.Adaptive;
 
+namespace CalorieLedger.Tests.ViewModels;
 public sealed class MainViewModelGoalEditorTests {
     [Fact]
     public void SetNewGoalAction_OpensGoalEditor() {
@@ -250,6 +252,109 @@ public sealed class MainViewModelGoalEditorTests {
             17m,
             viewModel.GoalEditor.StrategyValue
         );
+    }
+
+    [Fact]
+    public void SaveValidGoal_RefreshesAdaptiveEnergyAssessment() {
+        var adaptiveProvider = new CountingAdaptiveEnergyAssessmentPresentationProvider();
+
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            adaptiveProvider
+        );
+
+        var initialRequestCount = adaptiveProvider.GetCurrentCount;
+
+        var action = viewModel.Today.GoalActions.Single(
+            x => x.Action == GoalNextAction.SetNewGoal
+        );
+
+        action.SelectCommand.Execute(null);
+
+        var editor = Assert.IsType<NutritionGoalEditorViewModel>(
+            viewModel.GoalEditor
+        );
+
+        editor.GoalType = WeightGoalType.LoseWeight;
+
+        editor.TargetWeightKg = 75m;
+        editor.TargetBodyFatPercent = 15m;
+
+        editor.StrategyMode = EnergyStrategyMode.BalancePercent;
+
+        editor.StrategyValue = 10m;
+
+        editor.SaveCommand.Execute(null);
+
+        Assert.Equal(
+            initialRequestCount + 1,
+            adaptiveProvider.GetCurrentCount
+        );
+    }
+
+    [Fact]
+    public void SwitchToMaintenance_RefreshesAdaptiveEnergyAssessment() {
+        var profile = new UserNutritionProfile(
+            Id: Guid.NewGuid(),
+            DisplayName: "Test user",
+            Body: new BodyProfile(
+                Sex: BiologicalSex.Male,
+                AgeYears: 30,
+                HeightCm: 180m,
+                WeightKg: 75m,
+                BodyFatPercent: 15m,
+                BoneMassKg: null,
+                MuscleMassKg: null,
+                MusclePercent: null
+            ),
+            LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+            Goal: new NutritionGoal(
+                GoalType: WeightGoalType.LoseWeight,
+                TargetWeightKg: 75m,
+                TargetBodyFatPercent: 15m,
+                Strategy: EnergyStrategy.FromBalancePercent(15m)
+            )
+        );
+
+        var adaptiveProvider = new CountingAdaptiveEnergyAssessmentPresentationProvider();
+
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            new InMemoryUserNutritionProfileStore(
+                profile
+            ),
+            adaptiveProvider
+        );
+
+        var initialRequestCount = adaptiveProvider.GetCurrentCount;
+
+        var action = viewModel.Today.GoalActions.Single(
+            x => x.Action == GoalNextAction.SwitchToMaintenance
+        );
+
+        action.SelectCommand.Execute(null);
+
+        Assert.Equal(
+            initialRequestCount + 1,
+            adaptiveProvider.GetCurrentCount
+        );
+
+        Assert.Contains(
+            "Цель изменена на поддержание",
+            viewModel.Today.GoalActionSelectionSummary
+        );
+    }
+
+    private sealed class CountingAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {
+        private readonly IAdaptiveEnergyAssessmentPresentationProvider inner = new UnavailableAdaptiveEnergyAssessmentPresentationProvider();
+
+        public int GetCurrentCount { get; private set; }
+
+        public AdaptiveEnergyAssessmentPresentation GetCurrent() {
+            GetCurrentCount++;
+
+            return inner.GetCurrent();
+        }
     }
 
     private sealed class TestAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {
