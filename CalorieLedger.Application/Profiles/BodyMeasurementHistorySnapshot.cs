@@ -4,6 +4,7 @@ namespace CalorieLedger.Application.Profiles;
 
 public sealed class BodyMeasurementHistorySnapshot {
     public DateOnly AsOfDate { get; }
+    public IReadOnlyList<BodyMeasurementEntry> AllMeasurements { get; }
     public IReadOnlyList<BodyMeasurementEntry> EffectiveMeasurements { get; }
     public bool HasFutureMeasurements { get; }
 
@@ -14,13 +15,28 @@ public sealed class BodyMeasurementHistorySnapshot {
 
     public BodyMeasurementHistorySnapshot(
         DateOnly asOfDate,
-        IReadOnlyList<BodyMeasurementEntry> effectiveMeasurements,
-        bool hasFutureMeasurements
+        IReadOnlyList<BodyMeasurementEntry> allMeasurements
     ) {
-        ArgumentNullException.ThrowIfNull(effectiveMeasurements);
+        ArgumentNullException.ThrowIfNull(allMeasurements);
 
         AsOfDate = asOfDate;
-        EffectiveMeasurements = effectiveMeasurements;
+        AllMeasurements = allMeasurements.ToArray();
+
+        var effectiveMeasurements = new List<BodyMeasurementEntry>();
+
+        var hasFutureMeasurements = false;
+
+        foreach(var measurement in AllMeasurements) {
+            if(measurement.Date <= asOfDate) {
+                effectiveMeasurements.Add(measurement);
+            }
+            else {
+                hasFutureMeasurements = true;
+            }
+        }
+
+        EffectiveMeasurements = effectiveMeasurements.ToArray();
+
         HasFutureMeasurements = hasFutureMeasurements;
     }
 }

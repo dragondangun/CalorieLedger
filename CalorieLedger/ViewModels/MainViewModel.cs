@@ -246,12 +246,10 @@ public partial class MainViewModel:ViewModelBase {
         );
     }
 
-    private void RefreshBodyMeasurements(DateOnly currentDate) {
+    private void RefreshBodyMeasurements(BodyMeasurementHistorySnapshot measurementSnapshot) {
         BodyMeasurements.Clear();
 
-        var measurements = bodyMeasurementHistoryService.GetAll();
-        // Хранилище возвращает записи от старых к новым.
-        // На экране показываем новые сверху.
+        var measurements = measurementSnapshot.AllMeasurements;
 
         for(var index = measurements.Count - 1; index >= 0; index--) {
             BodyMeasurementEntry? previousMeasurement = index > 0
@@ -265,7 +263,7 @@ public partial class MainViewModel:ViewModelBase {
                     onDelete: DeleteBodyMeasurement,
                     previousMeasurement: previousMeasurement,
                     isLatest: index == measurements.Count - 1,
-                    currentDate: currentDate,
+                    currentDate: measurementSnapshot.AsOfDate,
                     onAddMeasurement: AddBodyMeasurement
                 )
             );
@@ -481,8 +479,11 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshAfterBodyMeasurementChange() {
         var measurementSnapshot = GetCurrentBodyMeasurementSnapshot();
-        RefreshBodyMeasurements(measurementSnapshot.AsOfDate);
+
+        RefreshBodyMeasurements(measurementSnapshot);
+
         RefreshBodyMeasurementDerivedState(measurementSnapshot);
+
         RefreshAdaptiveEnergyAssessment();
     }
 

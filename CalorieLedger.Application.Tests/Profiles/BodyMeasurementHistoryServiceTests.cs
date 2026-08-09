@@ -599,6 +599,16 @@ public sealed class BodyMeasurementHistoryServiceTests {
         );
 
         Assert.Equal(
+            3,
+            snapshot.AllMeasurements.Count
+        );
+
+        Assert.Equal(
+            futureMeasurement,
+            snapshot.AllMeasurements[2]
+        );
+
+        Assert.Equal(
             2,
             snapshot.EffectiveMeasurements.Count
         );

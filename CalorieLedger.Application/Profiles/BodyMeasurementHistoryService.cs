@@ -134,23 +134,9 @@ public sealed class BodyMeasurementHistoryService {
     }
 
     public BodyMeasurementHistorySnapshot GetSnapshot(DateOnly currentDate) {
-        var measurements = GetAll();
-        var effectiveMeasurements = new List<BodyMeasurementEntry>();
-
-        foreach(var measurement in measurements) {
-            if(measurement.Date > currentDate) {
-                break;
-            }
-
-            effectiveMeasurements.Add(measurement);
-        }
-
-        var hasFutureMeasurements = effectiveMeasurements.Count < measurements.Count;
-
         return new BodyMeasurementHistorySnapshot(
             asOfDate: currentDate,
-            effectiveMeasurements: effectiveMeasurements,
-            hasFutureMeasurements: hasFutureMeasurements
+            allMeasurements: GetAll()
         );
     }
 }

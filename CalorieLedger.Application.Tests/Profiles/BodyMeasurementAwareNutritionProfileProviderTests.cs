@@ -511,10 +511,9 @@ public sealed class
 
         var measurementSnapshot = new BodyMeasurementHistorySnapshot(
             asOfDate: currentDate,
-            effectiveMeasurements: new[] {
+            allMeasurements: new[] {
                 measurement,
-            },
-            hasFutureMeasurements: false
+            }
         );
 
         var provider = new BodyMeasurementAwareNutritionProfileProvider(

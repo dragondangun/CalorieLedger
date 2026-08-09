@@ -364,12 +364,27 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         BodyMeasurementEntry? effectiveMeasurement = null,
         bool hasFutureMeasurements = false
     ) {
+        var measurements = new List<BodyMeasurementEntry>();
+
+        if(effectiveMeasurement is not null) {
+            measurements.Add(
+                effectiveMeasurement
+            );
+        }
+
+        if(hasFutureMeasurements) {
+            measurements.Add(
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate.AddDays(1),
+                    WeightKg: 80m
+                )
+            );
+        }
+
         return new BodyMeasurementHistorySnapshot(
             asOfDate: currentDate,
-            effectiveMeasurements: effectiveMeasurement is null
-                ? []
-                : [effectiveMeasurement],
-            hasFutureMeasurements: hasFutureMeasurements
+            allMeasurements: measurements
         );
     }
 }
