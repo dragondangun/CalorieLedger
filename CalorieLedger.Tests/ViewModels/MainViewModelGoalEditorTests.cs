@@ -3,10 +3,9 @@ using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
-using CalorieLedger.Application.Profiles;
-using CalorieLedger.ViewModels.Adaptive;
 
 namespace CalorieLedger.Tests.ViewModels;
+
 public sealed class MainViewModelGoalEditorTests {
     [Fact]
     public void SetNewGoalAction_OpensGoalEditor() {
