@@ -1,4 +1,5 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Profile;
 
 namespace CalorieLedger.Tests.ViewModels.Profile;
@@ -16,7 +17,14 @@ public sealed class BodyTrendsViewModelFactoryTests {
                 BodyFatPercent: 25m)
         };
 
-        var result = BodyTrendsViewModelFactory.Create(measurements, asOfDate);
+        var measurementSnapshot = new BodyMeasurementHistorySnapshot(
+            asOfDate: asOfDate,
+            allMeasurements: measurements
+        );
+
+        var result = BodyTrendsViewModelFactory.Create(
+            measurementSnapshot
+        );
 
         Assert.False(result.WeightTrend.IsAvailable);
 
@@ -31,7 +39,14 @@ public sealed class BodyTrendsViewModelFactoryTests {
 
         var measurements = CreateDecreasingMeasurements(asOfDate);
 
-        var result = BodyTrendsViewModelFactory.Create(measurements, asOfDate);
+        var measurementSnapshot = new BodyMeasurementHistorySnapshot(
+            asOfDate: asOfDate,
+            allMeasurements: measurements
+        );
+
+        var result = BodyTrendsViewModelFactory.Create(
+            measurementSnapshot
+        );
 
         Assert.True(result.WeightTrend.IsAvailable);
 
@@ -54,17 +69,26 @@ public sealed class BodyTrendsViewModelFactoryTests {
     public void Create_UsesRussianDecimalSeparator() {
         var asOfDate = new DateOnly(2026, 7, 28);
 
+        var measurements = CreateDecreasingMeasurements(asOfDate);
+
+        var measurementSnapshot = new BodyMeasurementHistorySnapshot(
+            asOfDate: asOfDate,
+            allMeasurements: measurements
+        );
+
         var result = BodyTrendsViewModelFactory.Create(
-            CreateDecreasingMeasurements(asOfDate),
-            asOfDate);
+            measurementSnapshot
+        );
 
         Assert.Contains(
             ",",
-            result.WeightTrend.CurrentValueSummary);
+            result.WeightTrend.CurrentValueSummary
+        );
 
         Assert.Contains(
             ",",
-            result.BodyFatTrend.CurrentValueSummary);
+            result.BodyFatTrend.CurrentValueSummary
+        );
     }
 
     private static IReadOnlyList<BodyMeasurementEntry> CreateDecreasingMeasurements(DateOnly asOfDate) {
@@ -81,7 +105,8 @@ public sealed class BodyTrendsViewModelFactoryTests {
                 Id: Guid.NewGuid(),
                 Date: asOfDate.AddDays(-dayOffset),
                 WeightKg: 80m - elapsedDays * 0.05m,
-                BodyFatPercent: bodyFatPercent));
+                BodyFatPercent: bodyFatPercent
+            ));
         }
 
         return measurements;

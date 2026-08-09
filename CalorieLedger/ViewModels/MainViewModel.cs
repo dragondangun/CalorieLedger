@@ -277,8 +277,7 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshBodyTrends(BodyMeasurementHistorySnapshot measurementSnapshot) {
         BodyTrends = BodyTrendsViewModelFactory.Create(
-            measurementSnapshot.EffectiveMeasurements,
-            measurementSnapshot.AsOfDate
+            measurementSnapshot
         );
     }
 

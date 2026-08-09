@@ -1,26 +1,35 @@
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 
 namespace CalorieLedger.ViewModels.Profile;
 
 public static class BodyTrendsViewModelFactory {
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
 
-    public static BodyTrendsViewModel Create(IReadOnlyCollection<BodyMeasurementEntry> measurements, DateOnly asOfDate) {
+    public static BodyTrendsViewModel Create(BodyMeasurementHistorySnapshot measurementSnapshot) {
+        ArgumentNullException.ThrowIfNull(measurementSnapshot);
+
+        var measurements = measurementSnapshot.EffectiveMeasurements;
         ArgumentNullException.ThrowIfNull(measurements);
 
-        var orderedMeasurements = measurements.OrderBy(measurement => measurement.Date).ThenBy(measurement => measurement.Id).ToArray();
+        var currentDate = measurementSnapshot.AsOfDate;
 
-        var weightResult = BodyWeightTrendCalculator.Calculate(orderedMeasurements, asOfDate);
+        var weightResult = BodyWeightTrendCalculator.Calculate(
+            measurements,
+            currentDate
+        );
 
-        var bodyFatResult = BodyFatTrendCalculator.Calculate(orderedMeasurements, asOfDate);
+        var bodyFatResult = BodyFatTrendCalculator.Calculate(
+            measurements,
+            currentDate
+        );
 
         return new BodyTrendsViewModel(
             weightTrend: CreateWeightTrend(weightResult),
-            bodyFatTrend: CreateBodyFatTrend(bodyFatResult));
+            bodyFatTrend: CreateBodyFatTrend(bodyFatResult)
+        );
     }
 
     private static BodyTrendCardViewModel CreateWeightTrend(BodyWeightTrendResult result) {
