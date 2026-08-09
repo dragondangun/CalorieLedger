@@ -509,6 +509,80 @@ public sealed class MainViewModelBodyMeasurementEditorTests {
         );
     }
 
+    [Fact]
+    public void Constructor_FutureMeasurementWithEarlierEffectiveMeasurement_UsesEffectiveMeasurementAndShowsWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        var effectiveMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 79m
+        );
+
+        var futureMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 81m
+        );
+
+        store.Save(effectiveMeasurement);
+        store.Save(futureMeasurement);
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.Equal(
+            "Источник веса: измерение от 07.08.2026",
+            viewModel.ProfileSummary.WeightSourceSummary
+        );
+
+        Assert.Equal(
+            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
+            viewModel.ProfileSummary.MeasurementWarning
+        );
+
+        Assert.Equal(
+            2,
+            viewModel.BodyMeasurements.Count
+        );
+    }
+
+    [Fact]
+    public void Constructor_OnlyFutureMeasurement_UsesProfileWeightAndShowsWarning() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var store = new InMemoryBodyMeasurementStore();
+
+        store.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(1),
+                WeightKg: 81m
+            )
+        );
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        Assert.Equal(
+            "Источник веса: исходные данные профиля",
+            viewModel.ProfileSummary.WeightSourceSummary
+        );
+
+        Assert.Equal(
+            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
+            viewModel.ProfileSummary.MeasurementWarning
+        );
+
+        Assert.Single(
+            viewModel.BodyMeasurements
+        );
+    }
+
     private static InMemoryBodyMeasurementStore CreateStoreWithMeasurements(
         int measurementCount,
         DateOnly latestDate
