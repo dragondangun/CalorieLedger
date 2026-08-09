@@ -20,22 +20,44 @@ public sealed class BodyMeasurementHistorySnapshot {
         ArgumentNullException.ThrowIfNull(allMeasurements);
 
         AsOfDate = asOfDate;
-        AllMeasurements = allMeasurements.ToArray();
+
+        var orderedMeasurements = new List<BodyMeasurementEntry>(allMeasurements);
+
+        orderedMeasurements.Sort(
+            static (left, right) => {
+                var dateComparison =
+                    left.Date.CompareTo(
+                        right.Date
+                    );
+
+                if(dateComparison != 0) {
+                    return dateComparison;
+                }
+
+                return left.Id.CompareTo(
+                    right.Id
+                );
+            }
+        );
+
+        AllMeasurements = orderedMeasurements.AsReadOnly();
 
         var effectiveMeasurements = new List<BodyMeasurementEntry>();
 
         var hasFutureMeasurements = false;
 
-        foreach(var measurement in AllMeasurements) {
-            if(measurement.Date <= asOfDate) {
-                effectiveMeasurements.Add(measurement);
-            }
-            else {
+        foreach(var measurement in orderedMeasurements) {
+            if(measurement.Date > asOfDate) {
                 hasFutureMeasurements = true;
+                break;
             }
+
+            effectiveMeasurements.Add(
+                measurement
+            );
         }
 
-        EffectiveMeasurements = effectiveMeasurements.ToArray();
+        EffectiveMeasurements = effectiveMeasurements.AsReadOnly();
 
         HasFutureMeasurements = hasFutureMeasurements;
     }
