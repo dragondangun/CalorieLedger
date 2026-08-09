@@ -445,10 +445,10 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshProfileSummary(BodyMeasurementHistorySnapshot measurementSnapshot) {
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: currentProfileProvider.GetProfile(measurementSnapshot),
-            effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
-            hasFutureMeasurements: measurementSnapshot.HasFutureMeasurements,
-            currentDate: measurementSnapshot.AsOfDate,
+            profile: currentProfileProvider.GetProfile(
+                measurementSnapshot
+            ),
+            measurementSnapshot: measurementSnapshot,
             editProfile: EditProfile,
             addBodyMeasurement: AddBodyMeasurement
         );

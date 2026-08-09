@@ -1,8 +1,9 @@
+using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Common;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using CalorieLedger.Domain.Profile;
-using CalorieLedger.ViewModels.Common;
 
 namespace CalorieLedger.ViewModels.Profile;
 
@@ -11,24 +12,25 @@ public static class UserNutritionProfileSummaryViewModelFactory {
 
     public static UserNutritionProfileSummaryViewModel Create(
         UserNutritionProfile profile,
-        BodyMeasurementEntry? effectiveMeasurement,
-        bool hasFutureMeasurements,
-        DateOnly currentDate,
+        BodyMeasurementHistorySnapshot measurementSnapshot,
         Action editProfile,
         Action addBodyMeasurement
     ) {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(editProfile);
         ArgumentNullException.ThrowIfNull(addBodyMeasurement);
+        ArgumentNullException.ThrowIfNull(measurementSnapshot);
 
         var personalDataSummary = $"{FormatSex(profile.Body.Sex)} · {FormatAge(profile.Body.AgeYears)} · {profile.Body.HeightCm.ToString("0.0", RussianCulture)} см";
 
-        var weightSourceSummary = FormatWeightSource(effectiveMeasurement);
+        var weightSourceSummary = FormatWeightSource(
+            measurementSnapshot.LatestEffectiveMeasurement
+        );
 
         var measurementWarning = FormatMeasurementWarning(
-            effectiveMeasurement,
-            hasFutureMeasurements,
-            currentDate
+            measurementSnapshot.LatestEffectiveMeasurement,
+            measurementSnapshot.HasFutureMeasurements,
+            measurementSnapshot.AsOfDate
         );
 
         return new UserNutritionProfileSummaryViewModel(

@@ -1,3 +1,4 @@
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.Common;
 using CalorieLedger.ViewModels.Profile;
@@ -9,12 +10,13 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     public void Create_FormatsProfileUsingRussianCulture() {
         var profile = CreateProfile();
         var editInvoked = false;
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            new DateOnly(2026, 7, 26)
+        );
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile,
-            hasFutureMeasurements: false,
-            effectiveMeasurement: null,
-            currentDate: new DateOnly(2026, 7, 26),
+            profile: profile,
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => editInvoked = true,
             addBodyMeasurement: () => { }
         );
@@ -67,11 +69,13 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             },
         };
 
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            new DateOnly(2026, 7, 26)
+        );
+
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile,
-            hasFutureMeasurements: false,
-            effectiveMeasurement: null,
-            currentDate: new DateOnly(2026, 7, 26),
+            profile: profile,
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -82,36 +86,15 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         );
     }
 
-    private static UserNutritionProfile CreateProfile() {
-        return new UserNutritionProfile(
-            Id: Guid.NewGuid(),
-            DisplayName: "Test user",
-            Body: new BodyProfile(
-                Sex: BiologicalSex.Female,
-                AgeYears: 27,
-                HeightCm: 184m,
-                WeightKg: 70.5m,
-                BodyFatPercent: 20m,
-                BoneMassKg: 3.2m,
-                MuscleMassKg: 35m,
-                MusclePercent: 49.65m
-            ),
-            LifestyleActivityLevel: LifestyleActivityLevel.LightlyActive,
-            Goal: new NutritionGoal(
-                GoalType: WeightGoalType.Maintain,
-                Strategy: EnergyStrategy.FromBalancePercent(0m)
-            )
-        );
-    }
-
     [Fact]
     public void Create_WithoutMeasurements_ShowsProfileSourceAndWarning() {
-        var viewModel =
-        UserNutritionProfileSummaryViewModelFactory.Create(
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            new DateOnly(2026, 7, 26)
+        );
+
+        var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            hasFutureMeasurements: false,
-            effectiveMeasurement: null,
-            currentDate: new DateOnly(2026, 7, 26),
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -137,11 +120,14 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             WeightKg: 70.5m
         );
 
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: new DateOnly(2026, 7, 26),
+            effectiveMeasurement: measurement
+        );
+
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            hasFutureMeasurements: false,
-            effectiveMeasurement: measurement,
-            currentDate: new DateOnly(2026, 7, 26),
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -157,12 +143,13 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     [Fact]
     public void Create_WithoutMeasurements_AllowsAddingMeasurement() {
         var addMeasurementInvoked = false;
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            new DateOnly(2026, 7, 26)
+        );
 
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            hasFutureMeasurements: false,
-            effectiveMeasurement: null,
-            currentDate: new DateOnly(2026, 7, 26),
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => addMeasurementInvoked = true
         );
@@ -183,11 +170,14 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             WeightKg: 70m
         );
 
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: new DateOnly(2026, 7, 26),
+            effectiveMeasurement: measurement
+        );
+
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            hasFutureMeasurements: false,
-            effectiveMeasurement: measurement,
-            currentDate: new DateOnly(2026, 7, 26),
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -208,12 +198,14 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         );
 
         var profile = CreateProfile();
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: currentDate,
+            effectiveMeasurement: measurement
+        );
 
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
-            hasFutureMeasurements: false,
-            effectiveMeasurement: measurement,
-            currentDate: currentDate,
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -237,12 +229,14 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         );
 
         var profile = CreateProfile();
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: currentDate,
+            effectiveMeasurement: measurement
+        );
 
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: profile,
-            hasFutureMeasurements: false,
-            effectiveMeasurement: measurement,
-            currentDate: currentDate,
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -261,11 +255,14 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             WeightKg: 70.5m
         );
 
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: new DateOnly(2026, 7, 26),
+            effectiveMeasurement: measurement
+        );
+
         var viewModel = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            hasFutureMeasurements: false,
-            effectiveMeasurement: measurement,
-            currentDate: new DateOnly(2026, 7, 26),
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -283,11 +280,14 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
     public void Create_FutureMeasurement_HasDateWarning() {
         var currentDate = new DateOnly(2026, 8, 8);
 
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: currentDate,
+            hasFutureMeasurements: true
+        );
+
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            effectiveMeasurement: null,
-            hasFutureMeasurements: true,
-            currentDate: currentDate,
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -313,11 +313,15 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
             WeightKg: 79m
         );
 
+        var measurementSnapshot = CreateMeasurementSnapshot(
+            currentDate: currentDate,
+            effectiveMeasurement: effectiveMeasurement,
+            hasFutureMeasurements: true
+        );
+
         var summary = UserNutritionProfileSummaryViewModelFactory.Create(
             profile: CreateProfile(),
-            effectiveMeasurement: effectiveMeasurement,
-            hasFutureMeasurements: true,
-            currentDate: currentDate,
+            measurementSnapshot: measurementSnapshot,
             editProfile: () => { },
             addBodyMeasurement: () => { }
         );
@@ -333,58 +337,39 @@ public sealed class UserNutritionProfileSummaryViewModelFactoryTests {
         );
     }
 
-    [Fact]
-    public void Create_FutureMeasurement_ShowsWarningAndUsesProfileSource() {
-        var currentDate = new DateOnly(2026, 8, 8);
-        var profile = CreateProfile();
-
-        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: profile,
-            effectiveMeasurement: null,
-            hasFutureMeasurements: true,
-            currentDate: currentDate,
-            editProfile: () => { },
-            addBodyMeasurement: () => { }
-        );
-
-        Assert.Equal(
-            "Источник веса: исходные данные профиля",
-            summary.WeightSourceSummary
-        );
-
-        Assert.Equal(
-            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
-            summary.MeasurementWarning
-        );
-    }
-
-    [Fact]
-    public void Create_FutureMeasurementWithEarlierEffectiveMeasurement_ShowsEffectiveSourceAndWarning() {
-        var currentDate = new DateOnly(2026, 8, 8);
-
-        var effectiveMeasurement = new BodyMeasurementEntry(
+    private static UserNutritionProfile CreateProfile() {
+        return new UserNutritionProfile(
             Id: Guid.NewGuid(),
-            Date: currentDate.AddDays(-1),
-            WeightKg: 79m
+            DisplayName: "Test user",
+            Body: new BodyProfile(
+                Sex: BiologicalSex.Female,
+                AgeYears: 27,
+                HeightCm: 184m,
+                WeightKg: 70.5m,
+                BodyFatPercent: 20m,
+                BoneMassKg: 3.2m,
+                MuscleMassKg: 35m,
+                MusclePercent: 49.65m
+            ),
+            LifestyleActivityLevel: LifestyleActivityLevel.LightlyActive,
+            Goal: new NutritionGoal(
+                GoalType: WeightGoalType.Maintain,
+                Strategy: EnergyStrategy.FromBalancePercent(0m)
+            )
         );
+    }
 
-        var summary = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: CreateProfile(),
-            effectiveMeasurement: effectiveMeasurement,
-            hasFutureMeasurements: true,
-            currentDate: currentDate,
-            editProfile: () => { },
-            addBodyMeasurement: () => { }
-        );
-
-        Assert.Equal(
-            "Источник веса: измерение от 07.08.2026",
-            summary.WeightSourceSummary
-        );
-
-        Assert.Equal(
-            "В истории есть измерение с будущей датой. Проверьте дату измерения.",
-            summary.MeasurementWarning
+    private static BodyMeasurementHistorySnapshot CreateMeasurementSnapshot(
+        DateOnly currentDate,
+        BodyMeasurementEntry? effectiveMeasurement = null,
+        bool hasFutureMeasurements = false
+    ) {
+        return new BodyMeasurementHistorySnapshot(
+            asOfDate: currentDate,
+            effectiveMeasurements: effectiveMeasurement is null
+                ? []
+                : [effectiveMeasurement],
+            hasFutureMeasurements: hasFutureMeasurements
         );
     }
 }
