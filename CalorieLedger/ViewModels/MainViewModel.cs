@@ -321,23 +321,18 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private bool SwitchToMaintenance() {
-        var result =
-            goalTransitionService.SwitchToMaintenance();
+        var result = goalTransitionService.SwitchToMaintenance();
 
         if(!result.IsSuccess) {
-            var errorCodes =
-                string.Join(", ", result.Errors);
+            var errorCodes = string.Join(", ", result.Errors);
 
-            Today.GoalActionSelectionSummary =
-                "Не удалось изменить цель. " +
-                $"Ошибки проверки: {errorCodes}.";
+            Today.GoalActionSelectionSummary = $"Не удалось изменить цель. Ошибки проверки: {errorCodes}.";
 
             return true;
         }
 
-        Today = CreateTodayDashboardViewModel(
-            "Цель изменена на поддержание. " +
-            "Дневная норма КБЖУ пересчитана.");
+        Today = CreateTodayDashboardViewModel("Цель изменена на поддержание. Дневная норма КБЖУ пересчитана.");
+        RefreshAdaptiveEnergyAssessment();
 
         return true;
     }
@@ -371,8 +366,10 @@ public partial class MainViewModel:ViewModelBase {
         GoalEditor = null;
 
         Today = CreateTodayDashboardViewModel(
-            "Цель сохранена. " +
-            "Дневная норма КБЖУ пересчитана.");
+            "Цель сохранена. Дневная норма КБЖУ пересчитана."
+        );
+
+        RefreshAdaptiveEnergyAssessment();
     }
 
     private void OnBodyMeasurementSaved() {
