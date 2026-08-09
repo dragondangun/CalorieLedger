@@ -111,4 +111,43 @@ public sealed class BodyTrendsViewModelFactoryTests {
 
         return measurements;
     }
+
+    [Fact]
+    public void Create_WithFutureOutlier_IgnoresFutureMeasurement() {
+        var asOfDate = new DateOnly(2026, 7, 28);
+
+        var measurements = CreateDecreasingMeasurements(asOfDate).ToList();
+
+        measurements.Add(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: asOfDate.AddDays(1),
+                WeightKg: 200m,
+                BodyFatPercent: 90m
+            )
+        );
+
+        var measurementSnapshot = new BodyMeasurementHistorySnapshot(
+            asOfDate: asOfDate,
+            allMeasurements: measurements
+        );
+
+        var result = BodyTrendsViewModelFactory.Create(
+            measurementSnapshot
+        );
+
+        Assert.True(
+            measurementSnapshot.HasFutureMeasurements
+        );
+
+        Assert.Equal(
+            BodyTrendDirection.Decreasing,
+            result.WeightTrend.Direction
+        );
+
+        Assert.Equal(
+            BodyTrendDirection.Decreasing,
+            result.BodyFatTrend.Direction
+        );
+    }
 }
