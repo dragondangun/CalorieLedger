@@ -246,11 +246,10 @@ public partial class MainViewModel:ViewModelBase {
         );
     }
 
-    private void RefreshBodyMeasurements() {
+    private void RefreshBodyMeasurements(DateOnly currentDate) {
         BodyMeasurements.Clear();
 
         var measurements = bodyMeasurementHistoryService.GetAll();
-        var currentDate = currentDateProvider.GetCurrentDate();
         // Хранилище возвращает записи от старых к новым.
         // На экране показываем новые сверху.
 
@@ -481,16 +480,14 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshAfterBodyMeasurementChange() {
-        RefreshBodyMeasurements();
-        RefreshBodyMeasurementDerivedState();
+        var measurementSnapshot = GetCurrentBodyMeasurementSnapshot();
+        RefreshBodyMeasurements(measurementSnapshot.AsOfDate);
+        RefreshBodyMeasurementDerivedState(measurementSnapshot);
         RefreshAdaptiveEnergyAssessment();
     }
 
-    private void RefreshBodyMeasurementDerivedState() {
-        var measurementSnapshot = GetCurrentBodyMeasurementSnapshot();
-
+    private void RefreshBodyMeasurementDerivedState(BodyMeasurementHistorySnapshot measurementSnapshot) {
         RefreshProfileSummary(measurementSnapshot);
-
         RefreshBodyTrends(measurementSnapshot);
     }
 
