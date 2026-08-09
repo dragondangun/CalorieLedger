@@ -1,5 +1,6 @@
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.Tests.TestDoubles;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
@@ -344,15 +345,79 @@ public sealed class MainViewModelGoalEditorTests {
         );
     }
 
+    [Fact]
+    public void Constructor_PassesCurrentMeasurementSnapshotToAdaptiveAssessment() {
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var store = new InMemoryBodyMeasurementStore();
+
+        var effectiveMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate,
+            WeightKg: 80m
+        );
+
+        var futureMeasurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(1),
+            WeightKg: 81m
+        );
+
+        store.Save(effectiveMeasurement);
+
+        store.Save(futureMeasurement);
+
+        var adaptiveProvider = new CountingAdaptiveEnergyAssessmentPresentationProvider();
+
+        var profileStore = new InMemoryUserNutritionProfileStore(
+            new SampleUserNutritionProfileProvider().GetCurrentProfile()
+        );
+
+        _ = new MainViewModel(
+            bodyMeasurementStore: store,
+            profileStore: profileStore,
+            adaptiveEnergyAssessmentPresentationProvider: adaptiveProvider,
+            currentDateProvider: new FixedCurrentDateProvider(currentDate)
+        );
+
+        var measurementSnapshot = Assert.IsType<BodyMeasurementHistorySnapshot>(
+            adaptiveProvider.LastMeasurementSnapshot
+        );
+
+        Assert.Equal(
+            currentDate,
+            measurementSnapshot.AsOfDate
+        );
+
+        Assert.Equal(
+            2,
+            measurementSnapshot.AllMeasurements.Count
+        );
+
+        Assert.Equal(
+            effectiveMeasurement,
+            measurementSnapshot.LatestEffectiveMeasurement
+        );
+
+        Assert.True(
+            measurementSnapshot.HasFutureMeasurements
+        );
+    }
+
     private sealed class CountingAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {
         private readonly IAdaptiveEnergyAssessmentPresentationProvider inner = new UnavailableAdaptiveEnergyAssessmentPresentationProvider();
 
         public int GetCurrentCount { get; private set; }
+        public BodyMeasurementHistorySnapshot? LastMeasurementSnapshot { get; private set; }
 
-        public AdaptiveEnergyAssessmentPresentation GetCurrent() {
+        public AdaptiveEnergyAssessmentPresentation GetCurrent(BodyMeasurementHistorySnapshot measurementSnapshot) {
             GetCurrentCount++;
 
-            return inner.GetCurrent();
+            LastMeasurementSnapshot = measurementSnapshot;
+
+            return inner.GetCurrent(
+                measurementSnapshot
+            );
         }
     }
 
@@ -364,7 +429,8 @@ public sealed class MainViewModelGoalEditorTests {
             this.presentation = presentation;
         }
 
-        public AdaptiveEnergyAssessmentPresentation GetCurrent() {
+        public AdaptiveEnergyAssessmentPresentation GetCurrent(BodyMeasurementHistorySnapshot measurementSnapshot) {
+            ArgumentNullException.ThrowIfNull(measurementSnapshot);
             return presentation;
         }
     }

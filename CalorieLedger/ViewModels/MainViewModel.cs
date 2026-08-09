@@ -400,7 +400,13 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshAdaptiveEnergyAssessment() {
-        var presentation = adaptiveEnergyAssessmentPresentationProvider.GetCurrent();
+        RefreshAdaptiveEnergyAssessment(
+            GetCurrentBodyMeasurementSnapshot()
+        );
+    }
+
+    private void RefreshAdaptiveEnergyAssessment(BodyMeasurementHistorySnapshot measurementSnapshot) {
+        var presentation = adaptiveEnergyAssessmentPresentationProvider.GetCurrent(measurementSnapshot);
 
         AdaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModelFactory.Create(
             presentation: presentation,
@@ -480,7 +486,7 @@ public partial class MainViewModel:ViewModelBase {
 
         RefreshBodyMeasurementDerivedState(measurementSnapshot);
 
-        RefreshAdaptiveEnergyAssessment();
+        RefreshAdaptiveEnergyAssessment(measurementSnapshot);
     }
 
     private void RefreshBodyMeasurementDerivedState(BodyMeasurementHistorySnapshot measurementSnapshot) {
