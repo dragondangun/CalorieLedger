@@ -234,7 +234,13 @@ public sealed class MainViewModelBodyMeasurementEditorTests {
 
     [Fact]
     public void SaveMeasurement_RefreshesProfileMeasurementSource() {
-        var viewModel = new MainViewModel(new InMemoryBodyMeasurementStore());
+        var store = new InMemoryBodyMeasurementStore();
+        var currentDate = new DateOnly(2026, 8, 8);
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(currentDate)
+        );
 
         Assert.Contains(
             "исходные данные профиля",

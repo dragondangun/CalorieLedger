@@ -492,4 +492,68 @@ public sealed class
             result.Body.MusclePercent
         );
     }
+
+    [Fact]
+    public void GetProfile_WithSnapshot_UsesSnapshotMeasurement() {
+        var currentDate = new DateOnly(2026, 8, 8);
+        var historyService = CreateHistoryService();
+        var baseProfile = CreateBaseProfile();
+
+        var measurement = new BodyMeasurementEntry(
+            Id: Guid.NewGuid(),
+            Date: currentDate.AddDays(-1),
+            WeightKg: 79m,
+            BodyFatPercent: 18m,
+            BoneMassKg: 3.1m,
+            MuscleMassKg: 36m,
+            MusclePercent: 45.57m
+        );
+
+        var measurementSnapshot = new BodyMeasurementHistorySnapshot(
+            asOfDate: currentDate,
+            effectiveMeasurements: new[] {
+                measurement,
+            },
+            hasFutureMeasurements: false
+        );
+
+        var provider = new BodyMeasurementAwareNutritionProfileProvider(
+            new FixedUserNutritionProfileProvider(
+                baseProfile
+            ),
+            historyService,
+            new FixedCurrentDateProvider(
+                currentDate.AddYears(10)
+            )
+        );
+
+        var result = provider.GetProfile(
+            measurementSnapshot
+        );
+
+        Assert.Equal(
+            measurement.WeightKg,
+            result.Body.WeightKg
+        );
+
+        Assert.Equal(
+            measurement.BodyFatPercent,
+            result.Body.BodyFatPercent
+        );
+
+        Assert.Equal(
+            measurement.BoneMassKg,
+            result.Body.BoneMassKg
+        );
+
+        Assert.Equal(
+            measurement.MuscleMassKg,
+            result.Body.MuscleMassKg
+        );
+
+        Assert.Equal(
+            measurement.MusclePercent,
+            result.Body.MusclePercent
+        );
+    }
 }

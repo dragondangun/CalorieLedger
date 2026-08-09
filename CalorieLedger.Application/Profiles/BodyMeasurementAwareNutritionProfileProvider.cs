@@ -24,9 +24,19 @@ public sealed class BodyMeasurementAwareNutritionProfileProvider:IUserNutritionP
     }
 
     public UserNutritionProfile GetCurrentProfile() {
-        var baseProfile = baseProfileProvider.GetCurrentProfile();
+        var measurementSnapshot = measurementHistoryService.GetSnapshot(
+            currentDateProvider.GetCurrentDate()
+        );
 
-        var measurementSnapshot = measurementHistoryService.GetSnapshot(currentDateProvider.GetCurrentDate());
+        return GetProfile(measurementSnapshot);
+    }
+
+    public UserNutritionProfile GetProfile(
+        BodyMeasurementHistorySnapshot measurementSnapshot
+    ) {
+        ArgumentNullException.ThrowIfNull(measurementSnapshot);
+
+        var baseProfile = baseProfileProvider.GetCurrentProfile();
 
         var latestMeasurement = measurementSnapshot.LatestEffectiveMeasurement;
 
@@ -39,11 +49,11 @@ public sealed class BodyMeasurementAwareNutritionProfileProvider:IUserNutritionP
             BodyFatPercent = latestMeasurement.BodyFatPercent,
             BoneMassKg = latestMeasurement.BoneMassKg,
             MuscleMassKg = latestMeasurement.MuscleMassKg,
-            MusclePercent = latestMeasurement.MusclePercent
+            MusclePercent = latestMeasurement.MusclePercent,
         };
 
         return baseProfile with {
-            Body = currentBody
+            Body = currentBody,
         };
     }
 }

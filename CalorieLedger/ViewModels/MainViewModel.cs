@@ -24,8 +24,8 @@ public partial class MainViewModel:ViewModelBase {
     private readonly BodyMeasurementHistoryService bodyMeasurementHistoryService;
     private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
     private readonly UserNutritionProfileEditorService profileEditorService;
+    private readonly BodyMeasurementAwareNutritionProfileProvider  currentProfileProvider;
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
-    private readonly IUserNutritionProfileProvider currentProfileProvider;
     private readonly ICurrentDateProvider currentDateProvider;
 
     [ObservableProperty]
@@ -445,7 +445,7 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshProfileSummary(BodyMeasurementHistorySnapshot measurementSnapshot) {
         ProfileSummary = UserNutritionProfileSummaryViewModelFactory.Create(
-            profile: currentProfileProvider.GetCurrentProfile(),
+            profile: currentProfileProvider.GetProfile(measurementSnapshot),
             effectiveMeasurement: measurementSnapshot.LatestEffectiveMeasurement,
             hasFutureMeasurements: measurementSnapshot.HasFutureMeasurements,
             currentDate: measurementSnapshot.AsOfDate,
