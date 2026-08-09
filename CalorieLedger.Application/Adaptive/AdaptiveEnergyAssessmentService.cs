@@ -1,76 +1,53 @@
-﻿using CalorieLedger.Domain.Adaptive;
+using CalorieLedger.Domain.Adaptive;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Profile;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using CalorieLedger.Application.Profiles;
 
 namespace CalorieLedger.Application.Adaptive;
 
 public sealed class AdaptiveEnergyAssessmentService:IAdaptiveEnergyHistoryResetter {
-    private readonly
-        IAdaptiveEnergyEvaluationStore
-        _evaluationStore;
+    private readonly IAdaptiveEnergyEvaluationStore evaluationStore;
 
-    public AdaptiveEnergyAssessmentService(
-        IAdaptiveEnergyEvaluationStore
-            evaluationStore) {
-        ArgumentNullException.ThrowIfNull(
-            evaluationStore);
+    public AdaptiveEnergyAssessmentService(IAdaptiveEnergyEvaluationStore evaluationStore) {
+        ArgumentNullException.ThrowIfNull(evaluationStore);
 
-        _evaluationStore =
-            evaluationStore;
+        this.evaluationStore = evaluationStore;
     }
 
     public AdaptiveEnergyAssessmentResult Evaluate(
-        IEnumerable<BodyMeasurementEntry>
-            bodyMeasurements,
-        IEnumerable<DailyEnergyIntakeEntry>
-            intakeEntries,
+        BodyMeasurementHistorySnapshot measurementSnapshot,
+        IEnumerable<DailyEnergyIntakeEntry> intakeEntries,
         NutritionGoal goal,
-        decimal currentTargetCaloriesKcal,
-        DateOnly evaluationDate) {
-        ArgumentNullException.ThrowIfNull(
-            bodyMeasurements);
+        decimal currentTargetCaloriesKcal
+    ) {
+        ArgumentNullException.ThrowIfNull(measurementSnapshot);
+        ArgumentNullException.ThrowIfNull(intakeEntries);
+        ArgumentNullException.ThrowIfNull(goal);
 
-        ArgumentNullException.ThrowIfNull(
-            intakeEntries);
+        var intakeEntryArray = intakeEntries.ToArray();
 
-        ArgumentNullException.ThrowIfNull(
-            goal);
+        var evaluationDate = measurementSnapshot.AsOfDate;
 
-        var bodyMeasurementArray =
-            bodyMeasurements.ToArray();
+        var dataQuality = AdaptivePlanDataQualityEvaluator.Evaluate(
+            measurementSnapshot.EffectiveMeasurements,
+            intakeEntryArray,
+            asOfDate: evaluationDate
+        );
 
-        var intakeEntryArray =
-            intakeEntries.ToArray();
+        var adjustment = AdaptiveEnergyAdjustmentCalculator.Calculate(
+            dataQuality,
+            goal,
+            currentTargetCaloriesKcal
+        );
 
-        var dataQuality =
-            AdaptivePlanDataQualityEvaluator
-                .Evaluate(
-                    bodyMeasurementArray,
-                    intakeEntryArray,
-                    asOfDate:
-                        evaluationDate);
-
-        var adjustment =
-            AdaptiveEnergyAdjustmentCalculator
-                .Calculate(
-                    dataQuality,
-                    goal,
-                    currentTargetCaloriesKcal);
-
-        var storedHistory =
-            _evaluationStore
-                .GetAll()
-                .ToArray();
+        var storedHistory = evaluationStore.GetAll().ToArray();
 
         if(storedHistory.Any(
-                entry =>
-                    entry.EvaluationDate
-                    > evaluationDate)) {
+            entry => entry.EvaluationDate > evaluationDate
+        )) {
             throw new InvalidOperationException(
-                "Adaptive evaluation history contains dates later than the current evaluation date.");
+                "Adaptive evaluation history contains dates later than the current evaluation date."
+            );
         }
 
         /*
@@ -79,38 +56,28 @@ public sealed class AdaptiveEnergyAssessmentService:IAdaptiveEnergyHistoryResett
          * день заменяет запись, а не считается
          * второй последовательной проверкой.
          */
-        var previousHistory =
-            storedHistory
-                .Where(
-                    entry =>
-                        entry.EvaluationDate
-                        < evaluationDate)
-                .ToArray();
+        var previousHistory = storedHistory.Where(
+            entry => entry.EvaluationDate < evaluationDate
+        ).ToArray();
 
-        var recommendation =
-            AdaptiveEnergyRecommendationEvaluator
-                .Evaluate(
-                    adjustment,
-                    evaluationDate,
-                    previousHistory);
+        var recommendation = AdaptiveEnergyRecommendationEvaluator.Evaluate(
+            adjustment,
+            evaluationDate,
+            previousHistory
+        );
 
-        if(recommendation
-            .ShouldRecordEvaluation) {
-            _evaluationStore.Save(
-                recommendation
-                    .CurrentEvaluationEntry!);
+        if(recommendation.ShouldRecordEvaluation) {
+            evaluationStore.Save(recommendation.CurrentEvaluationEntry!);
         }
 
         return new AdaptiveEnergyAssessmentResult(
-            DataQuality:
-                dataQuality,
-            Adjustment:
-                adjustment,
-            Recommendation:
-                recommendation);
+            DataQuality: dataQuality,
+            Adjustment: adjustment,
+            Recommendation: recommendation
+        );
     }
 
     public void ResetHistory() {
-        _evaluationStore.Clear();
+        evaluationStore.Clear();
     }
 }
