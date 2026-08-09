@@ -229,21 +229,23 @@ public sealed class
     }
 
     private static BodyMeasurementEntry[] CreateBodyMeasurements(DateOnly startDate, int dayCount) {
-        return Enumerable.Range(0, dayCount).Select(
+        return [.. Enumerable.Range(0, dayCount).Select(
             day => new BodyMeasurementEntry(
                 Id: Guid.NewGuid(),
                 Date: startDate.AddDays(day),
                 WeightKg: 80m - day * 0.1m)
-        ).ToArray();
+        )];
     }
 
     private static DailyEnergyIntakeEntry[] CreateIntakeEntries(DateOnly startDate, int dayCount) {
-        return Enumerable.Range(0, dayCount).Select(
-            day => new DailyEnergyIntakeEntry(
-                Date: startDate.AddDays(day),
-                CaloriesKcal: 2200m,
-                IsComplete: true)
-        ).ToArray();
+        return [
+            .. Enumerable.Range(0, dayCount).Select(
+                day => new DailyEnergyIntakeEntry(
+                    Date: startDate.AddDays(day),
+                    CaloriesKcal: 2200m,
+                    IsComplete: true)
+            ),
+        ];
     }
 
     private static BodyMeasurementHistorySnapshot CreateMeasurementSnapshot(
