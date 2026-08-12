@@ -1,7 +1,10 @@
 using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Nutrition;
 using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Time;
 using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Profile;
@@ -10,8 +13,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
-using CalorieLedger.Application.Time;
-using CalorieLedger.Infrastructure;
 
 namespace CalorieLedger.ViewModels;
 
@@ -64,43 +65,59 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
+    private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
+        AdaptiveEnergyAssessmentService assessmentService,
+        BodyMeasurementAwareNutritionProfileProvider profileProvider
+    );
+
     public MainViewModel() : this(
         JsonBodyMeasurementStore.CreateDefault(),
         JsonUserNutritionProfileStore.CreateDefault(),
-        new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
+        CreateProductionAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore) : this(
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore
+    ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
-        new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
+        CreateProductionAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, ICurrentDateProvider currentDateProvider) : this(
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        ICurrentDateProvider currentDateProvider
+    ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
-        new UnavailableAdaptiveEnergyAssessmentPresentationProvider(),
+        CreateProductionAdaptiveProvider,
         currentDateProvider
     ) { }
 
-    public MainViewModel(IBodyMeasurementStore bodyMeasurementStore, IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider) : this(
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider
+    ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
-        adaptiveEnergyAssessmentPresentationProvider,
+        CreateInjectedAdaptiveProviderFactory(
+            adaptiveEnergyAssessmentPresentationProvider
+        ),
         new SystemCurrentDateProvider()
     ) { }
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
-        IAdaptiveEnergyAssessmentPresentationProvider
-        adaptiveEnergyAssessmentPresentationProvider)
-    : this(
+        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider
+    ) : this(
         bodyMeasurementStore,
         profileStore,
-        adaptiveEnergyAssessmentPresentationProvider,
+        CreateInjectedAdaptiveProviderFactory(
+            adaptiveEnergyAssessmentPresentationProvider
+        ),
         new SystemCurrentDateProvider()
     ) { }
 
@@ -109,10 +126,24 @@ public partial class MainViewModel:ViewModelBase {
         IUserNutritionProfileStore profileStore,
         IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider,
         ICurrentDateProvider currentDateProvider
+    ) : this(
+        bodyMeasurementStore,
+        profileStore,
+        CreateInjectedAdaptiveProviderFactory(
+            adaptiveEnergyAssessmentPresentationProvider
+        ),
+        currentDateProvider
+    ) { }
+
+    private MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IUserNutritionProfileStore profileStore,
+        AdaptiveEnergyAssessmentPresentationProviderFactory adaptiveEnergyAssessmentPresentationProviderFactory,
+        ICurrentDateProvider currentDateProvider
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
-        ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
+        ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProviderFactory);
         ArgumentNullException.ThrowIfNull(currentDateProvider);
 
         if(profileStore is not IUserNutritionProfileWriter profileWriter) {
@@ -123,7 +154,6 @@ public partial class MainViewModel:ViewModelBase {
         }
 
         this.currentDateProvider = currentDateProvider;
-        this.adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProvider;
 
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
@@ -148,9 +178,18 @@ public partial class MainViewModel:ViewModelBase {
 
         var adaptiveAssessmentService = new AdaptiveEnergyAssessmentService(adaptiveEvaluationStore);
 
+        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(
+            adaptiveAssessmentService,
+            currentProfileProvider
+        );
+
+        ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
+
+        var adaptiveEnergyHistoryResetter = adaptiveEnergyAssessmentPresentationProvider as IAdaptiveEnergyHistoryResetter ?? adaptiveAssessmentService;
+
         goalUpdateService = new NutritionGoalUpdateService(
             profileStore,
-            adaptiveAssessmentService
+            adaptiveEnergyHistoryResetter
         );
 
         goalTransitionService = new NutritionGoalTransitionService(goalUpdateService);
@@ -412,6 +451,25 @@ public partial class MainViewModel:ViewModelBase {
             presentation: presentation,
             openGoalEditor: OpenGoalEditorWithSuggestedStrategy
         );
+    }
+
+    private static IAdaptiveEnergyAssessmentPresentationProvider CreateProductionAdaptiveProvider(
+        AdaptiveEnergyAssessmentService assessmentService,
+        BodyMeasurementAwareNutritionProfileProvider profileProvider
+    ) {
+        return new AdaptiveEnergyAssessmentPresentationProvider(
+            assessmentService,
+            new SampleDailyEnergyIntakeHistoryProvider(),
+            profileProvider
+        );
+    }
+
+    private static AdaptiveEnergyAssessmentPresentationProviderFactory CreateInjectedAdaptiveProviderFactory(
+        IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider
+    ) {
+        ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
+
+        return (_, _) => adaptiveEnergyAssessmentPresentationProvider;
     }
 
     private static InMemoryUserNutritionProfileStore CreateInMemoryProfileStore() {

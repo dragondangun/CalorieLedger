@@ -125,6 +125,41 @@ public sealed class AdaptiveEnergyAssessmentPresentationProviderTests {
         );
     }
 
+    [Fact]
+    public void ResetHistory_AfterFirstDeviation_RestartsRecommendationSequence() {
+        var firstEvaluationDate = new DateOnly(2026, 7, 14);
+
+        var provider = CreateProvider(
+            new TrackingDailyEnergyIntakeHistoryProvider()
+        );
+
+        var firstResult = provider.GetCurrent(
+            CreateMeasurementSnapshot(
+                firstEvaluationDate
+            )
+        );
+
+        Assert.Equal(
+            AdaptiveEnergyAssessmentState.ObservationRequired,
+            firstResult.State
+        );
+
+        provider.ResetHistory();
+
+        var secondResult = provider.GetCurrent(
+            CreateMeasurementSnapshot(
+                firstEvaluationDate.AddDays(7)
+            )
+        );
+
+        Assert.Equal(
+            AdaptiveEnergyAssessmentState.ObservationRequired,
+            secondResult.State
+        );
+
+        Assert.Null(secondResult.SuggestedStrategy);
+    }
+
     private static AdaptiveEnergyAssessmentPresentationProvider CreateProvider(
         IDailyEnergyIntakeHistoryProvider intakeHistoryProvider
     ) {

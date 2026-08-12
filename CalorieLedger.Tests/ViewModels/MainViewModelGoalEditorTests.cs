@@ -1,3 +1,4 @@
+using CalorieLedger.Application.Adaptive;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Tests.TestDoubles;
@@ -402,6 +403,95 @@ public sealed class MainViewModelGoalEditorTests {
         Assert.True(
             measurementSnapshot.HasFutureMeasurements
         );
+    }
+
+    [Fact]
+    public void Constructor_SufficientAdaptiveData_UsesProductionAdaptiveProvider() {
+        var currentDate = new DateOnly(2026, 7, 28);
+
+        var store = new InMemoryBodyMeasurementStore();
+
+        for(var day = 13; day >= 0; day--) {
+            store.Save(
+                new BodyMeasurementEntry(
+                    Id: Guid.NewGuid(),
+                    Date: currentDate.AddDays(-day),
+                    WeightKg: 80m
+                )
+            );
+        }
+
+        var viewModel = new MainViewModel(
+            store,
+            new FixedCurrentDateProvider(
+                currentDate
+            )
+        );
+
+        Assert.False(viewModel.AdaptiveEnergyAssessment.IsUnavailable);
+
+        Assert.True(viewModel.AdaptiveEnergyAssessment.IsObservationRequired);
+    }
+
+    [Fact]
+    public void SaveGoal_StrategyChanged_ResetsInjectedAdaptiveProviderHistory() {
+        var adaptiveProvider =
+        new ResetTrackingAdaptiveEnergyAssessmentPresentationProvider();
+
+        var profileStore =
+        new InMemoryUserNutritionProfileStore(
+            new SampleUserNutritionProfileProvider()
+                .GetCurrentProfile()
+        );
+
+        var viewModel =
+        new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            profileStore,
+            adaptiveProvider
+        );
+
+        var action =
+        viewModel.Today.GoalActions.Single(
+            item =>
+                item.Action
+                == GoalNextAction.SetNewGoal
+        );
+
+        action.SelectCommand.Execute(null);
+
+        var editor =
+        Assert.IsType<NutritionGoalEditorViewModel>(
+            viewModel.GoalEditor
+        );
+
+        editor.StrategyValue = 10m;
+
+        editor.SaveCommand.Execute(null);
+
+        Assert.Equal(
+            1,
+            adaptiveProvider.ResetHistoryCount
+        );
+    }
+
+    private sealed class ResetTrackingAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider, IAdaptiveEnergyHistoryResetter {
+        public int ResetHistoryCount { get; private set; }
+
+        public AdaptiveEnergyAssessmentPresentation GetCurrent(BodyMeasurementHistorySnapshot measurementSnapshot) {
+            ArgumentNullException.ThrowIfNull(
+                measurementSnapshot
+            );
+
+            return new AdaptiveEnergyAssessmentPresentation(
+                State: AdaptiveEnergyAssessmentState.Unavailable,
+                Details: "Test"
+            );
+        }
+
+        public void ResetHistory() {
+            ResetHistoryCount++;
+        }
     }
 
     private sealed class CountingAdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {

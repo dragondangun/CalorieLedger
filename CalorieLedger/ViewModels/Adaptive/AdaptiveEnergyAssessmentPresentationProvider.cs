@@ -7,7 +7,10 @@ using System;
 
 namespace CalorieLedger.ViewModels.Adaptive;
 
-public sealed class AdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergyAssessmentPresentationProvider {
+public sealed class AdaptiveEnergyAssessmentPresentationProvider:
+    IAdaptiveEnergyAssessmentPresentationProvider,
+    IAdaptiveEnergyHistoryResetter
+{
     private readonly AdaptiveEnergyAssessmentService assessmentService;
     private readonly IDailyEnergyIntakeHistoryProvider intakeHistoryProvider;
     private readonly BodyMeasurementAwareNutritionProfileProvider profileProvider;
@@ -57,5 +60,9 @@ public sealed class AdaptiveEnergyAssessmentPresentationProvider:IAdaptiveEnergy
             result,
             profile.Goal
         );
+    }
+
+    public void ResetHistory() {
+        assessmentService.ResetHistory();
     }
 }
