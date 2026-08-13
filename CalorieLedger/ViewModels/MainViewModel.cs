@@ -1,8 +1,12 @@
 using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Nutrition;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
 using CalorieLedger.Application.Today;
+using CalorieLedger.Domain.Common;
+using CalorieLedger.Domain.Meals;
+using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
@@ -13,6 +17,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace CalorieLedger.ViewModels;
 
@@ -28,6 +33,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly BodyMeasurementAwareNutritionProfileProvider  currentProfileProvider;
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
     private readonly ICurrentDateProvider currentDateProvider;
+    private readonly IFoodDiaryStore foodDiaryStore;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -66,21 +72,24 @@ public partial class MainViewModel:ViewModelBase {
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
-        BodyMeasurementAwareNutritionProfileProvider profileProvider
+        BodyMeasurementAwareNutritionProfileProvider profileProvider,
+        IFoodDiaryStore foodDiaryStore
     );
 
     public MainViewModel() : this(
-        JsonBodyMeasurementStore.CreateDefault(),
-        JsonUserNutritionProfileStore.CreateDefault(),
-        CreatePersistentAdaptiveProvider,
-        new SystemCurrentDateProvider()
-    ) { }
+    JsonBodyMeasurementStore.CreateDefault(),
+    JsonUserNutritionProfileStore.CreateDefault(),
+    JsonFoodDiaryStore.CreateDefault(),
+    CreatePersistentAdaptiveProvider,
+    new SystemCurrentDateProvider()
+) { }
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore
     ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
+        new InMemoryFoodDiaryStore(),
         CreateInMemoryAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
@@ -91,6 +100,7 @@ public partial class MainViewModel:ViewModelBase {
     ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
+        new InMemoryFoodDiaryStore(),
         CreateInMemoryAdaptiveProvider,
         currentDateProvider
     ) { }
@@ -101,6 +111,7 @@ public partial class MainViewModel:ViewModelBase {
     ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
+        new InMemoryFoodDiaryStore(),
         CreateInjectedAdaptiveProviderFactory(
             adaptiveEnergyAssessmentPresentationProvider
         ),
@@ -114,6 +125,7 @@ public partial class MainViewModel:ViewModelBase {
     ) : this(
         bodyMeasurementStore,
         profileStore,
+        new InMemoryFoodDiaryStore(),
         CreateInjectedAdaptiveProviderFactory(
             adaptiveEnergyAssessmentPresentationProvider
         ),
@@ -128,15 +140,30 @@ public partial class MainViewModel:ViewModelBase {
     ) : this(
         bodyMeasurementStore,
         profileStore,
+        new InMemoryFoodDiaryStore(),
         CreateInjectedAdaptiveProviderFactory(
             adaptiveEnergyAssessmentPresentationProvider
         ),
         currentDateProvider
     ) { }
 
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IUserNutritionProfileStore profileStore,
+        IFoodDiaryStore foodDiaryStore,
+        ICurrentDateProvider currentDateProvider
+    ) : this(
+        bodyMeasurementStore,
+        profileStore,
+        foodDiaryStore,
+        CreateInMemoryAdaptiveProvider,
+        currentDateProvider
+    ) { }
+
     private MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
+        IFoodDiaryStore foodDiaryStore,
         AdaptiveEnergyAssessmentPresentationProviderFactory adaptiveEnergyAssessmentPresentationProviderFactory,
         ICurrentDateProvider currentDateProvider
     ) {
@@ -144,6 +171,7 @@ public partial class MainViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(profileStore);
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProviderFactory);
         ArgumentNullException.ThrowIfNull(currentDateProvider);
+        ArgumentNullException.ThrowIfNull(foodDiaryStore);
 
         if(profileStore is not IUserNutritionProfileWriter profileWriter) {
             throw new ArgumentException(
@@ -153,6 +181,7 @@ public partial class MainViewModel:ViewModelBase {
         }
 
         this.currentDateProvider = currentDateProvider;
+        this.foodDiaryStore = foodDiaryStore;
 
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
@@ -169,11 +198,13 @@ public partial class MainViewModel:ViewModelBase {
             currentDateProvider: currentDateProvider
         );
 
-        todayProvider = new SampleTodayDashboardSnapshotProvider(
-            currentProfileProvider
+        todayProvider = new TodayDashboardSnapshotProvider(
+            profileProvider: currentProfileProvider,
+            foodDiaryStore: foodDiaryStore,
+            currentDateProvider: currentDateProvider
         );
 
-        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(currentProfileProvider);
+        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(currentProfileProvider, foodDiaryStore);
 
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
@@ -319,14 +350,130 @@ public partial class MainViewModel:ViewModelBase {
         );
     }
 
-    private TodayDashboardViewModel CreateTodayDashboardViewModel(
-        string? actionSummary = null) {
+    private TodayDashboardViewModel CreateTodayDashboardViewModel(string? actionSummary = null) {
         var snapshot = todayProvider.GetToday();
 
         return new TodayDashboardViewModel(
             snapshot: snapshot,
             tryExecuteGoalAction: TryExecuteGoalAction,
-            initialGoalActionSummary: actionSummary);
+            addSampleFood: AddSampleFood,
+            markOvereating: MarkOvereating,
+            setFoodLogComplete: SetTodayFoodLogComplete,
+            initialGoalActionSummary: actionSummary
+        );
+    }
+
+    private void AddSampleFood() {
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        var meal = GetOrCreateTodayMeal(
+            currentDate,
+            "Перекусы",
+            MealGroupRole.Snack
+        );
+
+        foodDiaryStore.SaveFoodEntry(
+            new FoodLogEntry(
+                Id: Guid.NewGuid(),
+                MealEntryId: meal.Id,
+                Name: "Творог тестовый",
+                Quantity: FoodQuantity.Grams(
+                    250m
+                ),
+                Nutrition: new NutritionFacts(
+                    Basis: NutritionBasis.Per100Grams,
+                    CaloriesKcal: 120m,
+                    ProteinG: 17m,
+                    FatG: 5m,
+                    CarbsG: 3m
+                ),
+                Source: FoodLogSource.Manual
+            )
+        );
+
+        foodDiaryStore.SetDateComplete(
+            currentDate,
+            false
+        );
+
+        RefreshAfterFoodDiaryChange();
+    }
+
+    private void MarkOvereating() {
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        var meal = GetOrCreateTodayMeal(
+            currentDate,
+            "Особые события",
+            MealGroupRole.Custom
+        );
+
+        foodDiaryStore.SaveFoodEntry(
+            new FoodLogEntry(
+                Id: Guid.NewGuid(),
+                MealEntryId: meal.Id,
+                Name: "Праздник / переедание",
+                Quantity: FoodQuantity.Portions(1m),
+                Nutrition: new NutritionFacts(
+                    Basis: NutritionBasis.Total,
+                    CaloriesKcal: 1500m,
+                    ProteinG: null,
+                    FatG: null,
+                    CarbsG: null
+                ),
+                Source: FoodLogSource.Approximation,
+                IsApproximate: true
+            )
+        );
+
+        foodDiaryStore.SetDateComplete(
+            currentDate,
+            false
+        );
+
+        RefreshAfterFoodDiaryChange();
+    }
+
+    private void SetTodayFoodLogComplete(bool isComplete) {
+        foodDiaryStore.SetDateComplete(
+            currentDateProvider.GetCurrentDate(),
+            isComplete
+        );
+
+        RefreshAfterFoodDiaryChange();
+    }
+
+    private MealEntry GetOrCreateTodayMeal(
+        DateOnly date,
+        string name,
+        MealGroupRole role
+    ) {
+        var existingMeal = foodDiaryStore
+            .GetMeals(date, date)
+            .FirstOrDefault(meal => meal.Name == name && meal.Role == role);
+
+        if(existingMeal is not null) {
+            return existingMeal;
+        }
+
+        var meal = new MealEntry(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: name,
+            Role: role
+        );
+
+        foodDiaryStore.SaveMeal(
+            meal
+        );
+
+        return meal;
+    }
+
+    private void RefreshAfterFoodDiaryChange() {
+        Today = CreateTodayDashboardViewModel();
+
+        RefreshAdaptiveEnergyAssessment();
     }
 
     private bool TryExecuteGoalAction(GoalNextAction action) {
@@ -453,30 +600,35 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private static IAdaptiveEnergyAssessmentPresentationProvider CreatePersistentAdaptiveProvider(
-        BodyMeasurementAwareNutritionProfileProvider profileProvider
+        BodyMeasurementAwareNutritionProfileProvider profileProvider,
+        IFoodDiaryStore foodDiaryStore
     ) {
         return CreateAdaptiveProvider(
             JsonAdaptiveEnergyEvaluationStore.CreateDefault(),
+            foodDiaryStore,
             profileProvider
         );
     }
 
     private static IAdaptiveEnergyAssessmentPresentationProvider CreateInMemoryAdaptiveProvider(
-        BodyMeasurementAwareNutritionProfileProvider profileProvider
+        BodyMeasurementAwareNutritionProfileProvider profileProvider,
+        IFoodDiaryStore foodDiaryStore
     ) {
         return CreateAdaptiveProvider(
             new InMemoryAdaptiveEnergyEvaluationStore(),
+            foodDiaryStore,
             profileProvider
         );
     }
 
     private static IAdaptiveEnergyAssessmentPresentationProvider CreateAdaptiveProvider(
         IAdaptiveEnergyEvaluationStore evaluationStore,
+        IFoodDiaryStore foodDiaryStore,
         BodyMeasurementAwareNutritionProfileProvider profileProvider
     ) {
         return new AdaptiveEnergyAssessmentPresentationProvider(
             new AdaptiveEnergyAssessmentService(evaluationStore),
-            new SampleDailyEnergyIntakeHistoryProvider(),
+            new DailyEnergyIntakeHistoryProvider(foodDiaryStore),
             profileProvider
         );
     }
@@ -486,7 +638,7 @@ public partial class MainViewModel:ViewModelBase {
     ) {
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
-        return _ => adaptiveEnergyAssessmentPresentationProvider;
+        return (_, _) => adaptiveEnergyAssessmentPresentationProvider;
     }
 
     private static InMemoryUserNutritionProfileStore CreateInMemoryProfileStore() {

@@ -250,6 +250,11 @@
             Command="{Binding Today.MarkOvereatingCommand}"
             HorizontalAlignment="Stretch" />
 
+        <Button
+              Content="{Binding Today.FoodLogCompletionActionText}"
+              Command="{Binding Today.ToggleFoodLogCompletionCommand}"
+              HorizontalAlignment="Stretch" />
+
         <Border
             Padding="16"
             CornerRadius="16"

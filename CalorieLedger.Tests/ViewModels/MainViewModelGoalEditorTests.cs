@@ -1,5 +1,9 @@
 using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Common;
+using CalorieLedger.Domain.Meals;
+using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Tests.TestDoubles;
 using CalorieLedger.ViewModels;
@@ -409,10 +413,10 @@ public sealed class MainViewModelGoalEditorTests {
     public void Constructor_SufficientAdaptiveData_UsesProductionAdaptiveProvider() {
         var currentDate = new DateOnly(2026, 7, 28);
 
-        var store = new InMemoryBodyMeasurementStore();
+        var bodyMeasurementStore = new InMemoryBodyMeasurementStore();
 
         for(var day = 13; day >= 0; day--) {
-            store.Save(
+            bodyMeasurementStore.Save(
                 new BodyMeasurementEntry(
                     Id: Guid.NewGuid(),
                     Date: currentDate.AddDays(-day),
@@ -421,8 +425,70 @@ public sealed class MainViewModelGoalEditorTests {
             );
         }
 
+        var profile = new UserNutritionProfile(
+            Id: Guid.NewGuid(),
+            DisplayName: "Test user",
+            Body: new BodyProfile(
+                Sex: BiologicalSex.Male,
+                AgeYears: 30,
+                HeightCm: 180m,
+                WeightKg: 80m,
+                BodyFatPercent: 20m
+            ),
+            LifestyleActivityLevel: LifestyleActivityLevel.Sedentary,
+            Goal: new NutritionGoal(
+                GoalType: WeightGoalType.LoseWeight,
+                Strategy: EnergyStrategy.FromWeightChangePerWeek(0.5m)
+            )
+        );
+
+        var profileStore = new InMemoryUserNutritionProfileStore(
+            profile
+        );
+
+        var foodDiaryStore = new InMemoryFoodDiaryStore();
+
+        for(var day = 13; day >= 0; day--) {
+            var date = currentDate.AddDays(-day);
+
+            var meal = new MealEntry(
+                Id: Guid.NewGuid(),
+                Date: date,
+                Name: "Дневной рацион",
+                Role: MealGroupRole.Custom
+            );
+
+            foodDiaryStore.SaveMeal(meal);
+
+            foodDiaryStore.SaveFoodEntry(
+                new FoodLogEntry(
+                    Id: Guid.NewGuid(),
+                    MealEntryId: meal.Id,
+                    Name: "Рацион",
+                    Quantity: FoodQuantity.Portions(
+                        1m
+                    ),
+                    Nutrition: new NutritionFacts(
+                        Basis: NutritionBasis.Total,
+                        CaloriesKcal: 2200m,
+                        ProteinG: 100m,
+                        FatG: 70m,
+                        CarbsG: 290m
+                    ),
+                    Source: FoodLogSource.Manual
+                )
+            );
+
+            foodDiaryStore.SetDateComplete(
+                date,
+                true
+            );
+        }
+
         var viewModel = new MainViewModel(
-            store,
+            bodyMeasurementStore,
+            profileStore,
+            foodDiaryStore,
             new FixedCurrentDateProvider(
                 currentDate
             )

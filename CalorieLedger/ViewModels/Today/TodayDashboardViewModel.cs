@@ -72,130 +72,114 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private readonly Func<GoalNextAction, bool> tryExecuteGoalAction;
 
-    public decimal ActivityBurnedCaloriesKcal =>
-    Activities.Sum(x => x.BurnedCaloriesKcal);
+    public decimal ActivityBurnedCaloriesKcal => Activities.Sum(x => x.BurnedCaloriesKcal);
 
     public string ActivitySummary =>
         ActivityBurnedCaloriesKcal > 0m
             ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
             : "Дополнительная активность не указана";
 
+    private readonly Action addSampleFood;
+    private readonly Action markOvereating;
+    private readonly Action<bool> setFoodLogComplete;
+
+    public bool IsFoodLogComplete { get; }
+
+    public string FoodLogCompletionActionText => IsFoodLogComplete
+        ? "Открыть день снова"
+        : "Завершить день";
+
     public TodayDashboardViewModel(
         TodayDashboardSnapshot snapshot,
         Func<GoalNextAction, bool> tryExecuteGoalAction,
-        string? initialGoalActionSummary = null) {
+        Action addSampleFood,
+        Action markOvereating,
+        Action<bool> setFoodLogComplete,
+        string? initialGoalActionSummary = null
+    ) {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(tryExecuteGoalAction);
+        ArgumentNullException.ThrowIfNull(addSampleFood);
+        ArgumentNullException.ThrowIfNull(markOvereating);
+        ArgumentNullException.ThrowIfNull(setFoodLogComplete);
+
         this.tryExecuteGoalAction = tryExecuteGoalAction;
 
-        GoalActionSelectionSummary =
-            initialGoalActionSummary
-            ?? "Выберите дальнейшее действие.";
+        this.addSampleFood = addSampleFood;
+
+        this.markOvereating = markOvereating;
+
+        this.setFoodLogComplete = setFoodLogComplete;
+
+        IsFoodLogComplete = snapshot.IsFoodLogComplete;
+
+        GoalActionSelectionSummary = initialGoalActionSummary ?? "Выберите дальнейшее действие.";
 
         target = snapshot.Target;
+
         weeklySummary = snapshot.WeeklySummary;
 
         ConsumedCaloriesKcal = snapshot.ConsumedTotals.CaloriesKcal ?? 0m;
+
         ProteinG = snapshot.ConsumedTotals.ProteinG ?? 0m;
+
         FatG = snapshot.ConsumedTotals.FatG ?? 0m;
+
         CarbsG = snapshot.ConsumedTotals.CarbsG ?? 0m;
 
         foreach(var meal in snapshot.Meals) {
-            MealGroups.Add(new TodayMealGroupViewModel(
-               name: meal.Name,
-               timeSummary: FormatTime(meal.EatenAt),
-               foodItems: meal.FoodItems.Select(ToFoodLogItemViewModel)));
+            MealGroups.Add(
+                new TodayMealGroupViewModel(
+                    name: meal.Name,
+                    timeSummary: FormatTime(meal.EatenAt),
+                    foodItems: meal.FoodItems.Select(ToFoodLogItemViewModel)
+                )
+            );
         }
 
         foreach(var activity in snapshot.Activities) {
-            Activities.Add(new TodayActivityItemViewModel(
-                Name: activity.Name,
-                BurnedCaloriesKcal: activity.BurnedCaloriesKcal,
-                TimeSummary: FormatTime(activity.StartedAt),
-                DurationSummary: FormatDuration(activity.Duration)));
+            Activities.Add(
+                new TodayActivityItemViewModel(
+                    Name: activity.Name,
+                    BurnedCaloriesKcal: activity.BurnedCaloriesKcal,
+                    TimeSummary: FormatTime(activity.StartedAt),
+                    DurationSummary: FormatDuration(activity.Duration)
+                )
+            );
         }
 
-        GoalStatusSummary = FormatGoalDecisionStatus(snapshot.GoalDecision.Status);
+        GoalStatusSummary = FormatGoalDecisionStatus(
+            snapshot.GoalDecision.Status
+        );
 
-        GoalDetailsSummary = FormatGoalDecisionDetails(snapshot.GoalDecision);
+        GoalDetailsSummary = FormatGoalDecisionDetails(
+            snapshot.GoalDecision
+        );
 
         foreach(var action in snapshot.GoalDecision.AvailableActions) {
-            GoalActions.Add(new TodayGoalActionViewModel(
-                action: action,
-                title: FormatGoalAction(action),
-                onSelected: SelectGoalAction)
+            GoalActions.Add(
+                new TodayGoalActionViewModel(
+                    action: action,
+                    title: FormatGoalAction(action),
+                    onSelected: SelectGoalAction
+                )
             );
         }
     }
 
     [RelayCommand]
     private void AddSampleFood() {
-        var facts = new NutritionFacts(
-            Basis: NutritionBasis.Per100Grams,
-            CaloriesKcal: 120m,
-            ProteinG: 17m,
-            FatG: 5m,
-            CarbsG: 3m);
-
-        var quantity = FoodQuantity.Grams(250m);
-
-        var total = NutritionCalculator.CalculateTotal(facts, quantity);
-
-        ConsumedCaloriesKcal += total.CaloriesKcal ?? 0m;
-        ProteinG += total.ProteinG ?? 0m;
-        FatG += total.FatG ?? 0m;
-        CarbsG += total.CarbsG ?? 0m;
-
-        var snackGroup = MealGroups.FirstOrDefault(x => x.Name == "Перекусы");
-
-        if(snackGroup is null) {
-            snackGroup = new TodayMealGroupViewModel(
-                name: "Перекусы",
-                timeSummary: "",
-                foodItems: []);
-
-            MealGroups.Add(snackGroup);
-        }
-
-        snackGroup.AddFoodItem(new TodayFoodLogItemViewModel(
-            Name: "Творог тестовый",
-            QuantitySummary: "250 г",
-            CaloriesSummary: $"{total.CaloriesKcal ?? 0m:0} ккал",
-            MacrosSummary:
-                $"Б: {total.ProteinG ?? 0m:0.#} г · " +
-                $"Ж: {total.FatG ?? 0m:0.#} г · " +
-                $"У: {total.CarbsG ?? 0m:0.#} г",
-            CaloriesKcal: total.CaloriesKcal,
-            ProteinG: total.ProteinG,
-            FatG: total.FatG,
-            CarbsG: total.CarbsG));
+        addSampleFood();
     }
 
     [RelayCommand]
     private void MarkOvereating() {
-        const decimal estimatedCalories = 1500m;
+        markOvereating();
+    }
 
-        ConsumedCaloriesKcal += estimatedCalories;
-
-        var specialGroup = MealGroups.FirstOrDefault(x => x.Name == "Особые события");
-
-        if(specialGroup is null) {
-            specialGroup = new TodayMealGroupViewModel(
-                name: "Особые события",
-                timeSummary: "",
-                foodItems: []);
-
-            MealGroups.Add(specialGroup);
-        }
-
-        specialGroup.AddFoodItem(new TodayFoodLogItemViewModel(
-            Name: "Праздник / переедание",
-            QuantitySummary: "количество неизвестно",
-            CaloriesSummary: $"+{estimatedCalories:0} ккал",
-            MacrosSummary: "Б/Ж/У неизвестны",
-            IsApproximate: true,
-            CaloriesKcal: estimatedCalories,
-            ProteinG: null,
-            FatG: null,
-            CarbsG: null));
+    [RelayCommand]
+    private void ToggleFoodLogCompletion() {
+        setFoodLogComplete(!IsFoodLogComplete);
     }
 
     private static string FormatTarget(decimal? value) {
@@ -215,21 +199,44 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         return $"{quantity.Value:0.##} {unit}";
     }
 
-    private static TodayFoodLogItemViewModel ToFoodLogItemViewModel(
-    TodayFoodLogSnapshotItem item) {
+    private static TodayFoodLogItemViewModel ToFoodLogItemViewModel(TodayFoodLogSnapshotItem item) {
         return new TodayFoodLogItemViewModel(
             Name: item.Name,
-            QuantitySummary: FormatQuantity(item.Quantity),
-            CaloriesSummary: $"{item.Totals.CaloriesKcal ?? 0m:0} ккал",
-            MacrosSummary:
-                $"Б: {item.Totals.ProteinG ?? 0m:0.#} г · " +
-                $"Ж: {item.Totals.FatG ?? 0m:0.#} г · " +
-                $"У: {item.Totals.CarbsG ?? 0m:0.#} г",
+            QuantitySummary: FormatQuantity(
+                item.Quantity
+            ),
+            CaloriesSummary: FormatCalories(
+                item.Totals.CaloriesKcal
+            ),
+            MacrosSummary: FormatMacros(
+                item.Totals
+            ),
             IsApproximate: item.IsApproximate,
             CaloriesKcal: item.Totals.CaloriesKcal,
             ProteinG: item.Totals.ProteinG,
             FatG: item.Totals.FatG,
-            CarbsG: item.Totals.CarbsG);
+            CarbsG: item.Totals.CarbsG
+        );
+    }
+
+    private static string FormatCalories(decimal? caloriesKcal) {
+        return caloriesKcal is null
+            ? "калорийность неизвестна"
+            : $"{caloriesKcal.Value:0} ккал";
+    }
+
+    private static string FormatMacros(NutritionTotals totals) {
+        if(totals.ProteinG is null
+            && totals.FatG is null
+            && totals.CarbsG is null) {
+            return "Б/Ж/У неизвестны";
+        }
+
+        return $"Б: {FormatNutrient(totals.ProteinG)} г · Ж: {FormatNutrient(totals.FatG)} г · У: {FormatNutrient(totals.CarbsG)} г";
+    }
+
+    private static string FormatNutrient(decimal? value) {
+        return value is null ? "—" : $"{value.Value:0.#}";
     }
 
     private static string FormatTime(TimeOnly? time) {
