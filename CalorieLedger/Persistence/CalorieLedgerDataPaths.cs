@@ -20,4 +20,9 @@ internal static class CalorieLedgerDataPaths {
         ApplicationDirectory,
         "user-profile.json"
     );
+
+    public static string AdaptiveEnergyEvaluationsFilePath => Path.Combine(
+        ApplicationDirectory,
+        "adaptive-energy-evaluations.json"
+    );
 }

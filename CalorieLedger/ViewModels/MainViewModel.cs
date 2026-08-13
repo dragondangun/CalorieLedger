@@ -66,14 +66,13 @@ public partial class MainViewModel:ViewModelBase {
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
-        AdaptiveEnergyAssessmentService assessmentService,
         BodyMeasurementAwareNutritionProfileProvider profileProvider
     );
 
     public MainViewModel() : this(
         JsonBodyMeasurementStore.CreateDefault(),
         JsonUserNutritionProfileStore.CreateDefault(),
-        CreateProductionAdaptiveProvider,
+        CreatePersistentAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
 
@@ -82,7 +81,7 @@ public partial class MainViewModel:ViewModelBase {
     ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
-        CreateProductionAdaptiveProvider,
+        CreateInMemoryAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
 
@@ -92,7 +91,7 @@ public partial class MainViewModel:ViewModelBase {
     ) : this(
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
-        CreateProductionAdaptiveProvider,
+        CreateInMemoryAdaptiveProvider,
         currentDateProvider
     ) { }
 
@@ -174,18 +173,18 @@ public partial class MainViewModel:ViewModelBase {
             currentProfileProvider
         );
 
-        var adaptiveEvaluationStore = new InMemoryAdaptiveEnergyEvaluationStore();
-
-        var adaptiveAssessmentService = new AdaptiveEnergyAssessmentService(adaptiveEvaluationStore);
-
-        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(
-            adaptiveAssessmentService,
-            currentProfileProvider
-        );
+        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(currentProfileProvider);
 
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
-        var adaptiveEnergyHistoryResetter = adaptiveEnergyAssessmentPresentationProvider as IAdaptiveEnergyHistoryResetter ?? adaptiveAssessmentService;
+        var adaptiveEnergyHistoryResetter = adaptiveEnergyAssessmentPresentationProvider as IAdaptiveEnergyHistoryResetter;
+
+        goalUpdateService = new NutritionGoalUpdateService(
+            profileStore,
+            adaptiveEnergyHistoryResetter
+        );
+
+        ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
         goalUpdateService = new NutritionGoalUpdateService(
             profileStore,
@@ -453,12 +452,30 @@ public partial class MainViewModel:ViewModelBase {
         );
     }
 
-    private static IAdaptiveEnergyAssessmentPresentationProvider CreateProductionAdaptiveProvider(
-        AdaptiveEnergyAssessmentService assessmentService,
+    private static IAdaptiveEnergyAssessmentPresentationProvider CreatePersistentAdaptiveProvider(
+        BodyMeasurementAwareNutritionProfileProvider profileProvider
+    ) {
+        return CreateAdaptiveProvider(
+            JsonAdaptiveEnergyEvaluationStore.CreateDefault(),
+            profileProvider
+        );
+    }
+
+    private static IAdaptiveEnergyAssessmentPresentationProvider CreateInMemoryAdaptiveProvider(
+        BodyMeasurementAwareNutritionProfileProvider profileProvider
+    ) {
+        return CreateAdaptiveProvider(
+            new InMemoryAdaptiveEnergyEvaluationStore(),
+            profileProvider
+        );
+    }
+
+    private static IAdaptiveEnergyAssessmentPresentationProvider CreateAdaptiveProvider(
+        IAdaptiveEnergyEvaluationStore evaluationStore,
         BodyMeasurementAwareNutritionProfileProvider profileProvider
     ) {
         return new AdaptiveEnergyAssessmentPresentationProvider(
-            assessmentService,
+            new AdaptiveEnergyAssessmentService(evaluationStore),
             new SampleDailyEnergyIntakeHistoryProvider(),
             profileProvider
         );
@@ -469,7 +486,7 @@ public partial class MainViewModel:ViewModelBase {
     ) {
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
-        return (_, _) => adaptiveEnergyAssessmentPresentationProvider;
+        return _ => adaptiveEnergyAssessmentPresentationProvider;
     }
 
     private static InMemoryUserNutritionProfileStore CreateInMemoryProfileStore() {
