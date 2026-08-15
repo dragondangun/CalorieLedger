@@ -1,0 +1,219 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Meals.FoodLogEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mealsVm="using:CalorieLedger.ViewModels.Meals"
+    x:DataType="mealsVm:FoodLogEditorViewModel">
+
+    <ScrollViewer>
+        <StackPanel
+            Margin="24"
+            Spacing="14"
+            MaxWidth="640"
+            HorizontalAlignment="Center">
+
+            <TextBlock
+                Text="Добавление еды"
+                FontSize="26"
+                FontWeight="Bold" />
+
+            <TextBlock
+                Text="Название"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Name, Mode=TwoWay}"
+                Watermark="Например: творог 5%" />
+
+            <TextBlock
+                Text="Приём пищи"
+                FontWeight="SemiBold" />
+
+            <ComboBox
+                ItemsSource="{Binding MealRoleOptions}"
+                SelectedItem="{Binding SelectedMealRoleOption, Mode=TwoWay}">
+
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:CompileBindings="False">
+                        <TextBlock Text="{Binding DisplayName}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock
+                Text="Количество"
+                Margin="0,8,0,0"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <Grid
+                ColumnDefinitions="2*,*"
+                ColumnSpacing="12">
+
+                <NumericUpDown
+                    Grid.Column="0"
+                    Value="{Binding QuantityValue, Mode=TwoWay}"
+                    Minimum="0"
+                    Maximum="100000"
+                    Increment="1"
+                    FormatString="0.##" />
+
+                <ComboBox
+                    Grid.Column="1"
+                    ItemsSource="{Binding QuantityUnitOptions}"
+                    SelectedItem="{Binding SelectedQuantityUnitOption, Mode=TwoWay}">
+
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:CompileBindings="False">
+                            <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </Grid>
+
+            <TextBlock
+                Text="КБЖУ"
+                Margin="0,8,0,0"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                Text="Значения указаны"
+                FontWeight="SemiBold" />
+
+            <ComboBox
+                ItemsSource="{Binding NutritionBasisOptions}"
+                SelectedItem="{Binding SelectedNutritionBasisOption, Mode=TwoWay}">
+
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:CompileBindings="False">
+                        <TextBlock Text="{Binding DisplayName}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <Grid
+                ColumnDefinitions="*,*"
+                RowDefinitions="Auto,Auto,Auto,Auto"
+                ColumnSpacing="12"
+                RowSpacing="8">
+
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Text="Калорийность, ккал"
+                    VerticalAlignment="Center" />
+
+                <NumericUpDown
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Value="{Binding CaloriesKcal, Mode=TwoWay}"
+                    Minimum="0"
+                    Maximum="100000"
+                    Increment="1"
+                    FormatString="0.##" />
+
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Text="Белки, г"
+                    VerticalAlignment="Center" />
+
+                <NumericUpDown
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Value="{Binding ProteinG, Mode=TwoWay}"
+                    Minimum="0"
+                    Maximum="10000"
+                    Increment="0.1"
+                    FormatString="0.##" />
+
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    Text="Жиры, г"
+                    VerticalAlignment="Center" />
+
+                <NumericUpDown
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Value="{Binding FatG, Mode=TwoWay}"
+                    Minimum="0"
+                    Maximum="10000"
+                    Increment="0.1"
+                    FormatString="0.##" />
+
+                <TextBlock
+                    Grid.Row="3"
+                    Grid.Column="0"
+                    Text="Углеводы, г"
+                    VerticalAlignment="Center" />
+
+                <NumericUpDown
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    Value="{Binding CarbsG, Mode=TwoWay}"
+                    Minimum="0"
+                    Maximum="10000"
+                    Increment="0.1"
+                    FormatString="0.##" />
+            </Grid>
+
+            <Border
+                Padding="12"
+                CornerRadius="8"
+                BorderThickness="1">
+
+                <TextBlock
+                    Text="{Binding NutritionPreviewSummary}"
+                    TextWrapping="Wrap" />
+            </Border>
+
+            <CheckBox
+                Content="Приблизительная оценка"
+                IsChecked="{Binding IsApproximate, Mode=TwoWay}" />
+
+            <TextBlock
+                Text="Комментарий"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Note, Mode=TwoWay}"
+                AcceptsReturn="True"
+                MinHeight="72"
+                TextWrapping="Wrap"
+                Watermark="Необязательно" />
+
+            <Border
+                Padding="12"
+                CornerRadius="8"
+                BorderThickness="1"
+                IsVisible="{Binding HasValidationErrors}">
+
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        Text="Ошибки"
+                        FontWeight="Bold" />
+
+                    <ListBox
+                        ItemsSource="{Binding ValidationMessages}"
+                        IsHitTestVisible="False" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8">
+
+                <Button
+                    Content="Отмена"
+                    Command="{Binding CancelCommand}" />
+
+                <Button
+                    Content="Сохранить"
+                    Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

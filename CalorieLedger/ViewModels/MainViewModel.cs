@@ -11,6 +11,7 @@ using CalorieLedger.Domain.Profile;
 using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
 using CalorieLedger.ViewModels.Adaptive;
+using CalorieLedger.ViewModels.Meals;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Today;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -34,6 +35,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
     private readonly ICurrentDateProvider currentDateProvider;
     private readonly IFoodDiaryStore foodDiaryStore;
+    private readonly FoodLogEditorService foodLogEditorService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -52,6 +54,8 @@ public partial class MainViewModel:ViewModelBase {
     private UserNutritionProfileSummaryViewModel profileSummary = null!;
     [ObservableProperty]
     private bool isBodyMeasurementHistoryExpanded;
+    [ObservableProperty]
+    private FoodLogEditorViewModel? foodLogEditor;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -71,18 +75,20 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
+    public bool IsFoodLogEditorOpen => FoodLogEditor is not null;
+
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
         IFoodDiaryStore foodDiaryStore
     );
 
     public MainViewModel() : this(
-    JsonBodyMeasurementStore.CreateDefault(),
-    JsonUserNutritionProfileStore.CreateDefault(),
-    JsonFoodDiaryStore.CreateDefault(),
-    CreatePersistentAdaptiveProvider,
-    new SystemCurrentDateProvider()
-) { }
+        JsonBodyMeasurementStore.CreateDefault(),
+        JsonUserNutritionProfileStore.CreateDefault(),
+        JsonFoodDiaryStore.CreateDefault(),
+        CreatePersistentAdaptiveProvider,
+        new SystemCurrentDateProvider()
+    ) { }
 
     public MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore
@@ -182,6 +188,7 @@ public partial class MainViewModel:ViewModelBase {
 
         this.currentDateProvider = currentDateProvider;
         this.foodDiaryStore = foodDiaryStore;
+        foodLogEditorService = new FoodLogEditorService(foodDiaryStore);
 
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
@@ -244,7 +251,10 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsBodyMeasurementEditorOpen => BodyMeasurementEditor is not null;
 
-    public bool IsTodayDashboardVisible => GoalEditor is null && BodyMeasurementEditor is null && ProfileEditor is null;
+    public bool IsTodayDashboardVisible => GoalEditor is null
+        && BodyMeasurementEditor is null
+        && ProfileEditor is null
+        && FoodLogEditor is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -261,13 +271,12 @@ public partial class MainViewModel:ViewModelBase {
 
     [RelayCommand]
     private void EditProfile() {
-        ProfileEditor =
-            new UserNutritionProfileEditorViewModel(
-                editorService: profileEditorService,
-                draft: profileEditorService.LoadCurrentProfile(),
-                onSaved: OnProfileEditorSaved,
-                onCancelled: CloseProfileEditor
-            );
+        ProfileEditor = new UserNutritionProfileEditorViewModel(
+            editorService: profileEditorService,
+            draft: profileEditorService.LoadCurrentProfile(),
+            onSaved: OnProfileEditorSaved,
+            onCancelled: CloseProfileEditor
+        );
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleBodyMeasurementHistory))]
@@ -345,9 +354,7 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void RefreshBodyTrends(BodyMeasurementHistorySnapshot measurementSnapshot) {
-        BodyTrends = BodyTrendsViewModelFactory.Create(
-            measurementSnapshot
-        );
+        BodyTrends = BodyTrendsViewModelFactory.Create(measurementSnapshot);
     }
 
     private TodayDashboardViewModel CreateTodayDashboardViewModel(string? actionSummary = null) {
@@ -356,47 +363,39 @@ public partial class MainViewModel:ViewModelBase {
         return new TodayDashboardViewModel(
             snapshot: snapshot,
             tryExecuteGoalAction: TryExecuteGoalAction,
-            addSampleFood: AddSampleFood,
+            addFood: OpenFoodLogEditor,
             markOvereating: MarkOvereating,
             setFoodLogComplete: SetTodayFoodLogComplete,
             initialGoalActionSummary: actionSummary
         );
     }
 
-    private void AddSampleFood() {
+    private void OpenFoodLogEditor() {
         var currentDate = currentDateProvider.GetCurrentDate();
 
-        var meal = GetOrCreateTodayMeal(
-            currentDate,
-            "Перекусы",
-            MealGroupRole.Snack
+        FoodLogEditor = new FoodLogEditorViewModel(
+            editorService: foodLogEditorService,
+            draft: foodLogEditorService.CreateNew(currentDate),
+            currentDate: currentDate,
+            onSaved: OnFoodLogSaved,
+            onCancelled: CloseFoodLogEditor
         );
+    }
 
-        foodDiaryStore.SaveFoodEntry(
-            new FoodLogEntry(
-                Id: Guid.NewGuid(),
-                MealEntryId: meal.Id,
-                Name: "Творог тестовый",
-                Quantity: FoodQuantity.Grams(
-                    250m
-                ),
-                Nutrition: new NutritionFacts(
-                    Basis: NutritionBasis.Per100Grams,
-                    CaloriesKcal: 120m,
-                    ProteinG: 17m,
-                    FatG: 5m,
-                    CarbsG: 3m
-                ),
-                Source: FoodLogSource.Manual
-            )
-        );
-
-        foodDiaryStore.SetDateComplete(
-            currentDate,
-            false
-        );
+    private void OnFoodLogSaved() {
+        FoodLogEditor = null;
 
         RefreshAfterFoodDiaryChange();
+    }
+
+    private void CloseFoodLogEditor() {
+        FoodLogEditor = null;
+    }
+
+    partial void OnFoodLogEditorChanged(FoodLogEditorViewModel? value) {
+        OnPropertyChanged(nameof(IsFoodLogEditorOpen));
+
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
     private void MarkOvereating() {

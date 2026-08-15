@@ -7,9 +7,10 @@
     xmlns:profileVm="using:CalorieLedger.ViewModels.Profile"
     xmlns:profileViews="using:CalorieLedger.Views.Profile"
     xmlns:adaptiveViews="using:CalorieLedger.Views.Adaptive"
+    xmlns:mealViews="using:CalorieLedger.Views.Meals"
     x:DataType="vm:MainViewModel">
 
-  <Grid>
+    <Grid>
     <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
       <StackPanel Spacing="16" Margin="20">
 
@@ -240,10 +241,10 @@
           </StackPanel>
         </Border>
 
-        <Button
-            Content="Добавить еду"
-            Command="{Binding Today.AddSampleFoodCommand}"
-            HorizontalAlignment="Stretch" />
+          <Button
+              Content="Добавить еду"
+              Command="{Binding Today.AddFoodCommand}"
+              HorizontalAlignment="Stretch" />
 
         <Button
             Content="Обожрался"
@@ -360,5 +361,11 @@
       <profileViews:UserNutritionProfileEditorView
           DataContext="{Binding ProfileEditor}" />
     </Grid>
-  </Grid>
+        <Grid
+            IsVisible="{Binding IsFoodLogEditorOpen}"
+            Panel.ZIndex="1">
+
+            <mealViews:FoodLogEditorView DataContext="{Binding FoodLogEditor}" />
+        </Grid>
+    </Grid>
 </UserControl>

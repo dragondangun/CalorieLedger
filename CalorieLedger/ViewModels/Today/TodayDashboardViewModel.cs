@@ -79,7 +79,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
             : "Дополнительная активность не указана";
 
-    private readonly Action addSampleFood;
+    private readonly Action addFood;
     private readonly Action markOvereating;
     private readonly Action<bool> setFoodLogComplete;
 
@@ -92,20 +92,20 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     public TodayDashboardViewModel(
         TodayDashboardSnapshot snapshot,
         Func<GoalNextAction, bool> tryExecuteGoalAction,
-        Action addSampleFood,
+        Action addFood,
         Action markOvereating,
         Action<bool> setFoodLogComplete,
         string? initialGoalActionSummary = null
     ) {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(tryExecuteGoalAction);
-        ArgumentNullException.ThrowIfNull(addSampleFood);
+        ArgumentNullException.ThrowIfNull(addFood);
         ArgumentNullException.ThrowIfNull(markOvereating);
         ArgumentNullException.ThrowIfNull(setFoodLogComplete);
 
         this.tryExecuteGoalAction = tryExecuteGoalAction;
 
-        this.addSampleFood = addSampleFood;
+        this.addFood = addFood;
 
         this.markOvereating = markOvereating;
 
@@ -168,8 +168,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     }
 
     [RelayCommand]
-    private void AddSampleFood() {
-        addSampleFood();
+    private void AddFood() {
+        addFood();
     }
 
     [RelayCommand]
