@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Application.Profiles;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Persistence;
 
@@ -201,11 +201,9 @@ public sealed class JsonUserNutritionProfileStoreTests:IDisposable {
             new TestProfileProvider(fallbackProfile)
         );
 
-        var updatedProfile = fallbackProfile with
-        {
+        var updatedProfile = fallbackProfile with{
             DisplayName = "Updated user",
-            LifestyleActivityLevel =
-                LifestyleActivityLevel.VeryActive,
+            LifestyleActivityLevel = LifestyleActivityLevel.VeryActive,
         };
 
         store.UpdateProfile(updatedProfile);

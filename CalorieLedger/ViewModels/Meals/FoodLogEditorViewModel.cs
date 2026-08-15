@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace CalorieLedger.ViewModels.Meals;
 
@@ -23,6 +22,9 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     private readonly DateOnly foodLogDate;
     private readonly Action onSaved;
     private readonly Action onCancelled;
+    private readonly FoodLogSource source;
+    private readonly Guid? sourceId;
+    private bool isInitializing;
 
     [ObservableProperty]
     private string name = string.Empty;
@@ -148,7 +150,6 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(draft);
         ArgumentNullException.ThrowIfNull(onSaved);
         ArgumentNullException.ThrowIfNull(onCancelled);
-
         this.editorService = editorService;
         this.currentDate = currentDate;
         this.onSaved = onSaved;
@@ -156,6 +157,9 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
 
         foodLogId = draft.Id;
         foodLogDate = draft.Date;
+        source = draft.Source;
+        sourceId = draft.SourceId;
+        isInitializing = true;
         Name = draft.Name;
         MealRole = draft.MealRole;
         QuantityValue = draft.QuantityValue;
@@ -179,14 +183,13 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
         SelectedNutritionBasisOption = NutritionBasisOptions.First(
             option => option.Value == NutritionBasis
         );
+        isInitializing = false;
 
         UpdatePreview();
     }
 
     partial void OnMealRoleChanged(MealGroupRole value) {
-        var option = MealRoleOptions.First(
-            existing => existing.Value == value
-        );
+        var option = MealRoleOptions.First(existing => existing.Value == value);
 
         if(SelectedMealRoleOption != option) {
             SelectedMealRoleOption = option;
@@ -194,16 +197,13 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     }
 
     partial void OnSelectedMealRoleOptionChanged(SelectionOption<MealGroupRole>? value) {
-        if(value is not null
-            && MealRole != value.Value) {
+        if(value is not null && MealRole != value.Value) {
             MealRole = value.Value;
         }
     }
 
     partial void OnQuantityUnitChanged(FoodUnit value) {
-        var option = QuantityUnitOptions.First(
-            existing => existing.Value == value
-        );
+        var option = QuantityUnitOptions.First(existing => existing.Value == value);
 
         if(SelectedQuantityUnitOption != option) {
             SelectedQuantityUnitOption = option;
@@ -213,16 +213,13 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     }
 
     partial void OnSelectedQuantityUnitOptionChanged(SelectionOption<FoodUnit>? value) {
-        if(value is not null
-            && QuantityUnit != value.Value) {
+        if(value is not null && QuantityUnit != value.Value) {
             QuantityUnit = value.Value;
         }
     }
 
     partial void OnNutritionBasisChanged(NutritionBasis value) {
-        var option = NutritionBasisOptions.First(
-            existing => existing.Value == value
-        );
+        var option = NutritionBasisOptions.First(existing => existing.Value == value);
 
         if(SelectedNutritionBasisOption != option) {
             SelectedNutritionBasisOption = option;
@@ -232,8 +229,7 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     }
 
     partial void OnSelectedNutritionBasisOptionChanged(SelectionOption<NutritionBasis>? value) {
-        if(value is not null
-            && NutritionBasis != value.Value) {
+        if(value is not null && NutritionBasis != value.Value) {
             NutritionBasis = value.Value;
         }
     }
@@ -273,9 +269,7 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
         }
 
         foreach(var error in result.Errors) {
-            ValidationMessages.Add(
-                FormatValidationError(error)
-            );
+            ValidationMessages.Add(FormatValidationError(error));
         }
 
         OnPropertyChanged(nameof(HasValidationErrors));
@@ -299,12 +293,18 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
             ProteinG: ProteinG,
             FatG: FatG,
             CarbsG: CarbsG,
+            Source: source,
+            SourceId: sourceId,
             IsApproximate: IsApproximate,
             Note: Note
         );
     }
 
     private void UpdatePreview() {
+        if(isInitializing) {
+            return;
+        }
+
         if(QuantityValue is not > 0m) {
             NutritionPreviewSummary = "Введите количество, чтобы рассчитать итоговое КБЖУ.";
             return;
@@ -314,7 +314,6 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
 
         if(preview is null) {
             NutritionPreviewSummary = "Единица количества не соответствует способу задания КБЖУ.";
-
             return;
         }
 

@@ -116,6 +116,7 @@ public sealed class TodayDashboardSnapshotProvider:ITodayDashboardSnapshotProvid
 
     private static TodayFoodLogSnapshotItem CreateFoodItem(FoodLogEntry foodEntry) {
         return new TodayFoodLogSnapshotItem(
+            Id: foodEntry.Id,
             Name: foodEntry.Name,
             Quantity: foodEntry.Quantity,
             Totals: NutritionCalculator.CalculateTotal(

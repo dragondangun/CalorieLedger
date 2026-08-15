@@ -8,6 +8,14 @@ public interface IFoodDiaryStore {
         DateOnly endDate
     );
 
+    MealEntry? GetMeal(
+        Guid id
+    );
+
+    FoodLogEntry? GetFoodEntry(
+        Guid id
+    );
+
     IReadOnlyList<FoodLogEntry> GetFoodEntries(IReadOnlyCollection<Guid> mealEntryIds);
 
     IReadOnlyCollection<DateOnly> GetCompletedDates(

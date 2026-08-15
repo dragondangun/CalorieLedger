@@ -51,18 +51,13 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     public decimal RemainingCaloriesKcal => TargetCaloriesKcal - ConsumedCaloriesKcal;
 
-    public string CaloriesSummary =>
-        $"{ConsumedCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал";
+    public string CaloriesSummary => $"{ConsumedCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал";
 
-    public string RemainingCaloriesSummary =>
-        RemainingCaloriesKcal >= 0
+    public string RemainingCaloriesSummary => RemainingCaloriesKcal >= 0
             ? $"Осталось {RemainingCaloriesKcal:0} ккал"
             : $"Превышение {-RemainingCaloriesKcal:0} ккал";
 
-    public string MacrosSummary =>
-        $"Б: {ProteinG:0.#}/{FormatTarget(TargetProteinG)} г · " +
-        $"Ж: {FatG:0.#}/{FormatTarget(TargetFatG)} г · " +
-        $"У: {CarbsG:0.#}/{FormatTarget(TargetCarbsG)} г";
+    public string MacrosSummary => $"Б: {ProteinG:0.#}/{FormatTarget(TargetProteinG)} г · Ж: {FatG:0.#}/{FormatTarget(TargetFatG)} г · У: {CarbsG:0.#}/{FormatTarget(TargetCarbsG)} г";
 
     private readonly DailyNutritionTarget target;
 
@@ -74,14 +69,15 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     public decimal ActivityBurnedCaloriesKcal => Activities.Sum(x => x.BurnedCaloriesKcal);
 
-    public string ActivitySummary =>
-        ActivityBurnedCaloriesKcal > 0m
-            ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
-            : "Дополнительная активность не указана";
+    public string ActivitySummary => ActivityBurnedCaloriesKcal > 0m
+        ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
+        : "Дополнительная активность не указана";
 
     private readonly Action addFood;
     private readonly Action markOvereating;
     private readonly Action<bool> setFoodLogComplete;
+    private readonly Action<Guid> editFood;
+    private readonly Action<Guid> deleteFood;
 
     public bool IsFoodLogComplete { get; }
 
@@ -95,6 +91,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         Action addFood,
         Action markOvereating,
         Action<bool> setFoodLogComplete,
+        Action<Guid> editFood,
+        Action<Guid> deleteFood,
         string? initialGoalActionSummary = null
     ) {
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -102,14 +100,15 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         ArgumentNullException.ThrowIfNull(addFood);
         ArgumentNullException.ThrowIfNull(markOvereating);
         ArgumentNullException.ThrowIfNull(setFoodLogComplete);
+        ArgumentNullException.ThrowIfNull(editFood);
+        ArgumentNullException.ThrowIfNull(deleteFood);
 
         this.tryExecuteGoalAction = tryExecuteGoalAction;
-
         this.addFood = addFood;
-
         this.markOvereating = markOvereating;
-
         this.setFoodLogComplete = setFoodLogComplete;
+        this.editFood = editFood;
+        this.deleteFood = deleteFood;
 
         IsFoodLogComplete = snapshot.IsFoodLogComplete;
 
@@ -199,23 +198,22 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         return $"{quantity.Value:0.##} {unit}";
     }
 
-    private static TodayFoodLogItemViewModel ToFoodLogItemViewModel(TodayFoodLogSnapshotItem item) {
+    private TodayFoodLogItemViewModel ToFoodLogItemViewModel(
+    TodayFoodLogSnapshotItem item
+) {
         return new TodayFoodLogItemViewModel(
-            Name: item.Name,
-            QuantitySummary: FormatQuantity(
-                item.Quantity
-            ),
-            CaloriesSummary: FormatCalories(
-                item.Totals.CaloriesKcal
-            ),
-            MacrosSummary: FormatMacros(
-                item.Totals
-            ),
-            IsApproximate: item.IsApproximate,
-            CaloriesKcal: item.Totals.CaloriesKcal,
-            ProteinG: item.Totals.ProteinG,
-            FatG: item.Totals.FatG,
-            CarbsG: item.Totals.CarbsG
+            id: item.Id,
+            name: item.Name,
+            quantitySummary: FormatQuantity(item.Quantity),
+            caloriesSummary: FormatCalories(item.Totals.CaloriesKcal),
+            macrosSummary: FormatMacros(item.Totals),
+            onEdit: editFood,
+            onDelete: deleteFood,
+            isApproximate: item.IsApproximate,
+            caloriesKcal: item.Totals.CaloriesKcal,
+            proteinG: item.Totals.ProteinG,
+            fatG: item.Totals.FatG,
+            carbsG: item.Totals.CarbsG
         );
     }
 

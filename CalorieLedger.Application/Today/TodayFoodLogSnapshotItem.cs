@@ -1,11 +1,14 @@
-﻿using CalorieLedger.Domain.Common;
+using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
+using System;
 
 namespace CalorieLedger.Application.Today;
 
 public sealed record TodayFoodLogSnapshotItem(
+    Guid Id,
     string Name,
     FoodQuantity Quantity,
     NutritionTotals Totals,
     bool IsApproximate = false,
-    string? Note = null);
+    string? Note = null
+);

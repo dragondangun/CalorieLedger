@@ -21,56 +21,29 @@ public sealed class JsonFoodDiaryStore:IFoodDiaryStore {
     private readonly object syncRoot = new();
     private readonly AtomicJsonFile<FoodDiaryJsonData> jsonFile;
 
-    public JsonFoodDiaryStore(
-        string filePath
-    ) {
-        jsonFile =
-            new AtomicJsonFile<FoodDiaryJsonData>(
-                filePath,
-                SerializerOptions
-            );
+    public JsonFoodDiaryStore(string filePath) {
+        jsonFile = new AtomicJsonFile<FoodDiaryJsonData>(
+            filePath,
+            SerializerOptions
+        );
     }
 
     public static JsonFoodDiaryStore CreateDefault() {
-        return new JsonFoodDiaryStore(
-            CalorieLedgerDataPaths.FoodDiaryFilePath
-        );
+        return new JsonFoodDiaryStore(CalorieLedgerDataPaths.FoodDiaryFilePath);
     }
 
-    public IReadOnlyList<MealEntry> GetMeals(
-        DateOnly startDate,
-        DateOnly endDate
-    ) {
-        ValidateDateRange(
-            startDate,
-            endDate
-        );
+    public IReadOnlyList<MealEntry> GetMeals(DateOnly startDate, DateOnly endDate) {
+        ValidateDateRange(startDate, endDate);
 
         lock(syncRoot) {
             return [
                 .. ReadData()
                     .Meals
-                    .Where(
-                        meal =>
-                            meal.Date >= startDate
-                            && meal.Date <= endDate
-                    )
-                    .OrderBy(
-                        meal =>
-                            meal.Date
-                    )
-                    .ThenBy(
-                        meal =>
-                            meal.EatenAt is null
-                    )
-                    .ThenBy(
-                        meal =>
-                            meal.EatenAt
-                    )
-                    .ThenBy(
-                        meal =>
-                            meal.Id
-                    ),
+                    .Where(meal => meal.Date >= startDate && meal.Date <= endDate)
+                    .OrderBy(meal => meal.Date)
+                    .ThenBy(meal => meal.EatenAt is null)
+                    .ThenBy(meal => meal.EatenAt)
+                    .ThenBy(meal => meal.Id),
             ];
         }
     }
@@ -78,227 +51,146 @@ public sealed class JsonFoodDiaryStore:IFoodDiaryStore {
     public IReadOnlyList<FoodLogEntry> GetFoodEntries(
         IReadOnlyCollection<Guid> mealEntryIds
     ) {
-        ArgumentNullException.ThrowIfNull(
-            mealEntryIds
-        );
+        ArgumentNullException.ThrowIfNull(mealEntryIds);
 
-        var mealIdSet =
-            mealEntryIds.ToHashSet();
+        var mealIdSet = mealEntryIds.ToHashSet();
 
         lock(syncRoot) {
             return [
                 .. ReadData()
                     .FoodEntries
-                    .Where(
-                        foodEntry =>
-                            mealIdSet.Contains(
-                                foodEntry.MealEntryId
-                            )
-                    )
-                    .OrderBy(
-                        foodEntry =>
-                            foodEntry.MealEntryId
-                    )
-                    .ThenBy(
-                        foodEntry =>
-                            foodEntry.Id
-                    ),
+                    .Where(foodEntry => mealIdSet.Contains(foodEntry.MealEntryId))
+                    .OrderBy(foodEntry => foodEntry.MealEntryId)
+                    .ThenBy(foodEntry => foodEntry.Id),
             ];
         }
     }
 
-    public IReadOnlyCollection<DateOnly> GetCompletedDates(
-        DateOnly startDate,
-        DateOnly endDate
-    ) {
-        ValidateDateRange(
-            startDate,
-            endDate
-        );
+    public IReadOnlyCollection<DateOnly> GetCompletedDates(DateOnly startDate, DateOnly endDate) {
+        ValidateDateRange(startDate, endDate);
 
         lock(syncRoot) {
             return [
                 .. ReadData()
                     .CompletedDates
-                    .Where(
-                        date =>
-                            date >= startDate
-                            && date <= endDate
-                    )
-                    .OrderBy(
-                        date =>
-                            date
-                    ),
+                    .Where(date => date >= startDate && date <= endDate)
+                    .OrderBy(date => date),
             ];
         }
     }
 
-    public void SaveMeal(
-        MealEntry meal
-    ) {
-        ArgumentNullException.ThrowIfNull(
-            meal
-        );
+    public void SaveMeal(MealEntry meal) {
+        ArgumentNullException.ThrowIfNull(meal);
 
         lock(syncRoot) {
-            var data =
-                ReadData();
+            var data = ReadData();
 
-            var existingIndex =
-                data.Meals.FindIndex(
-                    existing =>
-                        existing.Id == meal.Id
-                );
+            var existingIndex = data.Meals.FindIndex(existing => existing.Id == meal.Id);
 
             if(existingIndex >= 0) {
-                data.Meals[existingIndex] =
-                    meal;
+                data.Meals[existingIndex] = meal;
             }
             else {
-                data.Meals.Add(
-                    meal
-                );
+                data.Meals.Add(meal);
             }
 
-            jsonFile.Write(
-                data
-            );
+            jsonFile.Write(data);
         }
     }
 
-    public void SaveFoodEntry(
-        FoodLogEntry foodEntry
-    ) {
-        ArgumentNullException.ThrowIfNull(
-            foodEntry
-        );
+    public void SaveFoodEntry(FoodLogEntry foodEntry) {
+        ArgumentNullException.ThrowIfNull(foodEntry);
 
         lock(syncRoot) {
-            var data =
-                ReadData();
+            var data = ReadData();
 
-            var existingIndex =
-                data.FoodEntries.FindIndex(
-                    existing =>
-                        existing.Id == foodEntry.Id
-                );
+            var existingIndex = data.FoodEntries.FindIndex(existing => existing.Id == foodEntry.Id);
 
             if(existingIndex >= 0) {
-                data.FoodEntries[existingIndex] =
-                    foodEntry;
+                data.FoodEntries[existingIndex] = foodEntry;
             }
             else {
-                data.FoodEntries.Add(
-                    foodEntry
-                );
+                data.FoodEntries.Add(foodEntry);
             }
 
-            jsonFile.Write(
-                data
-            );
+            jsonFile.Write(data);
         }
     }
 
-    public bool DeleteMeal(
-        Guid mealId
-    ) {
+    public bool DeleteMeal(Guid mealId) {
         lock(syncRoot) {
-            var data =
-                ReadData();
+            var data = ReadData();
 
-            var removed =
-                data.Meals.RemoveAll(
-                    meal =>
-                        meal.Id == mealId
-                ) > 0;
+            var removed = data.Meals.RemoveAll(meal => meal.Id == mealId) > 0;
 
             if(!removed) {
                 return false;
             }
 
-            data.FoodEntries.RemoveAll(
-                foodEntry =>
-                    foodEntry.MealEntryId == mealId
-            );
+            data.FoodEntries.RemoveAll(foodEntry => foodEntry.MealEntryId == mealId);
 
-            jsonFile.Write(
-                data
-            );
+            jsonFile.Write(data);
 
             return true;
         }
     }
 
-    public bool DeleteFoodEntry(
-        Guid foodEntryId
-    ) {
+    public bool DeleteFoodEntry(Guid foodEntryId) {
         lock(syncRoot) {
-            var data =
-                ReadData();
+            var data = ReadData();
 
-            var removed =
-                data.FoodEntries.RemoveAll(
-                    foodEntry =>
-                        foodEntry.Id == foodEntryId
-                ) > 0;
+            var removed = data.FoodEntries.RemoveAll(foodEntry => foodEntry.Id == foodEntryId) > 0;
 
             if(!removed) {
                 return false;
             }
 
-            jsonFile.Write(
-                data
-            );
+            jsonFile.Write(data);
 
             return true;
         }
     }
 
-    public void SetDateComplete(
-        DateOnly date,
-        bool isComplete
-    ) {
+    public void SetDateComplete(DateOnly date, bool isComplete) {
         lock(syncRoot) {
-            var data =
-                ReadData();
+            var data = ReadData();
 
             if(isComplete) {
-                if(!data.CompletedDates.Contains(
-                    date
-                )) {
-                    data.CompletedDates.Add(
-                        date
-                    );
+                if(!data.CompletedDates.Contains(date)) {
+                    data.CompletedDates.Add(date);
                 }
             }
             else {
-                data.CompletedDates.RemoveAll(
-                    completedDate =>
-                        completedDate == date
-                );
+                data.CompletedDates.RemoveAll(completedDate => completedDate == date);
             }
 
-            jsonFile.Write(
-                data
-            );
+            jsonFile.Write(data);
         }
     }
 
     private FoodDiaryJsonData ReadData() {
-        return jsonFile.Read()
-            ?? new FoodDiaryJsonData();
+        return jsonFile.Read() ?? new FoodDiaryJsonData();
     }
 
-    private static void ValidateDateRange(
-        DateOnly startDate,
-        DateOnly endDate
-    ) {
+    private static void ValidateDateRange(DateOnly startDate, DateOnly endDate) {
         if(endDate < startDate) {
             throw new ArgumentOutOfRangeException(
                 nameof(endDate),
                 endDate,
                 "End date cannot be earlier than start date."
             );
+        }
+    }
+
+    public MealEntry? GetMeal(Guid id) {
+        lock(syncRoot) {
+            return ReadData().Meals.FirstOrDefault(meal => meal.Id == id);
+        }
+    }
+
+    public FoodLogEntry? GetFoodEntry(Guid id) {
+        lock(syncRoot) {
+            return ReadData().FoodEntries.FirstOrDefault(foodEntry => foodEntry.Id == id);
         }
     }
 }

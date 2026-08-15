@@ -28,7 +28,40 @@ public sealed class FoodLogEditorService {
             CaloriesKcal: null,
             ProteinG: null,
             FatG: null,
-            CarbsG: null
+            CarbsG: null,
+            Source: FoodLogSource.Manual,
+            SourceId: null
+        );
+    }
+
+    public FoodLogDraft? Load(Guid id) {
+        var foodEntry = foodDiaryStore.GetFoodEntry(id);
+
+        if(foodEntry is null) {
+            return null;
+        }
+
+        var meal = foodDiaryStore.GetMeal(foodEntry.MealEntryId)
+            ?? throw new InvalidOperationException(
+                "Food log entry references a missing meal."
+            );
+
+        return new FoodLogDraft(
+            Id: foodEntry.Id,
+            Date: meal.Date,
+            Name: foodEntry.Name,
+            MealRole: meal.Role,
+            QuantityValue: foodEntry.Quantity.Value,
+            QuantityUnit: foodEntry.Quantity.Unit,
+            NutritionBasis: foodEntry.Nutrition.Basis,
+            CaloriesKcal: foodEntry.Nutrition.CaloriesKcal,
+            ProteinG: foodEntry.Nutrition.ProteinG,
+            FatG: foodEntry.Nutrition.FatG,
+            CarbsG: foodEntry.Nutrition.CarbsG,
+            Source: foodEntry.Source,
+            SourceId: foodEntry.SourceId,
+            IsApproximate: foodEntry.IsApproximate,
+            Note: foodEntry.Note
         );
     }
 
@@ -39,7 +72,8 @@ public sealed class FoodLogEditorService {
             || !IsNutritionBasisCompatible(
                 draft.NutritionBasis,
                 draft.QuantityUnit
-            )) {
+            )
+        ) {
             return null;
         }
 
@@ -58,13 +92,13 @@ public sealed class FoodLogEditorService {
         );
     }
 
-    public FoodLogSaveResult Save(
-        FoodLogDraft draft,
-        DateOnly currentDate
-    ) {
+    public FoodLogSaveResult Save(FoodLogDraft draft, DateOnly currentDate) {
         ArgumentNullException.ThrowIfNull(draft);
 
-        var errors = Validate(draft, currentDate);
+        var errors = Validate(
+            draft,
+            currentDate
+        );
 
         if(errors.Count > 0) {
             return new FoodLogSaveResult(
@@ -73,34 +107,36 @@ public sealed class FoodLogEditorService {
             );
         }
 
+        var existingEntry = foodDiaryStore.GetFoodEntry(draft.Id);
+
+        MealEntry? existingMeal = null;
+
+        if(existingEntry is not null) {
+            existingMeal = foodDiaryStore.GetMeal(existingEntry.MealEntryId)
+                ?? throw new InvalidOperationException("Food log entry references a missing meal.");
+        }
+
         var mealName = GetMealName(draft.MealRole);
 
-        var meal = foodDiaryStore
-            .GetMeals(
-                draft.Date,
-                draft.Date
-            )
-            .FirstOrDefault(
-                existing =>
-                    existing.Role == draft.MealRole
-                    && existing.Name == mealName
-            );
+        var targetMeal = foodDiaryStore
+            .GetMeals(draft.Date, draft.Date)
+            .FirstOrDefault(meal => meal.Role == draft.MealRole && meal.Name == mealName);
 
-        if(meal is null) {
-            meal = new MealEntry(
+        if(targetMeal is null) {
+            targetMeal = new MealEntry(
                 Id: Guid.NewGuid(),
                 Date: draft.Date,
                 Name: mealName,
                 Role: draft.MealRole
             );
 
-            foodDiaryStore.SaveMeal(meal);
+            foodDiaryStore.SaveMeal(targetMeal);
         }
 
         foodDiaryStore.SaveFoodEntry(
             new FoodLogEntry(
                 Id: draft.Id,
-                MealEntryId: meal.Id,
+                MealEntryId: targetMeal.Id,
                 Name: draft.Name.Trim(),
                 Quantity: new FoodQuantity(
                     draft.QuantityValue!.Value,
@@ -113,11 +149,25 @@ public sealed class FoodLogEditorService {
                     FatG: draft.FatG,
                     CarbsG: draft.CarbsG
                 ),
-                Source: draft.IsApproximate ? FoodLogSource.Approximation : FoodLogSource.Manual,
+                Source: ResolveSource(draft),
+                SourceId: draft.SourceId,
                 IsApproximate: draft.IsApproximate,
-                Note: string.IsNullOrWhiteSpace(draft.Note) ? null : draft.Note.Trim()
+                Note: string.IsNullOrWhiteSpace(draft.Note)
+                    ? null
+                    : draft.Note.Trim()
             )
         );
+
+        if(existingMeal is not null && existingMeal.Id != targetMeal.Id) {
+            RemoveMealIfEmpty(existingMeal.Id);
+
+            if(existingMeal.Date != draft.Date) {
+                foodDiaryStore.SetDateComplete(
+                    existingMeal.Date,
+                    false
+                );
+            }
+        }
 
         foodDiaryStore.SetDateComplete(
             draft.Date,
@@ -128,6 +178,35 @@ public sealed class FoodLogEditorService {
             IsSuccess: true,
             Errors: []
         );
+    }
+
+    public bool Delete(Guid id) {
+        var foodEntry = foodDiaryStore.GetFoodEntry(id);
+
+        if(foodEntry is null) {
+            return false;
+        }
+
+        var meal = foodDiaryStore.GetMeal(foodEntry.MealEntryId)
+            ?? throw new InvalidOperationException("Food log entry references a missing meal.");
+
+        if(!foodDiaryStore.DeleteFoodEntry(id)) {
+            return false;
+        }
+
+        RemoveMealIfEmpty(meal.Id);
+
+        foodDiaryStore.SetDateComplete(meal.Date, false);
+
+        return true;
+    }
+
+    private void RemoveMealIfEmpty(Guid mealId) {
+        if(foodDiaryStore.GetFoodEntries([mealId]).Count > 0) {
+            return;
+        }
+
+        foodDiaryStore.DeleteMeal(mealId);
     }
 
     private static IReadOnlyList<FoodLogValidationError> Validate(
@@ -156,33 +235,23 @@ public sealed class FoodLogEditorService {
             draft.NutritionBasis,
             draft.QuantityUnit
         )) {
-            errors.Add(
-                FoodLogValidationError.IncompatibleNutritionBasis
-            );
+            errors.Add(FoodLogValidationError.IncompatibleNutritionBasis);
         }
 
         if(draft.CaloriesKcal < 0m) {
-            errors.Add(
-                FoodLogValidationError.InvalidCalories
-            );
+            errors.Add(FoodLogValidationError.InvalidCalories);
         }
 
         if(draft.ProteinG < 0m) {
-            errors.Add(
-                FoodLogValidationError.InvalidProtein
-            );
+            errors.Add(FoodLogValidationError.InvalidProtein);
         }
 
         if(draft.FatG < 0m) {
-            errors.Add(
-                FoodLogValidationError.InvalidFat
-            );
+            errors.Add(FoodLogValidationError.InvalidFat);
         }
 
         if(draft.CarbsG < 0m) {
-            errors.Add(
-                FoodLogValidationError.InvalidCarbs
-            );
+            errors.Add(FoodLogValidationError.InvalidCarbs);
         }
 
         return errors;
@@ -202,6 +271,14 @@ public sealed class FoodLogEditorService {
                 nutritionBasis,
                 null
             )
+        };
+    }
+
+    private static FoodLogSource ResolveSource(FoodLogDraft draft) {
+        return draft.Source switch {
+            FoodLogSource.Manual when draft.IsApproximate => FoodLogSource.Approximation,
+            FoodLogSource.Approximation when !draft.IsApproximate => FoodLogSource.Manual,
+            _ => draft.Source
         };
     }
 

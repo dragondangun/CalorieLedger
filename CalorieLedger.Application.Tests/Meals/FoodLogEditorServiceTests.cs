@@ -125,4 +125,184 @@ public sealed class FoodLogEditorServiceTests {
             result.ProteinG
         );
     }
+
+    [Fact]
+    public void Load_ExistingFood_ReturnsEditableDraft() {
+        var date = new DateOnly(2026, 8, 15);
+
+        var store = new InMemoryFoodDiaryStore();
+
+        var meal = new MealEntry(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: "Обед",
+            Role: MealGroupRole.Lunch
+        );
+
+        var food = new FoodLogEntry(
+            Id: Guid.NewGuid(),
+            MealEntryId: meal.Id,
+            Name: "Гречка",
+            Quantity: FoodQuantity.Grams(200m),
+            Nutrition: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 110m,
+                ProteinG: 4m,
+                FatG: 1m,
+                CarbsG: 21m
+            ),
+            Source: FoodLogSource.CatalogProduct,
+            SourceId: Guid.NewGuid(),
+            Note: "До тренировки"
+        );
+
+        store.SaveMeal(meal);
+
+        store.SaveFoodEntry(food);
+
+        var service = new FoodLogEditorService(store);
+
+        var draft = Assert.IsType<FoodLogDraft>(service.Load(food.Id));
+
+        Assert.Equal(
+            food.Id,
+            draft.Id
+        );
+
+        Assert.Equal(
+            date,
+            draft.Date
+        );
+
+        Assert.Equal(
+            MealGroupRole.Lunch,
+            draft.MealRole
+        );
+
+        Assert.Equal(
+            FoodLogSource.CatalogProduct,
+            draft.Source
+        );
+
+        Assert.Equal(
+            food.SourceId,
+            draft.SourceId
+        );
+    }
+
+    [Fact]
+    public void Save_ExistingFood_UpdatesEntryAndMovesBetweenMeals() {
+        var date = new DateOnly(2026, 8, 15);
+
+        var store = new InMemoryFoodDiaryStore();
+
+        var oldMeal = new MealEntry(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: "Обед",
+            Role: MealGroupRole.Lunch
+        );
+
+        var food = new FoodLogEntry(
+            Id: Guid.NewGuid(),
+            MealEntryId: oldMeal.Id,
+            Name: "Творог",
+            Quantity: FoodQuantity.Grams(200m),
+            Nutrition: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 120m,
+                ProteinG: 17m,
+                FatG: 5m,
+                CarbsG: 3m
+            ),
+            Source: FoodLogSource.Manual
+        );
+
+        store.SaveMeal(oldMeal);
+
+        store.SaveFoodEntry(food);
+
+        store.SetDateComplete(date, true);
+
+        var service = new FoodLogEditorService(store);
+
+        var draft = Assert.IsType<FoodLogDraft>(service.Load(food.Id)) with {
+            Name = "Творог 5%",
+            MealRole = MealGroupRole.Snack,
+            QuantityValue = 250m,
+        };
+
+        var result = service.Save(draft, date);
+
+        Assert.True(result.IsSuccess);
+
+        var savedFood = Assert.IsType<FoodLogEntry>(
+            store.GetFoodEntry(food.Id)
+        );
+
+        Assert.Equal(
+            "Творог 5%",
+            savedFood.Name
+        );
+
+        Assert.Equal(
+            250m,
+            savedFood.Quantity.Value
+        );
+
+        var newMeal = Assert.IsType<MealEntry>(store.GetMeal(savedFood.MealEntryId));
+
+        Assert.Equal(MealGroupRole.Snack, newMeal.Role
+        );
+
+        Assert.Null(store.GetMeal(oldMeal.Id));
+
+        Assert.Empty(store.GetCompletedDates(date, date));
+    }
+
+    [Fact]
+    public void Delete_LastFoodInMeal_RemovesMealAndReopensDay() {
+        var date = new DateOnly(2026, 8, 15);
+
+        var store = new InMemoryFoodDiaryStore();
+
+        var meal = new MealEntry(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: "Перекусы",
+            Role: MealGroupRole.Snack
+        );
+
+        var food = new FoodLogEntry(
+            Id: Guid.NewGuid(),
+            MealEntryId: meal.Id,
+            Name: "Яблоко",
+            Quantity: FoodQuantity.Grams(150m),
+            Nutrition: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 52m,
+                ProteinG: 0.3m,
+                FatG: 0.2m,
+                CarbsG: 14m
+            ),
+            Source: FoodLogSource.Manual
+        );
+
+        store.SaveMeal(meal);
+
+        store.SaveFoodEntry(food);
+
+        store.SetDateComplete(date, true);
+
+        var service = new FoodLogEditorService(store);
+
+        var deleted = service.Delete(food.Id);
+        Assert.True(deleted);
+
+        Assert.Null(store.GetFoodEntry(food.Id));
+
+        Assert.Null(store.GetMeal(meal.Id));
+
+        Assert.Empty(store.GetCompletedDates(date, date));
+    }
 }

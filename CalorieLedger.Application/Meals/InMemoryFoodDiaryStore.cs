@@ -121,4 +121,12 @@ public sealed class InMemoryFoodDiaryStore:IFoodDiaryStore {
             );
         }
     }
+
+    public MealEntry? GetMeal(Guid id) {
+        return meals.FirstOrDefault(meal => meal.Id == id);
+    }
+
+    public FoodLogEntry? GetFoodEntry(Guid id) {
+        return foodEntries.FirstOrDefault(foodEntry => foodEntry.Id == id);
+    }
 }

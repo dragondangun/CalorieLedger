@@ -238,9 +238,7 @@ public partial class MainViewModel:ViewModelBase {
 
         bodyTrends = BodyTrendsViewModel.CreateUnavailable();
 
-        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModel.CreateUnavailable(
-            "Адаптивная оценка ещё не рассчитана."
-        );
+        adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModel.CreateUnavailable("Адаптивная оценка ещё не рассчитана.");
 
         today = CreateTodayDashboardViewModel();
 
@@ -282,7 +280,6 @@ public partial class MainViewModel:ViewModelBase {
     [RelayCommand(CanExecute = nameof(CanToggleBodyMeasurementHistory))]
     private void ToggleBodyMeasurementHistory() {
         IsBodyMeasurementHistoryExpanded = !IsBodyMeasurementHistoryExpanded;
-
         RefreshVisibleBodyMeasurements();
     }
 
@@ -366,16 +363,22 @@ public partial class MainViewModel:ViewModelBase {
             addFood: OpenFoodLogEditor,
             markOvereating: MarkOvereating,
             setFoodLogComplete: SetTodayFoodLogComplete,
+            editFood: EditFoodLog,
+            deleteFood: DeleteFoodLog,
             initialGoalActionSummary: actionSummary
         );
     }
 
     private void OpenFoodLogEditor() {
+        OpenFoodLogEditor(foodLogEditorService.CreateNew(currentDateProvider.GetCurrentDate()));
+    }
+
+    private void OpenFoodLogEditor(FoodLogDraft draft) {
         var currentDate = currentDateProvider.GetCurrentDate();
 
         FoodLogEditor = new FoodLogEditorViewModel(
             editorService: foodLogEditorService,
-            draft: foodLogEditorService.CreateNew(currentDate),
+            draft: draft,
             currentDate: currentDate,
             onSaved: OnFoodLogSaved,
             onCancelled: CloseFoodLogEditor
@@ -384,7 +387,6 @@ public partial class MainViewModel:ViewModelBase {
 
     private void OnFoodLogSaved() {
         FoodLogEditor = null;
-
         RefreshAfterFoodDiaryChange();
     }
 
@@ -394,7 +396,6 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnFoodLogEditorChanged(FoodLogEditorViewModel? value) {
         OnPropertyChanged(nameof(IsFoodLogEditorOpen));
-
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
@@ -462,9 +463,7 @@ public partial class MainViewModel:ViewModelBase {
             Role: role
         );
 
-        foodDiaryStore.SaveMeal(
-            meal
-        );
+        foodDiaryStore.SaveMeal(meal);
 
         return meal;
     }
@@ -479,26 +478,15 @@ public partial class MainViewModel:ViewModelBase {
         switch(action) {
             case GoalNextAction.SwitchToMaintenance:
                 return SwitchToMaintenance();
-
             case GoalNextAction.SetNewGoal:
                 OpenCurrentGoalEditor();
-
                 return true;
-
             case GoalNextAction.StartWeightLoss:
-                OpenGoalEditor(
-                    goalEditorService.CreateNewGoal(
-                        WeightGoalType.LoseWeight));
-
+                OpenGoalEditor(goalEditorService.CreateNewGoal(WeightGoalType.LoseWeight));
                 return true;
-
             case GoalNextAction.StartWeightGain:
-                OpenGoalEditor(
-                    goalEditorService.CreateNewGoal(
-                        WeightGoalType.GainWeight));
-
+                OpenGoalEditor(goalEditorService.CreateNewGoal(WeightGoalType.GainWeight));
                 return true;
-
             default:
                 return false;
         }
@@ -533,9 +521,7 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void OpenCurrentGoalEditor() {
-        OpenGoalEditor(
-            goalEditorService.LoadCurrentGoal()
-        );
+        OpenGoalEditor(goalEditorService.LoadCurrentGoal());
     }
 
     private void OpenGoalEditor(NutritionGoalDraft draft) {
@@ -543,15 +529,14 @@ public partial class MainViewModel:ViewModelBase {
             editorService: goalEditorService,
             draft: draft,
             onSaved: OnGoalEditorSaved,
-            onCancelled: CloseGoalEditor);
+            onCancelled: CloseGoalEditor
+        );
     }
 
     private void OnGoalEditorSaved() {
         GoalEditor = null;
 
-        Today = CreateTodayDashboardViewModel(
-            "Цель сохранена. Дневная норма КБЖУ пересчитана."
-        );
+        Today = CreateTodayDashboardViewModel("Цель сохранена. Дневная норма КБЖУ пересчитана.");
 
         RefreshAdaptiveEnergyAssessment();
     }
@@ -579,14 +564,11 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnBodyMeasurementEditorChanged(BodyMeasurementEditorViewModel? value) {
         OnPropertyChanged(nameof(IsBodyMeasurementEditorOpen));
-
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
     private void RefreshAdaptiveEnergyAssessment() {
-        RefreshAdaptiveEnergyAssessment(
-            GetCurrentBodyMeasurementSnapshot()
-        );
+        RefreshAdaptiveEnergyAssessment(GetCurrentBodyMeasurementSnapshot());
     }
 
     private void RefreshAdaptiveEnergyAssessment(BodyMeasurementHistorySnapshot measurementSnapshot) {
@@ -721,8 +703,26 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private BodyMeasurementHistorySnapshot GetCurrentBodyMeasurementSnapshot() {
-        return bodyMeasurementHistoryService.GetSnapshot(
-            currentDateProvider.GetCurrentDate()
-        );
+        return bodyMeasurementHistoryService.GetSnapshot(currentDateProvider.GetCurrentDate());
+    }
+
+    private void EditFoodLog(Guid id) {
+        var draft = foodLogEditorService.Load(id);
+
+        if(draft is null) {
+            RefreshAfterFoodDiaryChange();
+            return;
+        }
+
+        OpenFoodLogEditor(draft);
+    }
+
+    private void DeleteFoodLog(Guid id) {
+        if(!foodLogEditorService.Delete(id)) {
+            RefreshAfterFoodDiaryChange();
+            return;
+        }
+
+        RefreshAfterFoodDiaryChange();
     }
 }

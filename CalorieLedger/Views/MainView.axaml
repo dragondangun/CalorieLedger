@@ -325,6 +325,50 @@
                                     Text="{Binding AccuracySummary}"
                                     FontStyle="Italic"
                                     Opacity="0.75" />
+                                  <StackPanel
+    Orientation="Horizontal"
+    Spacing="8"
+    IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                      <Button
+                                          Content="Изменить"
+                                          Command="{Binding EditCommand}" />
+
+                                      <Button
+                                          Content="Удалить"
+                                          Command="{Binding DeleteCommand}" />
+                                  </StackPanel>
+
+                                  <Border
+                                      Padding="10"
+                                      BorderThickness="1"
+                                      CornerRadius="8"
+                                      IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                      <StackPanel Spacing="8">
+                                          <TextBlock
+                                              Text="Удалить эту запись?"
+                                              FontWeight="SemiBold" />
+
+                                          <TextBlock
+                                              Text="Она будет удалена из дневника питания."
+                                              TextWrapping="Wrap"
+                                              Opacity="0.75" />
+
+                                          <StackPanel
+                                              Orientation="Horizontal"
+                                              Spacing="8">
+
+                                              <Button
+                                                  Content="Отмена"
+                                                  Command="{Binding CancelDeleteCommand}" />
+
+                                              <Button
+                                                  Content="Удалить"
+                                                  Command="{Binding ConfirmDeleteCommand}" />
+                                          </StackPanel>
+                                      </StackPanel>
+                                  </Border>
                               </StackPanel>
                             </Border>
                           </DataTemplate>

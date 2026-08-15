@@ -17,6 +17,8 @@ public sealed record FoodLogDraft(
     decimal? ProteinG,
     decimal? FatG,
     decimal? CarbsG,
+    FoodLogSource Source,
+    Guid? SourceId,
     bool IsApproximate = false,
     string? Note = null
 );
