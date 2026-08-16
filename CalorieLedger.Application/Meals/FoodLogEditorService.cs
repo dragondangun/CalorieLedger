@@ -34,6 +34,25 @@ public sealed class FoodLogEditorService {
         );
     }
 
+    public FoodLogDraft CreateNewApproximation(DateOnly date) {
+        return new FoodLogDraft(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: string.Empty,
+            MealRole: MealGroupRole.Custom,
+            QuantityValue: 1m,
+            QuantityUnit: FoodUnit.Portion,
+            NutritionBasis: NutritionBasis.Total,
+            CaloriesKcal: null,
+            ProteinG: null,
+            FatG: null,
+            CarbsG: null,
+            Source: FoodLogSource.Approximation,
+            SourceId: null,
+            IsApproximate: true
+        );
+    }
+
     public FoodLogDraft? Load(Guid id) {
         var foodEntry = foodDiaryStore.GetFoodEntry(id);
 

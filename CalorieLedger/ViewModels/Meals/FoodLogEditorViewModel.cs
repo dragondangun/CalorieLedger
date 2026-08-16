@@ -94,6 +94,10 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
 
     public bool HasValidationErrors => ValidationMessages.Count > 0;
 
+    public string Title { get; }
+    public bool IsQuickApproximation { get; }
+    public bool IsDetailedEntry => !IsQuickApproximation;
+
     public IReadOnlyList<SelectionOption<MealGroupRole>> MealRoleOptions { get; } = [
         new(
             MealGroupRole.Breakfast,
@@ -161,7 +165,8 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
         FoodLogDraft draft,
         DateOnly currentDate,
         Action onSaved,
-        Action onCancelled
+        Action onCancelled,
+        bool isQuickApproximation = false
     ) {
         ArgumentNullException.ThrowIfNull(editorService);
         ArgumentNullException.ThrowIfNull(productCatalogService);
@@ -173,6 +178,10 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
         this.currentDate = currentDate;
         this.onSaved = onSaved;
         this.onCancelled = onCancelled;
+
+        IsQuickApproximation = isQuickApproximation;
+
+        Title = isQuickApproximation ? "Быстрая оценка еды" : "Добавление еды";
 
         foodLogId = draft.Id;
         foodLogDate = draft.Date;
@@ -291,6 +300,12 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     [RelayCommand]
     private void Save() {
         ClearValidationMessages();
+        if(IsQuickApproximation && CaloriesKcal is null) {
+            ValidationMessages.Add("Введите примерную калорийность.");
+            OnPropertyChanged(nameof(HasValidationErrors));
+
+            return;
+        }
 
         var result = editorService.Save(
             CreateDraft(),
@@ -315,6 +330,26 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     }
 
     private FoodLogDraft CreateDraft() {
+        if(IsQuickApproximation) {
+            return new FoodLogDraft(
+                Id: foodLogId,
+                Date: foodLogDate,
+                Name: Name,
+                MealRole: MealRole,
+                QuantityValue: 1m,
+                QuantityUnit: FoodUnit.Portion,
+                NutritionBasis: NutritionBasis.Total,
+                CaloriesKcal: CaloriesKcal,
+                ProteinG: null,
+                FatG: null,
+                CarbsG: null,
+                Source: FoodLogSource.Approximation,
+                SourceId: null,
+                IsApproximate: true,
+                Note: Note
+            );
+        }
+
         return new FoodLogDraft(
             Id: foodLogId,
             Date: foodLogDate,

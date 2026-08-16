@@ -253,10 +253,10 @@
               Command="{Binding Today.AddFoodCommand}"
               HorizontalAlignment="Stretch" />
 
-        <Button
-            Content="Обожрался"
-            Command="{Binding Today.MarkOvereatingCommand}"
-            HorizontalAlignment="Stretch" />
+          <Button
+              Content="Быстрая оценка"
+              Command="{Binding Today.AddApproximateFoodCommand}"
+              HorizontalAlignment="Stretch" />
 
         <Button
               Content="{Binding Today.FoodLogCompletionActionText}"

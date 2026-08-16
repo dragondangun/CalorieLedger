@@ -239,4 +239,129 @@ public sealed class FoodLogEditorViewModelTests {
             viewModel.CatalogActionSummary
         );
     }
+
+    [Fact]
+    public void SaveQuickApproximation_WithoutCalories_ShowsValidationAndDoesNotPersist() {
+        var date = new DateOnly(2026, 8, 16);
+
+        var foodDiaryStore = new InMemoryFoodDiaryStore();
+
+        var editorService = new FoodLogEditorService(foodDiaryStore);
+
+        var viewModel = new FoodLogEditorViewModel(
+            editorService: editorService,
+            productCatalogService: new ProductCatalogService(new InMemoryProductCatalogStore()),
+            draft: editorService.CreateNewApproximation(date),
+            currentDate: date,
+            onSaved: () => { },
+            onCancelled: () => { },
+            isQuickApproximation: true
+        );
+
+        viewModel.Name = "Ужин в ресторане";
+
+        viewModel.SaveCommand.Execute(null);
+
+        Assert.True(viewModel.HasValidationErrors);
+
+        Assert.Contains(
+            "Введите примерную калорийность.",
+            viewModel.ValidationMessages
+        );
+
+        Assert.Empty(foodDiaryStore.GetMeals(date, date));
+    }
+
+    [Fact]
+    public void SaveQuickApproximation_WithCalories_PersistsNormalizedApproximation() {
+        var date = new DateOnly(2026, 8, 16);
+
+        var foodDiaryStore = new InMemoryFoodDiaryStore();
+
+        foodDiaryStore.SetDateComplete(date, true);
+
+        var editorService = new FoodLogEditorService(foodDiaryStore);
+
+        var saved = false;
+
+        var viewModel = new FoodLogEditorViewModel(
+            editorService: editorService,
+            productCatalogService: new ProductCatalogService(new InMemoryProductCatalogStore()),
+            draft: editorService.CreateNewApproximation(date),
+            currentDate: date,
+            onSaved: () => saved = true,
+            onCancelled: () => { },
+            isQuickApproximation: true
+        );
+
+        viewModel.Name = "Ужин в ресторане";
+
+        viewModel.MealRole = MealGroupRole.Dinner;
+
+        viewModel.CaloriesKcal = 1350m;
+
+        viewModel.Note = "Очень приблизительно";
+
+        viewModel.SaveCommand.Execute(null);
+
+        Assert.True(saved);
+
+        var meal = Assert.Single(foodDiaryStore.GetMeals(date, date));
+
+        Assert.Equal(
+            MealGroupRole.Dinner,
+            meal.Role
+        );
+
+        var food = Assert.Single(
+            foodDiaryStore.GetFoodEntries(
+                [meal.Id]
+            )
+        );
+
+        Assert.Equal(
+            "Ужин в ресторане",
+            food.Name
+        );
+
+        Assert.Equal(
+            FoodLogSource.Approximation,
+            food.Source
+        );
+
+        Assert.True(food.IsApproximate);
+
+        Assert.Null(food.SourceId);
+
+        Assert.Equal(
+            1m,
+            food.Quantity.Value
+        );
+
+        Assert.Equal(
+            FoodUnit.Portion,
+            food.Quantity.Unit
+        );
+
+        Assert.Equal(
+            NutritionBasis.Total,
+            food.Nutrition.Basis
+        );
+
+        Assert.Equal(
+            1350m,
+            food.Nutrition.CaloriesKcal
+        );
+
+        Assert.Null(food.Nutrition.ProteinG);
+        Assert.Null(food.Nutrition.FatG);
+        Assert.Null(food.Nutrition.CarbsG);
+
+        Assert.Equal(
+            "Очень приблизительно",
+            food.Note
+        );
+
+        Assert.Empty(foodDiaryStore.GetCompletedDates(date, date));
+    }
 }

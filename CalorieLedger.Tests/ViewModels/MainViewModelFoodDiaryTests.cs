@@ -1,8 +1,10 @@
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Profiles;
+using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Tests.TestDoubles;
 using CalorieLedger.ViewModels;
+using CalorieLedger.ViewModels.Meals;
 
 namespace CalorieLedger.Tests.ViewModels;
 
@@ -32,17 +34,36 @@ public sealed class MainViewModelFoodDiaryTests {
     }
 
     [Fact]
-    public void MarkOvereating_PersistsApproximateFood() {
-        var currentDate = new DateOnly(2026, 8, 10);
+    public void AddApproximateFood_Save_PersistsApproximationAndRefreshesToday() {
+        var currentDate = new DateOnly(2026, 8, 16);
 
         var foodDiaryStore = new InMemoryFoodDiaryStore();
 
-        var viewModel = CreateViewModel(
-            currentDate,
-            foodDiaryStore
+        var viewModel = CreateViewModel(currentDate, foodDiaryStore);
+
+        viewModel.Today.AddApproximateFoodCommand.Execute(null);
+
+        var editor = Assert.IsType<FoodLogEditorViewModel>(viewModel.FoodLogEditor);
+
+        Assert.True(editor.IsQuickApproximation);
+
+        Assert.Equal(
+            "Быстрая оценка еды",
+            editor.Title
         );
 
-        viewModel.Today.MarkOvereatingCommand.Execute(null);
+        editor.Name = "Праздничный ужин";
+
+        editor.CaloriesKcal = 1500m;
+
+        editor.SaveCommand.Execute(null);
+
+        Assert.Null(viewModel.FoodLogEditor);
+
+        Assert.Equal(
+            1500m,
+            viewModel.Today.ConsumedCaloriesKcal
+        );
 
         var meal = Assert.Single(
             foodDiaryStore.GetMeals(
@@ -51,25 +72,22 @@ public sealed class MainViewModelFoodDiaryTests {
             )
         );
 
-        var foodEntry = Assert.Single(
+        var food = Assert.Single(
             foodDiaryStore.GetFoodEntries(
                 [meal.Id]
             )
         );
 
-        Assert.True(foodEntry.IsApproximate);
-
         Assert.Equal(
-            1500m,
-            NutritionCalculator.CalculateTotal(
-                foodEntry.Nutrition,
-                foodEntry.Quantity
-            ).CaloriesKcal
+            FoodLogSource.Approximation,
+            food.Source
         );
 
+        Assert.True(food.IsApproximate);
+
         Assert.Equal(
             1500m,
-            viewModel.Today.ConsumedCaloriesKcal
+            food.Nutrition.CaloriesKcal
         );
     }
 

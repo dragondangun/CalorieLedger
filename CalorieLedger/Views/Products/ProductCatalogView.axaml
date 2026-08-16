@@ -135,8 +135,9 @@
             </StackPanel>
         </ScrollViewer>
 
-        <productViews:ProductCatalogEditorView
-            IsVisible="{Binding IsEditorOpen}"
-            DataContext="{Binding Editor}" />
+        <Grid IsVisible="{Binding IsEditorOpen}">
+            <productViews:ProductCatalogEditorView
+                DataContext="{Binding Editor}" />
+        </Grid>
     </Grid>
 </UserControl>

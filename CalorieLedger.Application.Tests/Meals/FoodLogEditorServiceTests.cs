@@ -305,4 +305,47 @@ public sealed class FoodLogEditorServiceTests {
 
         Assert.Empty(store.GetCompletedDates(date, date));
     }
+
+    [Fact]
+    public void CreateNewApproximation_ReturnsTotalApproximateDraft() {
+        var date = new DateOnly(2026, 8, 16);
+
+        var service = new FoodLogEditorService(new InMemoryFoodDiaryStore());
+
+        var draft = service.CreateNewApproximation(date);
+
+        Assert.Equal(
+            date,
+            draft.Date
+        );
+
+        Assert.Equal(
+            MealGroupRole.Custom,
+            draft.MealRole
+        );
+
+        Assert.Equal(
+            1m,
+            draft.QuantityValue
+        );
+
+        Assert.Equal(
+            FoodUnit.Portion,
+            draft.QuantityUnit
+        );
+
+        Assert.Equal(
+            NutritionBasis.Total,
+            draft.NutritionBasis
+        );
+
+        Assert.Equal(
+            FoodLogSource.Approximation,
+            draft.Source
+        );
+
+        Assert.True(draft.IsApproximate);
+
+        Assert.Null(draft.CaloriesKcal);
+    }
 }

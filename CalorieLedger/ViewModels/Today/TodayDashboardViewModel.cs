@@ -74,7 +74,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         : "Дополнительная активность не указана";
 
     private readonly Action addFood;
-    private readonly Action markOvereating;
+    private readonly Action addApproximateFood;
     private readonly Action<bool> setFoodLogComplete;
     private readonly Action<Guid> editFood;
     private readonly Action<Guid> deleteFood;
@@ -89,7 +89,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         TodayDashboardSnapshot snapshot,
         Func<GoalNextAction, bool> tryExecuteGoalAction,
         Action addFood,
-        Action markOvereating,
+        Action addApproximateFood,
         Action<bool> setFoodLogComplete,
         Action<Guid> editFood,
         Action<Guid> deleteFood,
@@ -98,14 +98,14 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         ArgumentNullException.ThrowIfNull(snapshot);
         ArgumentNullException.ThrowIfNull(tryExecuteGoalAction);
         ArgumentNullException.ThrowIfNull(addFood);
-        ArgumentNullException.ThrowIfNull(markOvereating);
+        ArgumentNullException.ThrowIfNull(addApproximateFood);
         ArgumentNullException.ThrowIfNull(setFoodLogComplete);
         ArgumentNullException.ThrowIfNull(editFood);
         ArgumentNullException.ThrowIfNull(deleteFood);
 
         this.tryExecuteGoalAction = tryExecuteGoalAction;
         this.addFood = addFood;
-        this.markOvereating = markOvereating;
+        this.addApproximateFood = addApproximateFood;
         this.setFoodLogComplete = setFoodLogComplete;
         this.editFood = editFood;
         this.deleteFood = deleteFood;
@@ -121,9 +121,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         ConsumedCaloriesKcal = snapshot.ConsumedTotals.CaloriesKcal ?? 0m;
 
         ProteinG = snapshot.ConsumedTotals.ProteinG ?? 0m;
-
         FatG = snapshot.ConsumedTotals.FatG ?? 0m;
-
         CarbsG = snapshot.ConsumedTotals.CarbsG ?? 0m;
 
         foreach(var meal in snapshot.Meals) {
@@ -147,13 +145,9 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
             );
         }
 
-        GoalStatusSummary = FormatGoalDecisionStatus(
-            snapshot.GoalDecision.Status
-        );
+        GoalStatusSummary = FormatGoalDecisionStatus(snapshot.GoalDecision.Status);
 
-        GoalDetailsSummary = FormatGoalDecisionDetails(
-            snapshot.GoalDecision
-        );
+        GoalDetailsSummary = FormatGoalDecisionDetails(snapshot.GoalDecision);
 
         foreach(var action in snapshot.GoalDecision.AvailableActions) {
             GoalActions.Add(
@@ -172,8 +166,8 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     }
 
     [RelayCommand]
-    private void MarkOvereating() {
-        markOvereating();
+    private void AddApproximateFood() {
+        addApproximateFood();
     }
 
     [RelayCommand]

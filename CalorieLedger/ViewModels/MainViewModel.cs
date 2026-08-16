@@ -413,7 +413,7 @@ public partial class MainViewModel:ViewModelBase {
             snapshot: snapshot,
             tryExecuteGoalAction: TryExecuteGoalAction,
             addFood: OpenFoodLogEditor,
-            markOvereating: MarkOvereating,
+            addApproximateFood: OpenApproximateFoodLogEditor,
             setFoodLogComplete: SetTodayFoodLogComplete,
             editFood: EditFoodLog,
             deleteFood: DeleteFoodLog,
@@ -422,7 +422,28 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void OpenFoodLogEditor() {
-        OpenFoodLogEditor(foodLogEditorService.CreateNew(currentDateProvider.GetCurrentDate()));
+        OpenFoodLogEditor(
+            foodLogEditorService.CreateNew(
+                currentDateProvider.GetCurrentDate()
+            )
+        );
+    }
+
+    private void OpenFoodLogEditor(
+        FoodLogDraft draft,
+        bool isQuickApproximation = false
+    ) {
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        FoodLogEditor = new FoodLogEditorViewModel(
+            editorService: foodLogEditorService,
+            productCatalogService: productCatalogService,
+            draft: draft,
+            currentDate: currentDate,
+            onSaved: OnFoodLogSaved,
+            onCancelled: CloseFoodLogEditor,
+            isQuickApproximation: isQuickApproximation
+        );
     }
 
     private void OpenFoodLogEditor(FoodLogDraft draft) {
@@ -452,39 +473,11 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
-    private void MarkOvereating() {
-        var currentDate = currentDateProvider.GetCurrentDate();
-
-        var meal = GetOrCreateTodayMeal(
-            currentDate,
-            "Особые события",
-            MealGroupRole.Custom
+    private void OpenApproximateFoodLogEditor() {
+        OpenFoodLogEditor(
+            draft: foodLogEditorService.CreateNewApproximation(currentDateProvider.GetCurrentDate()),
+            isQuickApproximation: true
         );
-
-        foodDiaryStore.SaveFoodEntry(
-            new FoodLogEntry(
-                Id: Guid.NewGuid(),
-                MealEntryId: meal.Id,
-                Name: "Праздник / переедание",
-                Quantity: FoodQuantity.Portions(1m),
-                Nutrition: new NutritionFacts(
-                    Basis: NutritionBasis.Total,
-                    CaloriesKcal: 1500m,
-                    ProteinG: null,
-                    FatG: null,
-                    CarbsG: null
-                ),
-                Source: FoodLogSource.Approximation,
-                IsApproximate: true
-            )
-        );
-
-        foodDiaryStore.SetDateComplete(
-            currentDate,
-            false
-        );
-
-        RefreshAfterFoodDiaryChange();
     }
 
     private void SetTodayFoodLogComplete(bool isComplete) {
