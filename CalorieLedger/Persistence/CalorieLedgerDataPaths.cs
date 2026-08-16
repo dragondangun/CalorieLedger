@@ -30,4 +30,9 @@ internal static class CalorieLedgerDataPaths {
         ApplicationDirectory,
         "food-diary.json"
     );
+
+    public static string ProductCatalogFilePath => Path.Combine(
+        ApplicationDirectory,
+        "product-catalog.json"
+    );
 }
