@@ -8,6 +8,7 @@
     xmlns:profileViews="using:CalorieLedger.Views.Profile"
     xmlns:adaptiveViews="using:CalorieLedger.Views.Adaptive"
     xmlns:mealViews="using:CalorieLedger.Views.Meals"
+    xmlns:productViews="using:CalorieLedger.Views.Products"
     x:DataType="vm:MainViewModel">
 
     <Grid>
@@ -28,6 +29,12 @@
         <Button
             Content="Редактировать профиль"
             Command="{Binding EditProfileCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+        <Button
+            Content="Каталог продуктов"
+            Command="{Binding OpenProductCatalogCommand}"
             HorizontalAlignment="Stretch"
             HorizontalContentAlignment="Center"
             Padding="12,10" />
@@ -398,18 +405,25 @@
           DataContext="{Binding BodyMeasurementEditor}" />
     </Grid>
 
-    <Grid
-        IsVisible="{Binding IsProfileEditorOpen}"
-        Panel.ZIndex="1">
+        <Grid
+            IsVisible="{Binding IsProfileEditorOpen}"
+            Panel.ZIndex="1">
 
-      <profileViews:UserNutritionProfileEditorView
-          DataContext="{Binding ProfileEditor}" />
-    </Grid>
+            <profileViews:UserNutritionProfileEditorView
+            DataContext="{Binding ProfileEditor}" />
+        </Grid>
         <Grid
             IsVisible="{Binding IsFoodLogEditorOpen}"
             Panel.ZIndex="1">
 
             <mealViews:FoodLogEditorView DataContext="{Binding FoodLogEditor}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsProductCatalogOpen}"
+            Panel.ZIndex="1">
+
+            <productViews:ProductCatalogView
+                DataContext="{Binding ProductCatalogManager}" />
         </Grid>
     </Grid>
 </UserControl>

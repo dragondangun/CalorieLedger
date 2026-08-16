@@ -1,0 +1,142 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Products.ProductCatalogView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:productVm="using:CalorieLedger.ViewModels.Products"
+    xmlns:productViews="using:CalorieLedger.Views.Products"
+    x:DataType="productVm:ProductCatalogManagerViewModel">
+
+    <Grid>
+        <ScrollViewer IsVisible="{Binding IsListVisible}">
+            <StackPanel
+                Margin="24"
+                Spacing="14"
+                MaxWidth="760"
+                HorizontalAlignment="Center">
+
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="12">
+
+                    <TextBlock
+                        Text="Каталог продуктов"
+                        FontSize="26"
+                        FontWeight="Bold"
+                        VerticalAlignment="Center" />
+
+                    <Button
+                        Content="Закрыть"
+                        Command="{Binding CloseCommand}" />
+                </StackPanel>
+
+                <TextBox
+                    Text="{Binding SearchQuery, Mode=TwoWay}"
+                    Watermark="Поиск по названию, бренду или штрихкоду" />
+
+                <Button
+                    Content="Добавить продукт"
+                    Command="{Binding AddProductCommand}"
+                    HorizontalAlignment="Left" />
+
+                <TextBlock
+                    IsVisible="{Binding HasNoProducts}"
+                    Text="В каталоге пока нет подходящих продуктов."
+                    TextWrapping="Wrap"
+                    Opacity="0.75" />
+
+                <ItemsControl
+                    IsVisible="{Binding HasProducts}"
+                    ItemsSource="{Binding Products}">
+
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="10" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate
+                            x:DataType="productVm:ProductCatalogListItemViewModel">
+
+                            <Border
+                                Padding="12"
+                                BorderThickness="1"
+                                CornerRadius="10">
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock
+                                        Text="{Binding Name}"
+                                        FontSize="17"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        IsVisible="{Binding HasBrand}"
+                                        Text="{Binding Brand}"
+                                        Opacity="0.8" />
+
+                                    <TextBlock
+                                        Text="{Binding NutritionSummary}"
+                                        TextWrapping="Wrap" />
+
+                                    <TextBlock
+                                        IsVisible="{Binding HasBarcode}"
+                                        Text="{Binding Barcode, StringFormat='Штрихкод: {0}'}"
+                                        Opacity="0.7" />
+
+                                    <StackPanel
+                                        Orientation="Horizontal"
+                                        Spacing="8"
+                                        IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                        <Button
+                                            Content="Изменить"
+                                            Command="{Binding EditCommand}" />
+
+                                        <Button
+                                            Content="Удалить"
+                                            Command="{Binding DeleteCommand}" />
+                                    </StackPanel>
+
+                                    <Border
+                                        Padding="10"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock
+                                                Text="Удалить продукт из каталога?"
+                                                FontWeight="SemiBold" />
+
+                                            <TextBlock
+                                                Text="Уже сохранённые записи дневника питания останутся без изменений."
+                                                TextWrapping="Wrap"
+                                                Opacity="0.75" />
+
+                                            <StackPanel
+                                                Orientation="Horizontal"
+                                                Spacing="8">
+
+                                                <Button
+                                                    Content="Отмена"
+                                                    Command="{Binding CancelDeleteCommand}" />
+
+                                                <Button
+                                                    Content="Удалить"
+                                                    Command="{Binding ConfirmDeleteCommand}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <productViews:ProductCatalogEditorView
+            IsVisible="{Binding IsEditorOpen}"
+            DataContext="{Binding Editor}" />
+    </Grid>
+</UserControl>

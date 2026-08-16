@@ -13,6 +13,7 @@ using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Meals;
+using CalorieLedger.ViewModels.Products;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Today;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -58,6 +59,8 @@ public partial class MainViewModel:ViewModelBase {
     private bool isBodyMeasurementHistoryExpanded;
     [ObservableProperty]
     private FoodLogEditorViewModel? foodLogEditor;
+    [ObservableProperty]
+    private ProductCatalogManagerViewModel? productCatalogManager;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -78,6 +81,8 @@ public partial class MainViewModel:ViewModelBase {
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
     public bool IsFoodLogEditorOpen => FoodLogEditor is not null;
+
+    public bool IsProductCatalogOpen => ProductCatalogManager is not null;
 
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
@@ -276,10 +281,12 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsBodyMeasurementEditorOpen => BodyMeasurementEditor is not null;
 
-    public bool IsTodayDashboardVisible => GoalEditor is null
+    public bool IsTodayDashboardVisible =>
+        GoalEditor is null
         && BodyMeasurementEditor is null
         && ProfileEditor is null
-        && FoodLogEditor is null;
+        && FoodLogEditor is null
+        && ProductCatalogManager is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -308,6 +315,24 @@ public partial class MainViewModel:ViewModelBase {
     private void ToggleBodyMeasurementHistory() {
         IsBodyMeasurementHistoryExpanded = !IsBodyMeasurementHistoryExpanded;
         RefreshVisibleBodyMeasurements();
+    }
+
+    [RelayCommand]
+    private void OpenProductCatalog() {
+        ProductCatalogManager = new ProductCatalogManagerViewModel(
+            productCatalogService: productCatalogService,
+            onClosed: CloseProductCatalog
+        );
+    }
+
+    private void CloseProductCatalog() {
+        ProductCatalogManager = null;
+    }
+
+    partial void OnProductCatalogManagerChanged(ProductCatalogManagerViewModel? value) {
+        OnPropertyChanged(nameof(IsProductCatalogOpen));
+
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
     partial void OnIsBodyMeasurementHistoryExpandedChanged(bool value) {
