@@ -1,6 +1,7 @@
 using CalorieLedger.Application.Adaptive;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Nutrition;
+using CalorieLedger.Application.Products;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
 using CalorieLedger.Application.Today;
@@ -32,6 +33,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly BodyMeasurementEditorService bodyMeasurementEditorService;
     private readonly UserNutritionProfileEditorService profileEditorService;
     private readonly BodyMeasurementAwareNutritionProfileProvider  currentProfileProvider;
+    private readonly ProductCatalogService productCatalogService;
     private readonly IAdaptiveEnergyAssessmentPresentationProvider adaptiveEnergyAssessmentPresentationProvider;
     private readonly ICurrentDateProvider currentDateProvider;
     private readonly IFoodDiaryStore foodDiaryStore;
@@ -86,6 +88,7 @@ public partial class MainViewModel:ViewModelBase {
         JsonBodyMeasurementStore.CreateDefault(),
         JsonUserNutritionProfileStore.CreateDefault(),
         JsonFoodDiaryStore.CreateDefault(),
+        JsonProductCatalogStore.CreateDefault(),
         CreatePersistentAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
@@ -96,6 +99,7 @@ public partial class MainViewModel:ViewModelBase {
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
         new InMemoryFoodDiaryStore(),
+        new InMemoryProductCatalogStore(),
         CreateInMemoryAdaptiveProvider,
         new SystemCurrentDateProvider()
     ) { }
@@ -107,6 +111,7 @@ public partial class MainViewModel:ViewModelBase {
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
         new InMemoryFoodDiaryStore(),
+        new InMemoryProductCatalogStore(),
         CreateInMemoryAdaptiveProvider,
         currentDateProvider
     ) { }
@@ -118,6 +123,7 @@ public partial class MainViewModel:ViewModelBase {
         bodyMeasurementStore,
         CreateInMemoryProfileStore(),
         new InMemoryFoodDiaryStore(),
+        new InMemoryProductCatalogStore(),
         CreateInjectedAdaptiveProviderFactory(
             adaptiveEnergyAssessmentPresentationProvider
         ),
@@ -132,6 +138,7 @@ public partial class MainViewModel:ViewModelBase {
         bodyMeasurementStore,
         profileStore,
         new InMemoryFoodDiaryStore(),
+        new InMemoryProductCatalogStore(),
         CreateInjectedAdaptiveProviderFactory(
             adaptiveEnergyAssessmentPresentationProvider
         ),
@@ -147,6 +154,7 @@ public partial class MainViewModel:ViewModelBase {
         bodyMeasurementStore,
         profileStore,
         new InMemoryFoodDiaryStore(),
+        new InMemoryProductCatalogStore(),
         CreateInjectedAdaptiveProviderFactory(
             adaptiveEnergyAssessmentPresentationProvider
         ),
@@ -162,6 +170,22 @@ public partial class MainViewModel:ViewModelBase {
         bodyMeasurementStore,
         profileStore,
         foodDiaryStore,
+        new InMemoryProductCatalogStore(),
+        CreateInMemoryAdaptiveProvider,
+        currentDateProvider
+    ) { }
+
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IUserNutritionProfileStore profileStore,
+        IFoodDiaryStore foodDiaryStore,
+        IProductCatalogStore productCatalogStore,
+        ICurrentDateProvider currentDateProvider
+    ) : this(
+        bodyMeasurementStore,
+        profileStore,
+        foodDiaryStore,
+        productCatalogStore,
         CreateInMemoryAdaptiveProvider,
         currentDateProvider
     ) { }
@@ -170,6 +194,7 @@ public partial class MainViewModel:ViewModelBase {
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
         IFoodDiaryStore foodDiaryStore,
+        IProductCatalogStore productCatalogStore,
         AdaptiveEnergyAssessmentPresentationProviderFactory adaptiveEnergyAssessmentPresentationProviderFactory,
         ICurrentDateProvider currentDateProvider
     ) {
@@ -178,6 +203,7 @@ public partial class MainViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProviderFactory);
         ArgumentNullException.ThrowIfNull(currentDateProvider);
         ArgumentNullException.ThrowIfNull(foodDiaryStore);
+        ArgumentNullException.ThrowIfNull(productCatalogStore);
 
         if(profileStore is not IUserNutritionProfileWriter profileWriter) {
             throw new ArgumentException(
@@ -189,6 +215,7 @@ public partial class MainViewModel:ViewModelBase {
         this.currentDateProvider = currentDateProvider;
         this.foodDiaryStore = foodDiaryStore;
         foodLogEditorService = new FoodLogEditorService(foodDiaryStore);
+        productCatalogService = new ProductCatalogService(productCatalogStore);
 
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
@@ -378,6 +405,7 @@ public partial class MainViewModel:ViewModelBase {
 
         FoodLogEditor = new FoodLogEditorViewModel(
             editorService: foodLogEditorService,
+            productCatalogService: productCatalogService,
             draft: draft,
             currentDate: currentDate,
             onSaved: OnFoodLogSaved,

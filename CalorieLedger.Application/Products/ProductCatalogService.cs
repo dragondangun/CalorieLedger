@@ -148,8 +148,7 @@ public sealed class ProductCatalogService {
         return nutritionBasis is
             NutritionBasis.Per100Grams
             or NutritionBasis.Per100Milliliters
-            or NutritionBasis.PerItem
-            or NutritionBasis.Total;
+            or NutritionBasis.PerItem;
     }
 
     private static bool Contains(string? value, string query) {
@@ -158,5 +157,9 @@ public sealed class ProductCatalogService {
 
     private static string? NormalizeOptionalText(string? value) {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    public ProductCatalogItem? Get(Guid id) {
+        return productCatalogStore.Get(id);
     }
 }

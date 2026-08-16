@@ -1,8 +1,10 @@
 using CalorieLedger.Application.Meals;
+using CalorieLedger.Application.Products;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Products;
 using CalorieLedger.Tests.TestDoubles;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Meals;
@@ -233,5 +235,67 @@ public sealed class MainViewModelFoodLogEditorTests {
         Assert.Null(foodDiaryStore.GetFoodEntry(food.Id));
 
         Assert.Null(foodDiaryStore.GetMeal(meal.Id));
+    }
+
+    [Fact]
+    public void AddFood_CatalogProductSelected_PersistsCatalogSourceAndRefreshesToday() {
+        var currentDate = new DateOnly(2026, 8, 15);
+
+        var foodDiaryStore = new InMemoryFoodDiaryStore();
+
+        var productCatalogStore = new InMemoryProductCatalogStore();
+
+        var product = new ProductCatalogItem(
+            Id: Guid.NewGuid(),
+            Name: "Творог 5%",
+            Nutrition: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 120m,
+                ProteinG: 17m,
+                FatG: 5m,
+                CarbsG: 3m
+            )
+        );
+
+        productCatalogStore.Save(product);
+
+        var profileStore = new InMemoryUserNutritionProfileStore(new SampleUserNutritionProfileProvider().GetCurrentProfile());
+
+        var viewModel = new MainViewModel(
+            new InMemoryBodyMeasurementStore(),
+            profileStore,
+            foodDiaryStore,
+            productCatalogStore,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        viewModel.Today.AddFoodCommand.Execute(null);
+
+        var editor = Assert.IsType<FoodLogEditorViewModel>(viewModel.FoodLogEditor);
+
+        editor.SelectedCatalogProduct = Assert.Single(editor.CatalogResults);
+
+        editor.QuantityValue = 250m;
+
+        editor.SaveCommand.Execute(null);
+
+        var meal = Assert.Single(foodDiaryStore.GetMeals(currentDate, currentDate));
+
+        var food = Assert.Single(foodDiaryStore.GetFoodEntries([meal.Id]));
+
+        Assert.Equal(
+            FoodLogSource.CatalogProduct,
+            food.Source
+        );
+
+        Assert.Equal(
+            product.Id,
+            food.SourceId
+        );
+
+        Assert.Equal(
+            300m,
+            viewModel.Today.ConsumedCaloriesKcal
+        );
     }
 }

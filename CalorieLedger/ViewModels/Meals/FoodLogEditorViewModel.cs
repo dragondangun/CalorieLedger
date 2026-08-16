@@ -1,7 +1,9 @@
 using CalorieLedger.Application.Meals;
+using CalorieLedger.Application.Products;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Products;
 using CalorieLedger.ViewModels.Common;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -22,9 +24,11 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
     private readonly DateOnly foodLogDate;
     private readonly Action onSaved;
     private readonly Action onCancelled;
-    private readonly FoodLogSource source;
-    private readonly Guid? sourceId;
+    private FoodLogSource source;
+    private Guid? sourceId;
     private bool isInitializing;
+    private const int MaxCatalogResultCount = 20;
+    private readonly ProductCatalogService productCatalogService;
 
     [ObservableProperty]
     private string name = string.Empty;
@@ -73,6 +77,18 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
 
     [ObservableProperty]
     private FoodLogEditorViewModel? foodLogEditor;
+
+    [ObservableProperty]
+    private string catalogSearchQuery = string.Empty;
+
+    [ObservableProperty]
+    private IReadOnlyList<ProductCatalogItem> catalogResults = [];
+
+    [ObservableProperty]
+    private ProductCatalogItem? selectedCatalogProduct;
+
+    [ObservableProperty]
+    private string catalogActionSummary = "Можно выбрать сохранённый продукт или добавить текущий в каталог.";
 
     public ObservableCollection<string> ValidationMessages { get; } = [];
 
@@ -141,16 +157,19 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
 
     public FoodLogEditorViewModel(
         FoodLogEditorService editorService,
+        ProductCatalogService productCatalogService,
         FoodLogDraft draft,
         DateOnly currentDate,
         Action onSaved,
         Action onCancelled
     ) {
         ArgumentNullException.ThrowIfNull(editorService);
+        ArgumentNullException.ThrowIfNull(productCatalogService);
         ArgumentNullException.ThrowIfNull(draft);
         ArgumentNullException.ThrowIfNull(onSaved);
         ArgumentNullException.ThrowIfNull(onCancelled);
         this.editorService = editorService;
+        this.productCatalogService = productCatalogService;
         this.currentDate = currentDate;
         this.onSaved = onSaved;
         this.onCancelled = onCancelled;
@@ -183,6 +202,21 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
         SelectedNutritionBasisOption = NutritionBasisOptions.First(
             option => option.Value == NutritionBasis
         );
+        RefreshCatalogResults();
+
+        if(draft.Source == FoodLogSource.CatalogProduct
+            && draft.SourceId is Guid catalogProductId) {
+            selectedCatalogProduct =
+                productCatalogService.Get(
+                    catalogProductId
+                );
+
+            if(selectedCatalogProduct is not null) {
+                CatalogActionSummary =
+                    $"Используется продукт из каталога: {FormatCatalogProductName(selectedCatalogProduct)}.";
+            }
+        }
+
         isInitializing = false;
 
         UpdatePreview();
@@ -370,5 +404,144 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
                 "0.##",
                 RussianCulture
             );
+    }
+
+    partial void OnCatalogSearchQueryChanged(string value) {
+        RefreshCatalogResults();
+    }
+
+    partial void OnSelectedCatalogProductChanged(ProductCatalogItem? value) {
+        if(value is null || isInitializing) {
+            return;
+        }
+
+        ApplyCatalogProduct(value);
+    }
+
+    private void RefreshCatalogResults() {
+        CatalogResults = [
+            .. productCatalogService
+            .Search(CatalogSearchQuery)
+            .Take(MaxCatalogResultCount),
+        ];
+    }
+
+    private void ApplyCatalogProduct(ProductCatalogItem product) {
+        isInitializing = true;
+
+        try {
+            Name = product.Name;
+            NutritionBasis = product.Nutrition.Basis;
+            QuantityUnit = GetDefaultQuantityUnit(product.Nutrition.Basis);
+            QuantityValue = GetDefaultQuantity(product.Nutrition.Basis);
+            CaloriesKcal = product.Nutrition.CaloriesKcal;
+            ProteinG = product.Nutrition.ProteinG;
+            FatG = product.Nutrition.FatG;
+            CarbsG = product.Nutrition.CarbsG;
+            IsApproximate = false;
+
+            source = FoodLogSource.CatalogProduct;
+
+            sourceId = product.Id;
+        }
+        finally {
+            isInitializing = false;
+        }
+
+        CatalogActionSummary = $"Выбран продукт: {FormatCatalogProductName(product)}.";
+
+        UpdatePreview();
+    }
+
+    private static FoodUnit GetDefaultQuantityUnit(NutritionBasis nutritionBasis) {
+        return nutritionBasis switch {
+            NutritionBasis.Per100Grams => FoodUnit.Gram,
+            NutritionBasis.Per100Milliliters => FoodUnit.Milliliter,
+            NutritionBasis.PerItem => FoodUnit.Piece,
+            NutritionBasis.Total => FoodUnit.Portion,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(nutritionBasis),
+                nutritionBasis,
+                null
+            )
+        };
+    }
+
+    private static decimal GetDefaultQuantity(NutritionBasis nutritionBasis) {
+        return nutritionBasis switch {
+            NutritionBasis.Per100Grams => 100m,
+            NutritionBasis.Per100Milliliters => 100m,
+            NutritionBasis.PerItem => 1m,
+            NutritionBasis.Total => 1m,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(nutritionBasis),
+                nutritionBasis,
+                null
+            )
+        };
+    }
+
+    [RelayCommand]
+    private void SaveCurrentProductToCatalog() {
+        if(IsApproximate) {
+            CatalogActionSummary =
+                "Приблизительную оценку нельзя сохранить в каталог.";
+
+            return;
+        }
+
+        var draft =
+        productCatalogService.CreateNew() with {
+            Name = Name,
+            NutritionBasis =
+                NutritionBasis,
+            CaloriesKcal =
+                CaloriesKcal,
+            ProteinG =
+                ProteinG,
+            FatG =
+                FatG,
+            CarbsG =
+                CarbsG,
+        };
+
+        var result = productCatalogService.Save(draft);
+
+        if(!result.IsSuccess) {
+            CatalogActionSummary = string.Join(" ", result.Errors.Select(FormatCatalogValidationError));
+            return;
+        }
+
+        source = FoodLogSource.CatalogProduct;
+        sourceId = draft.Id;
+
+        RefreshCatalogResults();
+
+        SelectedCatalogProduct = CatalogResults.FirstOrDefault(product => product.Id == draft.Id);
+
+        CatalogActionSummary = $"Продукт «{draft.Name.Trim()}» сохранён в каталог.";
+    }
+
+    private static string FormatCatalogValidationError(ProductCatalogValidationError error) {
+        return error switch {
+            ProductCatalogValidationError.MissingId => "Не удалось создать продукт.",
+            ProductCatalogValidationError.MissingName => "Введите название продукта.",
+            ProductCatalogValidationError.InvalidNutritionBasis => "Для каталога КБЖУ нужно указать на 100 г, 100 мл или 1 штуку.",
+            ProductCatalogValidationError.InvalidCalories => "Калорийность не может быть отрицательной.",
+            ProductCatalogValidationError.InvalidProtein => "Количество белка не может быть отрицательным.",
+            ProductCatalogValidationError.InvalidFat => "Количество жира не может быть отрицательным.",
+            ProductCatalogValidationError.InvalidCarbs => "Количество углеводов не может быть отрицательным.",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(error),
+                error,
+                null
+            )
+        };
+    }
+
+    private static string FormatCatalogProductName(ProductCatalogItem product) {
+        return string.IsNullOrWhiteSpace(product.Brand)
+            ? product.Name
+            : $"{product.Name} · {product.Brand}";
     }
 }

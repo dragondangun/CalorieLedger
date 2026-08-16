@@ -275,4 +275,28 @@ public sealed class ProductCatalogServiceTests {
             Barcode: barcode
         );
     }
+
+    [Fact]
+    public void Save_TotalNutritionBasis_ReturnsValidationError() {
+        var store = new InMemoryProductCatalogStore();
+
+        var service = new ProductCatalogService(store);
+
+        var draft = service.CreateNew() with {
+            Name = "Готовая порция",
+            NutritionBasis = NutritionBasis.Total,
+            CaloriesKcal = 500m,
+        };
+
+        var result = service.Save(draft);
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Contains(
+            ProductCatalogValidationError.InvalidNutritionBasis,
+            result.Errors
+        );
+
+        Assert.Empty(store.GetAll());
+    }
 }

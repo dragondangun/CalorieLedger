@@ -16,6 +16,47 @@
                 Text="Добавление еды"
                 FontSize="26"
                 FontWeight="Bold" />
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="Каталог продуктов"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBox
+                        Text="{Binding CatalogSearchQuery, Mode=TwoWay}"
+                        Watermark="Название, бренд или штрихкод" />
+
+                    <ComboBox
+                        ItemsSource="{Binding CatalogResults}"
+                        SelectedItem="{Binding SelectedCatalogProduct, Mode=TwoWay}"
+                        PlaceholderText="Выберите продукт">
+
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <StackPanel>
+                                    <TextBlock
+                                        Text="{Binding Name}"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        Text="{Binding Brand}"
+                                        Opacity="0.7" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <TextBlock
+                        Text="{Binding CatalogActionSummary}"
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
+                </StackPanel>
+            </Border>
 
             <TextBlock
                 Text="Название"
@@ -168,6 +209,10 @@
                     Text="{Binding NutritionPreviewSummary}"
                     TextWrapping="Wrap" />
             </Border>
+            <Button
+                Content="Сохранить текущий продукт в каталог"
+                Command="{Binding SaveCurrentProductToCatalogCommand}"
+                HorizontalAlignment="Left" />
 
             <CheckBox
                 Content="Приблизительная оценка"
