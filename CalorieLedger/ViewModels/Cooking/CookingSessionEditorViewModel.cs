@@ -1,7 +1,9 @@
 using CalorieLedger.Application.Cooking;
+using CalorieLedger.Application.Fridge;
 using CalorieLedger.Application.Products;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Cooking;
+using CalorieLedger.Domain.Fridge;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Products;
 using CalorieLedger.ViewModels;
@@ -26,6 +28,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
     private readonly List<CookingIngredient> ingredients;
     private readonly Action onSaved;
     private readonly Action onCancelled;
+    private readonly FridgeInventoryService fridgeInventoryService;
 
     [ObservableProperty]
     private string name = string.Empty;
@@ -56,6 +59,20 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
     [ObservableProperty]
     private string nutritionPer100GramsSummary = string.Empty;
+    [ObservableProperty]
+    private string fridgeSearchQuery = string.Empty;
+
+    [ObservableProperty]
+    private IReadOnlyList<FridgeItem> fridgeResults = [];
+
+    [ObservableProperty]
+    private FridgeItem? selectedFridgeItem;
+
+    [ObservableProperty]
+    private decimal? fridgeQuantityValue;
+
+    [ObservableProperty]
+    private string fridgeActionSummary = "Выберите остаток и укажите используемое количество.";
 
     public string Title { get; }
 
@@ -70,6 +87,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
     public CookingSessionEditorViewModel(
         CookingSessionService cookingSessionService,
         ProductCatalogService productCatalogService,
+        FridgeInventoryService fridgeInventoryService,
         CookingSessionDraft draft,
         bool isNew,
         Action onSaved,
@@ -80,9 +98,11 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(draft);
         ArgumentNullException.ThrowIfNull(onSaved);
         ArgumentNullException.ThrowIfNull(onCancelled);
+        ArgumentNullException.ThrowIfNull(fridgeInventoryService);
 
         this.cookingSessionService = cookingSessionService;
         this.productCatalogService = productCatalogService;
+        this.fridgeInventoryService = fridgeInventoryService;
 
         this.onSaved = onSaved;
         this.onCancelled = onCancelled;
@@ -101,6 +121,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
         RefreshCatalogResults();
         RefreshIngredientItems();
+        RefreshFridgeResults();
         UpdatePreview();
     }
 
@@ -194,6 +215,51 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
         onCancelled();
     }
 
+    [RelayCommand]
+    private void AddFridgeIngredient() {
+        if(SelectedFridgeItem is null) {
+            FridgeActionSummary = "Сначала выберите остаток из холодильника.";
+
+            return;
+        }
+
+        if(FridgeQuantityValue is not > 0m) {
+            FridgeActionSummary = "Укажите количество больше 0.";
+
+            return;
+        }
+
+        if(FridgeQuantityValue.Value > SelectedFridgeItem.Quantity.Value) {
+            FridgeActionSummary = "В холодильнике нет такого количества.";
+
+            return;
+        }
+
+        var ingredient = cookingSessionService.CreateFridgeIngredient(
+            SelectedFridgeItem,
+            FridgeQuantityValue.Value
+        );
+
+        if(ingredient is null) {
+            FridgeActionSummary = "Этот остаток нельзя использовать как ингредиент.";
+
+            return;
+        }
+
+        ingredients.Add(ingredient);
+
+        Ingredients.Add(CreateIngredientItem(ingredient));
+
+        FridgeActionSummary = $"Добавлено: {ingredient.Name}.";
+
+        SelectedFridgeItem = null;
+
+        FridgeQuantityValue = null;
+
+        OnPropertyChanged(nameof(HasIngredients));
+
+        UpdatePreview();
+    }
     private CookingSessionDraft CreateDraft() {
         return new CookingSessionDraft(
             Id: sessionId,
@@ -230,6 +296,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
             name: ingredient.Name,
             quantity: ingredient.Quantity,
             nutrition: ingredient.Nutrition,
+            source: ingredient.Source,
             updateQuantity: UpdateIngredientQuantity,
             remove: RemoveIngredient
         );
@@ -324,5 +391,37 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
     private static string FormatValue(decimal? value) {
         return value is null ? "—" : value.Value.ToString("0.##", RussianCulture);
+    }
+
+    partial void OnFridgeSearchQueryChanged(string value) {
+        RefreshFridgeResults();
+    }
+
+    partial void OnSelectedFridgeItemChanged(FridgeItem? value) {
+        if(value is null) {
+            return;
+        }
+
+        var preferredQuantity = value.Quantity.Unit switch {
+            FoodUnit.Gram => 100m,
+            FoodUnit.Milliliter => 100m,
+            FoodUnit.Piece => 1m,
+            FoodUnit.Portion => 1m,
+            _ => 1m
+        };
+
+        FridgeQuantityValue = Math.Min(
+            preferredQuantity,
+            value.Quantity.Value
+        );
+    }
+
+    private void RefreshFridgeResults() {
+        FridgeResults = [
+            .. fridgeInventoryService
+            .Search(FridgeSearchQuery)
+            .Where(item => item.Quantity.Value > 0m)
+            .Take(MaxCatalogResultCount),
+    ];
     }
 }

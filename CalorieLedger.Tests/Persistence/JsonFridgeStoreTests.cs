@@ -84,6 +84,50 @@ public sealed class JsonFridgeStoreTests:IDisposable {
         Assert.Single(reopenedStore.GetAll());
     }
 
+    [Fact]
+    public void SaveMany_UpdatesMultipleItemsInOnePersistedState() {
+        var first = new FridgeItem(
+            Id: Guid.NewGuid(),
+            Name: "Первый",
+            Quantity: FoodQuantity.Grams(500m),
+            Nutrition: NutritionFacts.Empty(NutritionBasis.Per100Grams)
+        );
+
+        var second = new FridgeItem(
+            Id: Guid.NewGuid(),
+            Name: "Второй",
+            Quantity: FoodQuantity.Grams(400m),
+            Nutrition: NutritionFacts.Empty(NutritionBasis.Per100Grams)
+        );
+
+        var store = new JsonFridgeStore(filePath);
+
+        store.SaveMany([first, second,]);
+
+        store.SaveMany(
+            [
+                first with {
+                    Quantity = FoodQuantity.Grams(300m),
+            },
+            second with {
+                Quantity = FoodQuantity.Grams(250m),
+            },
+        ]
+        );
+
+        var reopenedStore = new JsonFridgeStore(filePath);
+
+        Assert.Equal(
+            300m,
+            reopenedStore.Get(first.Id)?.Quantity.Value
+        );
+
+        Assert.Equal(
+            250m,
+            reopenedStore.Get(second.Id)?.Quantity.Value
+        );
+    }
+
     public void Dispose() {
         if(Directory.Exists(directoryPath)) {
             Directory.Delete(

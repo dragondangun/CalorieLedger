@@ -45,4 +45,9 @@ internal static class CalorieLedgerDataPaths {
         ApplicationDirectory,
         "fridge.json"
     );
+
+    public static string CookingBatchesFilePath => Path.Combine(
+        ApplicationDirectory,
+        "cooking-batches.json"
+    );
 }

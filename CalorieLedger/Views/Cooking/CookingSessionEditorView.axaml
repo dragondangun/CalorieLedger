@@ -79,6 +79,52 @@
                 </StackPanel>
             </Border>
 
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="Добавить ингредиент из холодильника"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBox
+                        Text="{Binding FridgeSearchQuery, Mode=TwoWay}"
+                        PlaceholderText="Поиск по холодильнику" />
+
+                    <ComboBox
+                        ItemsSource="{Binding FridgeResults}"
+                        SelectedItem="{Binding SelectedFridgeItem, Mode=TwoWay}"
+                        PlaceholderText="Выберите остаток">
+
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <NumericUpDown
+                        Value="{Binding FridgeQuantityValue, Mode=TwoWay}"
+                        Minimum="0"
+                        Maximum="100000"
+                        Increment="1"
+                        FormatString="0.##" />
+
+                    <Button
+                        Content="Добавить из холодильника"
+                        Command="{Binding AddFridgeIngredientCommand}"
+                        HorizontalAlignment="Left" />
+
+                    <TextBlock
+                        Text="{Binding FridgeActionSummary}"
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
+                </StackPanel>
+            </Border>
+
             <TextBlock
                 Text="Ингредиенты"
                 FontSize="18"
@@ -104,6 +150,11 @@
                                 <TextBlock
                                     Text="{Binding Name}"
                                     FontWeight="SemiBold" />
+
+                                <TextBlock
+                                    Text="{Binding SourceSummary}"
+                                    FontStyle="Italic"
+                                    Opacity="0.7" />
 
                                 <Grid
                                     ColumnDefinitions="*,Auto,Auto"

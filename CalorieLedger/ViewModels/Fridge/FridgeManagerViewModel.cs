@@ -17,7 +17,6 @@ namespace CalorieLedger.ViewModels.Fridge;
 public partial class FridgeManagerViewModel:ViewModelBase {
     private readonly FridgeInventoryService fridgeInventoryService;
     private readonly ProductCatalogService productCatalogService;
-    private readonly CookingSessionService cookingSessionService;
     private readonly DateOnly currentDate;
     private readonly Action<Guid> logFood;
     private readonly Action onClosed;
@@ -38,15 +37,6 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     private decimal? catalogQuantityValue;
 
     [ObservableProperty]
-    private string cookingSearchQuery = string.Empty;
-
-    [ObservableProperty]
-    private IReadOnlyList<CookingSessionDraft> cookingResults = [];
-
-    [ObservableProperty]
-    private CookingSessionDraft? selectedCookingSession;
-
-    [ObservableProperty]
     private DateTimeOffset? expirationDate;
 
     [ObservableProperty]
@@ -64,20 +54,17 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     public FridgeManagerViewModel(
         FridgeInventoryService fridgeInventoryService,
         ProductCatalogService productCatalogService,
-        CookingSessionService cookingSessionService,
         DateOnly currentDate,
         Action<Guid> logFood,
         Action onClosed
     ) {
         ArgumentNullException.ThrowIfNull(fridgeInventoryService);
         ArgumentNullException.ThrowIfNull(productCatalogService);
-        ArgumentNullException.ThrowIfNull(cookingSessionService);
         ArgumentNullException.ThrowIfNull(logFood);
         ArgumentNullException.ThrowIfNull(onClosed);
 
         this.fridgeInventoryService = fridgeInventoryService;
         this.productCatalogService = productCatalogService;
-        this.cookingSessionService = cookingSessionService;
 
         this.currentDate = currentDate;
 
@@ -86,7 +73,6 @@ public partial class FridgeManagerViewModel:ViewModelBase {
         this.onClosed = onClosed;
 
         RefreshCatalogResults();
-        RefreshCookingResults();
         RefreshItems();
     }
 
@@ -96,10 +82,6 @@ public partial class FridgeManagerViewModel:ViewModelBase {
 
     partial void OnCatalogSearchQueryChanged(string value) {
         RefreshCatalogResults();
-    }
-
-    partial void OnCookingSearchQueryChanged(string value) {
-        RefreshCookingResults();
     }
 
     partial void OnSelectedCatalogProductChanged(ProductCatalogItem? value) {
@@ -147,43 +129,6 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     }
 
     [RelayCommand]
-    private void AddCookingSession() {
-        if(SelectedCookingSession is null) {
-            ActionSummary = "Выберите приготовленное блюдо.";
-
-            return;
-        }
-
-        var nutrition = cookingSessionService.CalculatePreview(SelectedCookingSession);
-
-        if(nutrition is null) {
-            ActionSummary = "Для этого приготовления недоступен расчёт КБЖУ.";
-
-            return;
-        }
-
-        var result = fridgeInventoryService.AddCookingSession(
-            session: SelectedCookingSession,
-            nutrition: nutrition,
-            expirationDate: GetExpirationDate(),
-            note: Note
-        );
-
-        if(!result.IsSuccess) {
-            ActionSummary = FormatErrors(result.Errors);
-
-            return;
-        }
-
-        ActionSummary = $"«{result.Item!.Name}» добавлено в холодильник.";
-
-        SelectedCookingSession = null;
-
-        ResetSharedFields();
-        RefreshItems();
-    }
-
-    [RelayCommand]
     private void Close() {
         onClosed();
     }
@@ -215,10 +160,6 @@ public partial class FridgeManagerViewModel:ViewModelBase {
 
     private void RefreshCatalogResults() {
         CatalogResults = productCatalogService.Search(CatalogSearchQuery);
-    }
-
-    private void RefreshCookingResults() {
-        CookingResults = cookingSessionService.Search(CookingSearchQuery);
     }
 
     private DateOnly? GetExpirationDate() {

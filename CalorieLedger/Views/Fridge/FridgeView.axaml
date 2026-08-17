@@ -74,40 +74,6 @@
                 </StackPanel>
             </Border>
 
-            <Border
-                Padding="14"
-                BorderThickness="1"
-                CornerRadius="10">
-
-                <StackPanel Spacing="10">
-                    <TextBlock
-                        Text="Добавить приготовленное блюдо"
-                        FontSize="18"
-                        FontWeight="SemiBold" />
-
-                    <TextBox
-                        Text="{Binding CookingSearchQuery, Mode=TwoWay}"
-                        PlaceholderText="Название приготовления" />
-
-                    <ComboBox
-                        ItemsSource="{Binding CookingResults}"
-                        SelectedItem="{Binding SelectedCookingSession, Mode=TwoWay}"
-                        PlaceholderText="Выберите блюдо">
-
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:CompileBindings="False">
-                                <TextBlock Text="{Binding Name}" />
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-
-                    <Button
-                        Content="Добавить всё приготовление"
-                        Command="{Binding AddCookingSessionCommand}"
-                        HorizontalAlignment="Left" />
-                </StackPanel>
-            </Border>
-
             <TextBlock
                 Text="Срок годности"
                 FontWeight="SemiBold" />

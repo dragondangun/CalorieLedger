@@ -1,6 +1,7 @@
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Cooking;
+using CalorieLedger.Domain.Fridge;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Products;
@@ -79,6 +80,40 @@ public sealed class CookingSessionService {
             Nutrition: product.Nutrition,
             Source: CookingIngredientSource.ProductCatalog,
             SourceId: product.Id
+        );
+    }
+
+    public CookingIngredient? CreateFridgeIngredient(
+        FridgeItem fridgeItem,
+        decimal quantityValue
+    ) {
+        ArgumentNullException.ThrowIfNull(fridgeItem);
+
+        if(quantityValue <= 0m || quantityValue > fridgeItem.Quantity.Value) {
+            return null;
+        }
+
+        var quantity = new FoodQuantity(
+            quantityValue,
+            fridgeItem.Quantity.Unit
+        );
+
+        if(!IsNutritionBasisCompatible(
+                fridgeItem.Nutrition.Basis,
+                quantity
+            )
+        ) {
+            return null;
+        }
+
+        return new CookingIngredient(
+            Id: Guid.NewGuid(),
+            Name: fridgeItem.Name,
+            Quantity: quantity,
+            Nutrition: fridgeItem.Nutrition,
+            Source: CookingIngredientSource.FridgeItem,
+            SourceId: fridgeItem.Id,
+            Note: fridgeItem.Note
         );
     }
 

@@ -7,5 +7,6 @@ public interface IFridgeStore {
 
     FridgeItem? Get(Guid id);
     void Save(FridgeItem item);
+    void SaveMany(IReadOnlyCollection<FridgeItem> items);
     bool Delete(Guid id);
 }

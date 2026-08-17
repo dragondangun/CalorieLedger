@@ -53,16 +53,26 @@ public sealed class JsonFridgeStore:IFridgeStore {
     public void Save(FridgeItem item) {
         ArgumentNullException.ThrowIfNull(item);
 
+        SaveMany([item]);
+    }
+
+    public void SaveMany(IReadOnlyCollection<FridgeItem> newItems) {
+        ArgumentNullException.ThrowIfNull(newItems);
+
         lock(syncRoot) {
             var items = ReadItems();
 
-            var index = items.FindIndex(existing => existing.Id == item.Id);
+            foreach(var item in newItems) {
+                ArgumentNullException.ThrowIfNull(item);
 
-            if(index >= 0) {
-                items[index] = item;
-            }
-            else {
-                items.Add(item);
+                var index = items.FindIndex(existing => existing.Id == item.Id);
+
+                if(index >= 0) {
+                    items[index] = item;
+                }
+                else {
+                    items.Add(item);
+                }
             }
 
             jsonFile.Write(items);

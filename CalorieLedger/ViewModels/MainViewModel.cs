@@ -47,6 +47,8 @@ public partial class MainViewModel:ViewModelBase {
     private readonly CookingSessionService cookingSessionService;
     private readonly FridgeInventoryService fridgeInventoryService;
 
+    private readonly CookingExecutionService cookingExecutionService;
+
     [ObservableProperty]
     private TodayDashboardViewModel today;
 
@@ -115,7 +117,8 @@ public partial class MainViewModel:ViewModelBase {
         CreatePersistentAdaptiveProvider,
         new SystemCurrentDateProvider(),
         JsonCookingSessionStore.CreateDefault(),
-        JsonFridgeStore.CreateDefault()
+        JsonFridgeStore.CreateDefault(),
+        JsonCookingBatchStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -259,7 +262,8 @@ public partial class MainViewModel:ViewModelBase {
         AdaptiveEnergyAssessmentPresentationProviderFactory adaptiveEnergyAssessmentPresentationProviderFactory,
         ICurrentDateProvider currentDateProvider,
         ICookingSessionStore? cookingSessionStore = null,
-        IFridgeStore? fridgeStore = null
+        IFridgeStore? fridgeStore = null,
+        ICookingBatchStore? cookingBatchStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -283,7 +287,14 @@ public partial class MainViewModel:ViewModelBase {
         fridgeInventoryService = new FridgeInventoryService(resolvedFridgeStore);
         foodDiaryDaySnapshotProvider = new FoodDiaryDaySnapshotProvider(foodDiaryStore);
         productCatalogService = new ProductCatalogService(productCatalogStore);
-        cookingSessionService = new CookingSessionService(cookingSessionStore ?? new InMemoryCookingSessionStore());
+        var resolvedCookingSessionStore = cookingSessionStore ?? new InMemoryCookingSessionStore();
+        var resolvedCookingBatchStore = cookingBatchStore ?? new InMemoryCookingBatchStore();
+        cookingSessionService = new CookingSessionService(resolvedCookingSessionStore);
+        cookingExecutionService = new CookingExecutionService(
+            cookingSessionStore: resolvedCookingSessionStore,
+            cookingBatchStore: resolvedCookingBatchStore,
+            fridgeStore: resolvedFridgeStore
+        );
 
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
@@ -409,8 +420,10 @@ public partial class MainViewModel:ViewModelBase {
     private void OpenCookingSessions() {
         CookingSessionManager = new CookingSessionManagerViewModel(
             cookingSessionService: cookingSessionService,
+            cookingExecutionService: cookingExecutionService,
             productCatalogService: productCatalogService,
-            logFood: OpenCookingSessionFoodLog,
+            fridgeInventoryService: fridgeInventoryService,
+            currentDate: currentDateProvider.GetCurrentDate(),
             onClosed: CloseCookingSessions
         );
     }
@@ -420,7 +433,6 @@ public partial class MainViewModel:ViewModelBase {
         FridgeManager = new FridgeManagerViewModel(
             fridgeInventoryService: fridgeInventoryService,
             productCatalogService: productCatalogService,
-            cookingSessionService: cookingSessionService,
             currentDate: currentDateProvider.GetCurrentDate(),
             logFood: OpenFridgeFoodLog,
             onClosed: CloseFridge
@@ -449,19 +461,6 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(IsFridgeOpen));
 
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
-    }
-
-    private void OpenCookingSessionFoodLog(Guid cookingSessionId) {
-        var draft = cookingSessionService.CreateFoodLogDraft(
-            cookingSessionId,
-            currentDateProvider.GetCurrentDate()
-        );
-
-        if(draft is null) {
-            return;
-        }
-
-        OpenFoodLogEditor(draft);
     }
 
     private void CloseCookingSessions() {

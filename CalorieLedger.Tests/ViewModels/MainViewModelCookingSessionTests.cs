@@ -1,9 +1,11 @@
 using CalorieLedger.Application.Cooking;
+using CalorieLedger.Application.Fridge;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Products;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Cooking;
+using CalorieLedger.Domain.Fridge;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Tests.TestDoubles;
@@ -14,30 +16,44 @@ namespace CalorieLedger.Tests.ViewModels;
 
 public sealed class MainViewModelCookingSessionTests {
     [Fact]
-    public void CookingSession_LogFood_OpensFoodEditorAndPersistsCalculatedServing() {
-        var currentDate = new DateOnly(2026, 8, 17);
+    public void CookingSession_Cook_ConsumesIngredientAndCreatesFridgeOutput() {
+        var currentDate = new DateOnly(2026, 8, 18);
 
         var foodDiaryStore = new InMemoryFoodDiaryStore();
 
         var productCatalogStore = new InMemoryProductCatalogStore();
 
-        var cookingSessionStore = new InMemoryCookingSessionStore();
+        var cookingSessionStore =
+        new InMemoryCookingSessionStore();
+
+        var fridgeStore = new InMemoryFridgeStore();
+
+        var ingredientStock = new FridgeItem(
+            Id: Guid.NewGuid(),
+            Name: "Курица",
+            Quantity: FoodQuantity.Grams(500m),
+            Nutrition: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 100m,
+                ProteinG: 20m,
+                FatG: 2m,
+                CarbsG: 0m
+            )
+        );
+
+        fridgeStore.Save(ingredientStock);
 
         var cooking = new CookingSessionDraft(
             Id: Guid.NewGuid(),
-            Name: "Курица",
+            Name: "Готовая курица",
             Ingredients: [
                 new CookingIngredient(
                     Id: Guid.NewGuid(),
-                    Name: "Куриная грудка",
-                    Quantity: FoodQuantity.Grams(500m),
-                    Nutrition: new NutritionFacts(
-                        Basis: NutritionBasis.Per100Grams,
-                        CaloriesKcal: 100m,
-                        ProteinG: 20m,
-                        FatG: 2m,
-                        CarbsG: 0m
-                    )
+                    Name: ingredientStock.Name,
+                    Quantity: FoodQuantity.Grams(200m),
+                    Nutrition: ingredientStock.Nutrition,
+                    Source: CookingIngredientSource.FridgeItem,
+                    SourceId: ingredientStock.Id
                 ),
             ],
             OutputWeightG: 400m
@@ -53,6 +69,7 @@ public sealed class MainViewModelCookingSessionTests {
             foodDiaryStore,
             productCatalogStore,
             cookingSessionStore,
+            fridgeStore,
             new FixedCurrentDateProvider(
                 currentDate
             )
@@ -62,43 +79,34 @@ public sealed class MainViewModelCookingSessionTests {
 
         var session = Assert.Single(viewModel.CookingSessionManager!.Sessions);
 
-        session.LogFoodCommand.Execute(null);
-
-        var editor = Assert.IsType<FoodLogEditorViewModel>(viewModel.FoodLogEditor);
+        session.CookCommand.Execute(null);
 
         Assert.Equal(
-            "Курица",
-            editor.Name
+            300m,
+            fridgeStore.Get(ingredientStock.Id)?.Quantity.Value
+        );
+
+        var output = Assert.Single(
+            fridgeStore.GetAll(),
+            item => item.Source == FridgeItemSource.CookingSession && item.SourceId == cooking.Id
         );
 
         Assert.Equal(
-            125m,
-            editor.CaloriesKcal
-        );
-
-        editor.QuantityValue = 200m;
-
-        editor.SaveCommand.Execute(null);
-
-        var meal = Assert.Single(foodDiaryStore.GetMeals(currentDate, currentDate));
-
-        var food = Assert.Single(foodDiaryStore.GetFoodEntries([meal.Id]));
-
-        Assert.Equal(
-            FoodLogSource.CookingSession,
-            food.Source
+            400m,
+            output.Quantity.Value
         );
 
         Assert.Equal(
-            cooking.Id,
-            food.SourceId
+            50m,
+            output.Nutrition.CaloriesKcal
         );
 
-        Assert.Equal(
-            250m,
-            viewModel.Today.ConsumedCaloriesKcal
-        );
+        var completedSession = Assert.Single(viewModel.CookingSessionManager.Sessions);
 
-        Assert.NotNull(viewModel.CookingSessionManager);
+        Assert.True(completedSession.IsCompleted);
+
+        Assert.False(completedSession.CookCommand.CanExecute(null));
+
+        Assert.Null(viewModel.FoodLogEditor);
     }
 }

@@ -1,4 +1,5 @@
 using CalorieLedger.Domain.Common;
+using CalorieLedger.Domain.Cooking;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,6 +20,7 @@ public partial class CookingIngredientItemViewModel:ViewModelBase {
     public Guid Id { get; }
 
     public string Name { get; }
+    public string SourceSummary { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NutritionSummary))]
@@ -51,6 +53,7 @@ public partial class CookingIngredientItemViewModel:ViewModelBase {
         string name,
         FoodQuantity quantity,
         NutritionFacts nutrition,
+        CookingIngredientSource source,
         Action<Guid, decimal> updateQuantity,
         Action<Guid> remove
     ) {
@@ -68,6 +71,14 @@ public partial class CookingIngredientItemViewModel:ViewModelBase {
         this.nutrition = nutrition;
         this.updateQuantity = updateQuantity;
         this.remove = remove;
+
+        SourceSummary = source switch {
+            CookingIngredientSource.Manual => "вручную",
+            CookingIngredientSource.ProductCatalog => "из каталога",
+            CookingIngredientSource.FridgeItem => "из холодильника",
+            CookingIngredientSource.Recipe => "из рецепта",
+            _ => source.ToString()
+        };
     }
 
     partial void OnQuantityValueChanged(decimal value) {

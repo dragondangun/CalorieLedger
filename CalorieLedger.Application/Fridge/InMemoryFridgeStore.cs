@@ -22,15 +22,24 @@ public sealed class InMemoryFridgeStore:IFridgeStore {
     public void Save(FridgeItem item) {
         ArgumentNullException.ThrowIfNull(item);
 
-        var index = items.FindIndex(existing => existing.Id == item.Id);
+        SaveMany([item]);
+    }
 
-        if(index >= 0) {
-            items[index] = item;
+    public void SaveMany(IReadOnlyCollection<FridgeItem> newItems) {
+        ArgumentNullException.ThrowIfNull(newItems);
 
-            return;
+        foreach(var item in newItems) {
+            ArgumentNullException.ThrowIfNull(item);
+
+            var index = items.FindIndex(existing => existing.Id == item.Id);
+
+            if(index >= 0) {
+                items[index] = item;
+            }
+            else {
+                items.Add(item);
+            }
         }
-
-        items.Add(item);
     }
 
     public bool Delete(Guid id) {
