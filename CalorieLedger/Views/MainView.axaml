@@ -9,6 +9,7 @@
     xmlns:adaptiveViews="using:CalorieLedger.Views.Adaptive"
     xmlns:mealViews="using:CalorieLedger.Views.Meals"
     xmlns:productViews="using:CalorieLedger.Views.Products"
+    xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
     x:DataType="vm:MainViewModel">
 
     <Grid>
@@ -35,6 +36,12 @@
         <Button
             Content="Каталог продуктов"
             Command="{Binding OpenProductCatalogCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+        <Button
+            Content="История питания"
+            Command="{Binding OpenFoodDiaryHistoryCommand}"
             HorizontalAlignment="Stretch"
             HorizontalContentAlignment="Center"
             Padding="12,10" />
@@ -275,7 +282,7 @@
 
             <ItemsControl ItemsSource="{Binding Today.MealGroups}">
               <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="todayVm:TodayMealGroupViewModel">
+                <DataTemplate x:DataType="mealVm:FoodDiaryMealGroupViewModel">
                   <Border
                       Padding="10"
                       Margin="0,0,0,10"
@@ -308,7 +315,7 @@
 
                       <ItemsControl ItemsSource="{Binding FoodItems}">
                         <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="todayVm:TodayFoodLogItemViewModel">
+                          <DataTemplate x:DataType="mealVm:FoodDiaryFoodItemViewModel">
                             <Border
                                 Padding="8"
                                 Margin="0,0,0,6"
@@ -411,6 +418,13 @@
 
             <profileViews:UserNutritionProfileEditorView
             DataContext="{Binding ProfileEditor}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsFoodDiaryHistoryOpen}"
+            Panel.ZIndex="1">
+
+            <mealViews:FoodDiaryHistoryView
+                DataContext="{Binding FoodDiaryHistory}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsFoodLogEditorOpen}"

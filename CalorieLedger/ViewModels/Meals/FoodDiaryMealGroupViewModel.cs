@@ -1,20 +1,34 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace CalorieLedger.ViewModels.Today;
+namespace CalorieLedger.ViewModels.Meals;
 
-public sealed partial class TodayMealGroupViewModel:ObservableObject {
+public sealed partial class FoodDiaryMealGroupViewModel:ObservableObject {
     private decimal caloriesKcal;
     private decimal proteinG;
     private decimal fatG;
     private decimal carbsG;
 
-    public TodayMealGroupViewModel(
+    public string Name { get; }
+
+    public string TimeSummary { get; }
+
+    public ObservableCollection<FoodDiaryFoodItemViewModel> FoodItems { get; } = [];
+
+    public bool HasFoodItems => FoodItems.Count > 0;
+
+    public string CaloriesSummary => $"{caloriesKcal:0} ккал";
+
+    public string MacrosSummary => $"Б: {proteinG:0.#} г · Ж: {fatG:0.#} г · У: {carbsG:0.#} г";
+
+    public FoodDiaryMealGroupViewModel(
         string name,
         string timeSummary,
-        IEnumerable<TodayFoodLogItemViewModel> foodItems) {
+        IEnumerable<FoodDiaryFoodItemViewModel> foodItems
+    ) {
         Name = name;
+
         TimeSummary = timeSummary;
 
         foreach(var item in foodItems) {
@@ -22,20 +36,7 @@ public sealed partial class TodayMealGroupViewModel:ObservableObject {
         }
     }
 
-    public string Name { get; }
-
-    public string TimeSummary { get; }
-
-    public ObservableCollection<TodayFoodLogItemViewModel> FoodItems { get; } = [];
-
-    public bool HasFoodItems => FoodItems.Count > 0;
-
-    public string CaloriesSummary => $"{caloriesKcal:0} ккал";
-
-    public string MacrosSummary =>
-        $"Б: {proteinG:0.#} г · Ж: {fatG:0.#} г · У: {carbsG:0.#} г";
-
-    public void AddFoodItem(TodayFoodLogItemViewModel item) {
+    public void AddFoodItem(FoodDiaryFoodItemViewModel item) {
         FoodItems.Add(item);
 
         caloriesKcal += item.CaloriesKcal ?? 0m;

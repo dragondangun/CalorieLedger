@@ -63,10 +63,8 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
-            store,
-            new FixedCurrentDateProvider(
-                currentDate
-            )
+            new FoodDiaryDaySnapshotProvider(store),
+            new FixedCurrentDateProvider(currentDate)
         );
 
         var result = provider.GetToday();
@@ -123,10 +121,8 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
-            new InMemoryFoodDiaryStore(),
-            new FixedCurrentDateProvider(
-                currentDate
-            )
+            new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
+            new FixedCurrentDateProvider(currentDate)
         );
 
         var result = provider.GetToday();
@@ -184,10 +180,8 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
-            store,
-            new FixedCurrentDateProvider(
-                currentDate
-            )
+            new FoodDiaryDaySnapshotProvider(store),
+            new FixedCurrentDateProvider(currentDate)
         );
 
         var result = provider.GetToday();

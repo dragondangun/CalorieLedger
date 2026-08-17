@@ -2,9 +2,9 @@ using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
 using System;
 
-namespace CalorieLedger.Application.Today;
+namespace CalorieLedger.Application.Meals;
 
-public sealed record TodayFoodLogSnapshotItem(
+public sealed record FoodDiaryFoodSnapshotItem(
     Guid Id,
     string Name,
     FoodQuantity Quantity,

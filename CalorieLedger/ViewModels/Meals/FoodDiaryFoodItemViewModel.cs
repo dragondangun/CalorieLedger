@@ -2,9 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 
-namespace CalorieLedger.ViewModels.Today;
+namespace CalorieLedger.ViewModels.Meals;
 
-public sealed partial class TodayFoodLogItemViewModel:ViewModelBase {
+public sealed partial class FoodDiaryFoodItemViewModel:ViewModelBase {
     private readonly Action<Guid> onEdit;
     private readonly Action<Guid> onDelete;
 
@@ -19,16 +19,14 @@ public sealed partial class TodayFoodLogItemViewModel:ViewModelBase {
     public decimal? FatG { get; }
     public decimal? CarbsG { get; }
 
-    public string AccuracySummary => IsApproximate
-        ? "примерная оценка"
-        : "точная запись";
+    public string AccuracySummary => IsApproximate ? "примерная оценка" : "точная запись";
 
     [ObservableProperty]
     private bool isDeleteConfirmationVisible;
 
     public bool ArePrimaryActionsVisible => !IsDeleteConfirmationVisible;
 
-    public TodayFoodLogItemViewModel(
+    public FoodDiaryFoodItemViewModel(
         Guid id,
         string name,
         string quantitySummary,
@@ -43,6 +41,7 @@ public sealed partial class TodayFoodLogItemViewModel:ViewModelBase {
         decimal? carbsG = null
     ) {
         ArgumentNullException.ThrowIfNull(onEdit);
+
         ArgumentNullException.ThrowIfNull(onDelete);
 
         Id = id;
@@ -83,8 +82,6 @@ public sealed partial class TodayFoodLogItemViewModel:ViewModelBase {
     }
 
     partial void OnIsDeleteConfirmationVisibleChanged(bool value) {
-        OnPropertyChanged(
-            nameof(ArePrimaryActionsVisible)
-        );
+        OnPropertyChanged(nameof(ArePrimaryActionsVisible));
     }
 }

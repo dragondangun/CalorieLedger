@@ -39,6 +39,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly ICurrentDateProvider currentDateProvider;
     private readonly IFoodDiaryStore foodDiaryStore;
     private readonly FoodLogEditorService foodLogEditorService;
+    private readonly FoodDiaryDaySnapshotProvider foodDiaryDaySnapshotProvider;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -61,6 +62,8 @@ public partial class MainViewModel:ViewModelBase {
     private FoodLogEditorViewModel? foodLogEditor;
     [ObservableProperty]
     private ProductCatalogManagerViewModel? productCatalogManager;
+    [ObservableProperty]
+    private FoodDiaryHistoryViewModel? foodDiaryHistory;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -73,16 +76,17 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool CanToggleBodyMeasurementHistory => BodyMeasurements.Count > CollapsedBodyMeasurementCount;
 
-    public string BodyMeasurementHistoryToggleText =>
-        IsBodyMeasurementHistoryExpanded
-            ? "Свернуть историю"
-            : $"Показать все измерения ({BodyMeasurements.Count})";
+    public string BodyMeasurementHistoryToggleText => IsBodyMeasurementHistoryExpanded
+        ? "Свернуть историю"
+        : $"Показать все измерения ({BodyMeasurements.Count})";
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
 
     public bool IsFoodLogEditorOpen => FoodLogEditor is not null;
 
     public bool IsProductCatalogOpen => ProductCatalogManager is not null;
+
+    public bool IsFoodDiaryHistoryOpen => FoodDiaryHistory is not null;
 
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
@@ -220,6 +224,7 @@ public partial class MainViewModel:ViewModelBase {
         this.currentDateProvider = currentDateProvider;
         this.foodDiaryStore = foodDiaryStore;
         foodLogEditorService = new FoodLogEditorService(foodDiaryStore);
+        foodDiaryDaySnapshotProvider = new FoodDiaryDaySnapshotProvider(foodDiaryStore);
         productCatalogService = new ProductCatalogService(productCatalogStore);
 
         profileEditorService = new UserNutritionProfileEditorService(
@@ -239,7 +244,7 @@ public partial class MainViewModel:ViewModelBase {
 
         todayProvider = new TodayDashboardSnapshotProvider(
             profileProvider: currentProfileProvider,
-            foodDiaryStore: foodDiaryStore,
+            foodDiaryDaySnapshotProvider: foodDiaryDaySnapshotProvider,
             currentDateProvider: currentDateProvider
         );
 
@@ -286,7 +291,8 @@ public partial class MainViewModel:ViewModelBase {
         && BodyMeasurementEditor is null
         && ProfileEditor is null
         && FoodLogEditor is null
-        && ProductCatalogManager is null;
+        && ProductCatalogManager is null
+        && FoodDiaryHistory is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -323,6 +329,30 @@ public partial class MainViewModel:ViewModelBase {
             productCatalogService: productCatalogService,
             onClosed: CloseProductCatalog
         );
+    }
+
+    [RelayCommand]
+    private void OpenFoodDiaryHistory() {
+        FoodDiaryHistory = new FoodDiaryHistoryViewModel(
+            snapshotProvider: foodDiaryDaySnapshotProvider,
+            currentDate: currentDateProvider.GetCurrentDate(),
+            addFood: OpenFoodLogEditorForDate,
+            addApproximateFood: OpenApproximateFoodLogEditorForDate,
+            editFood: EditFoodLog,
+            deleteFood: DeleteFoodLog,
+            setFoodLogComplete: SetFoodLogComplete,
+            onClosed: CloseFoodDiaryHistory
+        );
+    }
+
+    private void CloseFoodDiaryHistory() {
+        FoodDiaryHistory = null;
+    }
+
+    partial void OnFoodDiaryHistoryChanged(FoodDiaryHistoryViewModel? value) {
+        OnPropertyChanged(nameof(IsFoodDiaryHistoryOpen));
+
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
     private void CloseProductCatalog() {
@@ -422,11 +452,11 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void OpenFoodLogEditor() {
-        OpenFoodLogEditor(
-            foodLogEditorService.CreateNew(
-                currentDateProvider.GetCurrentDate()
-            )
-        );
+        OpenFoodLogEditorForDate(currentDateProvider.GetCurrentDate());
+    }
+
+    private void OpenFoodLogEditorForDate(DateOnly date) {
+        OpenFoodLogEditor(foodLogEditorService.CreateNew(date));
     }
 
     private void OpenFoodLogEditor(
@@ -474,17 +504,28 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     private void OpenApproximateFoodLogEditor() {
+        OpenApproximateFoodLogEditorForDate(currentDateProvider.GetCurrentDate());
+    }
+
+    private void OpenApproximateFoodLogEditorForDate(DateOnly date) {
         OpenFoodLogEditor(
-            draft: foodLogEditorService.CreateNewApproximation(currentDateProvider.GetCurrentDate()),
+            draft: foodLogEditorService.CreateNewApproximation(date),
             isQuickApproximation: true
         );
     }
 
     private void SetTodayFoodLogComplete(bool isComplete) {
-        foodDiaryStore.SetDateComplete(
+        SetFoodLogComplete(
             currentDateProvider.GetCurrentDate(),
             isComplete
         );
+    }
+
+    private void SetFoodLogComplete(
+        DateOnly date,
+        bool isComplete
+    ) {
+        foodDiaryStore.SetDateComplete(date, isComplete);
 
         RefreshAfterFoodDiaryChange();
     }
@@ -516,7 +557,7 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshAfterFoodDiaryChange() {
         Today = CreateTodayDashboardViewModel();
-
+        FoodDiaryHistory?.RefreshCurrentDay();
         RefreshAdaptiveEnergyAssessment();
     }
 

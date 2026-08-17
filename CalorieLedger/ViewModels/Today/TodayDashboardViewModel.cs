@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Meals;
 
 namespace CalorieLedger.ViewModels.Today;
 
@@ -47,7 +48,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     [ObservableProperty]
     private string goalActionSelectionSummary = string.Empty;
 
-    public ObservableCollection<TodayMealGroupViewModel> MealGroups { get; } = [];
+    public ObservableCollection<FoodDiaryMealGroupViewModel> MealGroups { get; } = [];
 
     public decimal RemainingCaloriesKcal => TargetCaloriesKcal - ConsumedCaloriesKcal;
 
@@ -126,10 +127,10 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
         foreach(var meal in snapshot.Meals) {
             MealGroups.Add(
-                new TodayMealGroupViewModel(
-                    name: meal.Name,
-                    timeSummary: FormatTime(meal.EatenAt),
-                    foodItems: meal.FoodItems.Select(ToFoodLogItemViewModel)
+                FoodDiaryPresentationFactory.CreateMealGroup(
+                    meal:meal,
+                    editFood: editFood,
+                    deleteFood: deleteFood
                 )
             );
         }
@@ -179,64 +180,11 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         return value is null ? "—" : $"{value.Value:0.#}";
     }
 
-    private static string FormatQuantity(FoodQuantity quantity) {
-        var unit = quantity.Unit switch
-        {
-            FoodUnit.Gram => "г",
-            FoodUnit.Milliliter => "мл",
-            FoodUnit.Piece => "шт",
-            FoodUnit.Portion => "порц.",
-            _ => quantity.Unit.ToString()
-        };
-
-        return $"{quantity.Value:0.##} {unit}";
-    }
-
-    private TodayFoodLogItemViewModel ToFoodLogItemViewModel(
-    TodayFoodLogSnapshotItem item
-) {
-        return new TodayFoodLogItemViewModel(
-            id: item.Id,
-            name: item.Name,
-            quantitySummary: FormatQuantity(item.Quantity),
-            caloriesSummary: FormatCalories(item.Totals.CaloriesKcal),
-            macrosSummary: FormatMacros(item.Totals),
-            onEdit: editFood,
-            onDelete: deleteFood,
-            isApproximate: item.IsApproximate,
-            caloriesKcal: item.Totals.CaloriesKcal,
-            proteinG: item.Totals.ProteinG,
-            fatG: item.Totals.FatG,
-            carbsG: item.Totals.CarbsG
-        );
-    }
-
-    private static string FormatCalories(decimal? caloriesKcal) {
-        return caloriesKcal is null
-            ? "калорийность неизвестна"
-            : $"{caloriesKcal.Value:0} ккал";
-    }
-
-    private static string FormatMacros(NutritionTotals totals) {
-        if(totals.ProteinG is null
-            && totals.FatG is null
-            && totals.CarbsG is null) {
-            return "Б/Ж/У неизвестны";
-        }
-
-        return $"Б: {FormatNutrient(totals.ProteinG)} г · Ж: {FormatNutrient(totals.FatG)} г · У: {FormatNutrient(totals.CarbsG)} г";
-    }
-
-    private static string FormatNutrient(decimal? value) {
-        return value is null ? "—" : $"{value.Value:0.#}";
-    }
-
     private static string FormatTime(TimeOnly? time) {
         return time is null ? "" : time.Value.ToString("HH:mm");
     }
 
-    public string WeeklyCaloriesAverageSummary =>
-    $"{weeklySummary.AverageCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал в среднем за 7 дней";
+    public string WeeklyCaloriesAverageSummary => $"{weeklySummary.AverageCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал в среднем за 7 дней";
 
     public string WeeklyMacrosAverageSummary =>
         $"Б: {weeklySummary.AverageProteinG:0.#} г · " +
