@@ -1,0 +1,212 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Cooking.CookingSessionEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cookingVm="using:CalorieLedger.ViewModels.Cooking"
+    x:DataType="cookingVm:CookingSessionEditorViewModel">
+
+    <ScrollViewer>
+        <StackPanel
+            Margin="24"
+            Spacing="14"
+            MaxWidth="720"
+            HorizontalAlignment="Center">
+
+            <TextBlock
+                Text="{Binding Title}"
+                FontSize="26"
+                FontWeight="Bold" />
+
+            <TextBlock
+                Text="Название блюда"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Name, Mode=TwoWay}"
+                Watermark="Например: курица с картофелем" />
+
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="Добавить ингредиент из каталога"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBox
+                        Text="{Binding CatalogSearchQuery, Mode=TwoWay}"
+                        Watermark="Название, бренд или штрихкод" />
+
+                    <ComboBox
+                        ItemsSource="{Binding CatalogResults}"
+                        SelectedItem="{Binding SelectedCatalogProduct, Mode=TwoWay}"
+                        PlaceholderText="Выберите продукт">
+
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <StackPanel>
+                                    <TextBlock
+                                        Text="{Binding Name}"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        Text="{Binding Brand}"
+                                        Opacity="0.7" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <NumericUpDown
+                        Value="{Binding IngredientQuantityValue, Mode=TwoWay}"
+                        Minimum="0"
+                        Maximum="100000"
+                        Increment="1"
+                        FormatString="0.##" />
+
+                    <Button
+                        Content="Добавить ингредиент"
+                        Command="{Binding AddCatalogIngredientCommand}"
+                        HorizontalAlignment="Left" />
+
+                    <TextBlock
+                        Text="{Binding CatalogActionSummary}"
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                Text="Ингредиенты"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBlock
+                IsVisible="{Binding !HasIngredients}"
+                Text="Ингредиенты пока не добавлены."
+                Opacity="0.75" />
+
+            <ItemsControl ItemsSource="{Binding Ingredients}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate
+                        x:DataType="cookingVm:CookingIngredientItemViewModel">
+
+                        <Border
+                            Padding="10"
+                            Margin="0,0,0,8"
+                            BorderThickness="1"
+                            CornerRadius="8">
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    Text="{Binding Name}"
+                                    FontWeight="SemiBold" />
+
+                                <Grid
+                                    ColumnDefinitions="*,Auto,Auto"
+                                    ColumnSpacing="8">
+
+                                    <NumericUpDown
+                                        Grid.Column="0"
+                                        Value="{Binding QuantityValue, Mode=TwoWay}"
+                                        Minimum="0"
+                                        Maximum="100000"
+                                        Increment="1"
+                                        FormatString="0.##" />
+
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Text="{Binding QuantityUnitSummary}"
+                                        VerticalAlignment="Center" />
+
+                                    <Button
+                                        Grid.Column="2"
+                                        Content="Удалить"
+                                        Command="{Binding RemoveCommand}" />
+                                </Grid>
+
+                                <TextBlock
+                                    Text="{Binding NutritionSummary}"
+                                    TextWrapping="Wrap"
+                                    Opacity="0.8" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock
+                Text="Вес готового блюда, г"
+                FontWeight="SemiBold" />
+
+            <NumericUpDown
+                Value="{Binding OutputWeightG, Mode=TwoWay}"
+                Minimum="0"
+                Maximum="100000"
+                Increment="1"
+                FormatString="0.##" />
+
+            <Border
+                Padding="12"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        Text="{Binding TotalNutritionSummary}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Text="{Binding NutritionPer100GramsSummary}"
+                        TextWrapping="Wrap"
+                        FontWeight="SemiBold" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                Text="Комментарий"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Note, Mode=TwoWay}"
+                AcceptsReturn="True"
+                MinHeight="72"
+                TextWrapping="Wrap"
+                Watermark="Необязательно" />
+
+            <Border
+                Padding="12"
+                BorderThickness="1"
+                CornerRadius="8"
+                IsVisible="{Binding HasValidationErrors}">
+
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        Text="Ошибки"
+                        FontWeight="Bold" />
+
+                    <ListBox
+                        ItemsSource="{Binding ValidationMessages}"
+                        IsHitTestVisible="False" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8">
+
+                <Button
+                    Content="Отмена"
+                    Command="{Binding CancelCommand}" />
+
+                <Button
+                    Content="Сохранить"
+                    Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

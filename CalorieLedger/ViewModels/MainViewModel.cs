@@ -1,4 +1,5 @@
 using CalorieLedger.Application.Adaptive;
+using CalorieLedger.Application.Cooking;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Nutrition;
 using CalorieLedger.Application.Products;
@@ -12,6 +13,7 @@ using CalorieLedger.Domain.Profile;
 using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
 using CalorieLedger.ViewModels.Adaptive;
+using CalorieLedger.ViewModels.Cooking;
 using CalorieLedger.ViewModels.Meals;
 using CalorieLedger.ViewModels.Products;
 using CalorieLedger.ViewModels.Profile;
@@ -40,6 +42,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly IFoodDiaryStore foodDiaryStore;
     private readonly FoodLogEditorService foodLogEditorService;
     private readonly FoodDiaryDaySnapshotProvider foodDiaryDaySnapshotProvider;
+    private readonly CookingSessionService cookingSessionService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -64,6 +67,8 @@ public partial class MainViewModel:ViewModelBase {
     private ProductCatalogManagerViewModel? productCatalogManager;
     [ObservableProperty]
     private FoodDiaryHistoryViewModel? foodDiaryHistory;
+    [ObservableProperty]
+    private CookingSessionManagerViewModel? cookingSessionManager;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -88,6 +93,8 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsFoodDiaryHistoryOpen => FoodDiaryHistory is not null;
 
+    public bool IsCookingSessionManagerOpen => CookingSessionManager is not null;
+
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
         IFoodDiaryStore foodDiaryStore
@@ -99,7 +106,8 @@ public partial class MainViewModel:ViewModelBase {
         JsonFoodDiaryStore.CreateDefault(),
         JsonProductCatalogStore.CreateDefault(),
         CreatePersistentAdaptiveProvider,
-        new SystemCurrentDateProvider()
+        new SystemCurrentDateProvider(),
+        JsonCookingSessionStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -199,13 +207,31 @@ public partial class MainViewModel:ViewModelBase {
         currentDateProvider
     ) { }
 
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IUserNutritionProfileStore profileStore,
+        IFoodDiaryStore foodDiaryStore,
+        IProductCatalogStore productCatalogStore,
+        ICookingSessionStore cookingSessionStore,
+        ICurrentDateProvider currentDateProvider
+    ) : this(
+        bodyMeasurementStore,
+        profileStore,
+        foodDiaryStore,
+        productCatalogStore,
+        CreateInMemoryAdaptiveProvider,
+        currentDateProvider,
+        cookingSessionStore
+    ) { }
+
     private MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
         IFoodDiaryStore foodDiaryStore,
         IProductCatalogStore productCatalogStore,
         AdaptiveEnergyAssessmentPresentationProviderFactory adaptiveEnergyAssessmentPresentationProviderFactory,
-        ICurrentDateProvider currentDateProvider
+        ICurrentDateProvider currentDateProvider,
+        ICookingSessionStore? cookingSessionStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -226,6 +252,7 @@ public partial class MainViewModel:ViewModelBase {
         foodLogEditorService = new FoodLogEditorService(foodDiaryStore);
         foodDiaryDaySnapshotProvider = new FoodDiaryDaySnapshotProvider(foodDiaryStore);
         productCatalogService = new ProductCatalogService(productCatalogStore);
+        cookingSessionService = new CookingSessionService(cookingSessionStore ?? new InMemoryCookingSessionStore());
 
         profileEditorService = new UserNutritionProfileEditorService(
             profileStore: profileStore,
@@ -292,7 +319,8 @@ public partial class MainViewModel:ViewModelBase {
         && ProfileEditor is null
         && FoodLogEditor is null
         && ProductCatalogManager is null
-        && FoodDiaryHistory is null;
+        && FoodDiaryHistory is null
+        && CookingSessionManager is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -344,6 +372,39 @@ public partial class MainViewModel:ViewModelBase {
             onClosed: CloseFoodDiaryHistory
         );
     }
+
+    [RelayCommand]
+    private void OpenCookingSessions() {
+        CookingSessionManager = new CookingSessionManagerViewModel(
+            cookingSessionService: cookingSessionService,
+            productCatalogService: productCatalogService,
+            logFood: OpenCookingSessionFoodLog,
+            onClosed: CloseCookingSessions
+        );
+    }
+
+    private void OpenCookingSessionFoodLog(Guid cookingSessionId) {
+        var draft = cookingSessionService.CreateFoodLogDraft(
+            cookingSessionId,
+            currentDateProvider.GetCurrentDate()
+        );
+
+        if(draft is null) {
+            return;
+        }
+
+        OpenFoodLogEditor(draft);
+    }
+
+    private void CloseCookingSessions() {
+        CookingSessionManager = null;
+    }
+
+    partial void OnCookingSessionManagerChanged(CookingSessionManagerViewModel? value) {
+        OnPropertyChanged(nameof(IsCookingSessionManagerOpen));
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+    }
+
 
     private void CloseFoodDiaryHistory() {
         FoodDiaryHistory = null;

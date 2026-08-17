@@ -1,0 +1,134 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Cooking.CookingSessionView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:cookingVm="using:CalorieLedger.ViewModels.Cooking"
+    xmlns:cookingViews="using:CalorieLedger.Views.Cooking"
+    x:DataType="cookingVm:CookingSessionManagerViewModel">
+
+    <Grid>
+        <ScrollViewer IsVisible="{Binding IsListVisible}">
+            <StackPanel
+                Margin="24"
+                Spacing="14"
+                MaxWidth="760"
+                HorizontalAlignment="Center">
+
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock
+                        Grid.Column="0"
+                        Text="Приготовленные блюда"
+                        FontSize="26"
+                        FontWeight="Bold" />
+
+                    <Button
+                        Grid.Column="1"
+                        Content="Закрыть"
+                        Command="{Binding CloseCommand}" />
+                </Grid>
+
+                <TextBox
+                    Text="{Binding SearchQuery, Mode=TwoWay}"
+                    Watermark="Поиск по названию блюда" />
+
+                <Button
+                    Content="Новое приготовление"
+                    Command="{Binding AddSessionCommand}"
+                    HorizontalAlignment="Left" />
+
+                <TextBlock
+                    IsVisible="{Binding HasNoSessions}"
+                    Text="Сохранённых приготовлений пока нет."
+                    Opacity="0.75" />
+
+                <ItemsControl ItemsSource="{Binding Sessions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="10" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate
+                            x:DataType="cookingVm:CookingSessionListItemViewModel">
+
+                            <Border
+                                Padding="12"
+                                BorderThickness="1"
+                                CornerRadius="10">
+
+                                <StackPanel Spacing="6">
+                                    <TextBlock
+                                        Text="{Binding Name}"
+                                        FontSize="17"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        Text="{Binding OutputWeightSummary}" />
+
+                                    <TextBlock
+                                        Text="{Binding NutritionSummary}"
+                                        TextWrapping="Wrap" />
+
+                                    <StackPanel
+                                        Orientation="Horizontal"
+                                        Spacing="8"
+                                        IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                        <Button
+                                            Content="В дневник"
+                                            Command="{Binding LogFoodCommand}" />
+
+                                        <Button
+                                            Content="Изменить"
+                                            Command="{Binding EditCommand}" />
+
+                                        <Button
+                                            Content="Удалить"
+                                            Command="{Binding DeleteCommand}" />
+                                    </StackPanel>
+
+                                    <Border
+                                        Padding="10"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                        <StackPanel Spacing="8">
+                                            <TextBlock
+                                                Text="Удалить приготовление?"
+                                                FontWeight="SemiBold" />
+
+                                            <TextBlock
+                                                Text="Уже добавленные в дневник записи останутся без изменений."
+                                                TextWrapping="Wrap"
+                                                Opacity="0.75" />
+
+                                            <StackPanel
+                                                Orientation="Horizontal"
+                                                Spacing="8">
+
+                                                <Button
+                                                    Content="Отмена"
+                                                    Command="{Binding CancelDeleteCommand}" />
+
+                                                <Button
+                                                    Content="Удалить"
+                                                    Command="{Binding ConfirmDeleteCommand}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid IsVisible="{Binding IsEditorOpen}">
+            <cookingViews:CookingSessionEditorView
+                DataContext="{Binding Editor}" />
+        </Grid>
+    </Grid>
+</UserControl>
