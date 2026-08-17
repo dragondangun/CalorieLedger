@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Linq;
 
 namespace CalorieLedger.ViewModels.Meals;
 
@@ -22,6 +23,7 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DateSummary))]
     [NotifyPropertyChangedFor(nameof(IsToday))]
+    [NotifyPropertyChangedFor(nameof(WeekSummary))]
     private DateOnly selectedDate;
 
     [ObservableProperty]
@@ -49,6 +51,20 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
     private string dataQualitySummary = string.Empty;
 
     public ObservableCollection<FoodDiaryMealGroupViewModel> MealGroups { get; } = [];
+
+    public ObservableCollection<FoodDiaryWeekDayViewModel> WeekDays { get; } = [];
+
+    public string WeekSummary {
+        get {
+            var weekStart = GetWeekStart(SelectedDate);
+
+            var weekEnd = weekStart.AddDays(6);
+
+            return $"{FormatShortDate(weekStart)} — {FormatShortDate(weekEnd)}";
+        }
+    }
+
+    public string WeekDataQualitySummary { get; private set; } = string.Empty;
 
     public bool HasMeals => MealGroups.Count > 0;
 
@@ -102,7 +118,7 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
 
         selectedDate = currentDate;
 
-        RefreshCurrentDay();
+        Refresh();
     }
 
     [RelayCommand]
@@ -151,6 +167,76 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
         onClosed();
     }
 
+    [RelayCommand]
+    private void PreviousWeek() {
+        SelectedDate = SelectedDate.AddDays(-7);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGoToNextWeek))]
+    private void NextWeek() {
+        var nextDate = SelectedDate.AddDays(7);
+
+        SelectedDate = nextDate > currentDate ? currentDate : nextDate;
+    }
+
+    private bool CanGoToNextWeek() {
+        return GetWeekStart(SelectedDate) < GetWeekStart(currentDate);
+    }
+
+    public void Refresh() {
+        RefreshCurrentDay();
+        RefreshWeek();
+    }
+    private void RefreshWeek() {
+        var weekStart = GetWeekStart(SelectedDate);
+
+        var weekEnd = weekStart.AddDays(6);
+
+        var availableEnd = weekEnd < currentDate ? weekEnd : currentDate;
+
+        var snapshots = snapshotProvider
+            .GetRange(weekStart, availableEnd)
+            .ToDictionary(snapshot => snapshot.Date);
+
+        WeekDays.Clear();
+
+        for(var offset = 0; offset < 7; offset++) {
+            var date = weekStart.AddDays(offset);
+
+            snapshots.TryGetValue(date, out var snapshot);
+
+            WeekDays.Add(
+                new FoodDiaryWeekDayViewModel(
+                    date: date,
+                    currentDate: currentDate,
+                    isSelected: date == SelectedDate,
+                    snapshot: snapshot,
+                    selectDate: SelectDate
+                )
+            );
+        }
+
+        var availableDays = WeekDays.Count(day => day.IsAvailable);
+
+        var energyCompleteDays = WeekDays.Count(day => day.IsEnergyComplete);
+
+        var macroCompleteDays = WeekDays.Count(
+            day => day.AreMacrosComplete
+        );
+
+        WeekDataQualitySummary = $"Полная калорийность: {energyCompleteDays} из {availableDays} дней · полные БЖУ: {macroCompleteDays} из {availableDays} дней";
+
+        OnPropertyChanged(nameof(WeekDataQualitySummary));
+    }
+
+    private void SelectDate(DateOnly date) {
+        if(date > currentDate) {
+            return;
+        }
+
+        SelectedDate = date;
+    }
+
     public void RefreshCurrentDay() {
         var snapshot = snapshotProvider.GetDay(SelectedDate);
 
@@ -179,10 +265,18 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
     }
 
     partial void OnSelectedDateChanged(DateOnly value) {
+        if(value > currentDate) {
+            SelectedDate = currentDate;
+
+            return;
+        }
+
         NextDayCommand.NotifyCanExecuteChanged();
+        NextWeekCommand.NotifyCanExecuteChanged();
         GoToTodayCommand.NotifyCanExecuteChanged();
 
         RefreshCurrentDay();
+        RefreshWeek();
     }
 
     private static string FormatDate(DateOnly date) {
@@ -203,5 +297,15 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
         }
 
         return "День завершён, данные полны.";
+    }
+
+    private static DateOnly GetWeekStart(DateOnly date) {
+        var daysSinceMonday = ((int)date.DayOfWeek + 6) % 7;
+
+        return date.AddDays(-daysSinceMonday);
+    }
+
+    private static string FormatShortDate(DateOnly date) {
+        return date.ToString("d MMM", RussianCulture);
     }
 }

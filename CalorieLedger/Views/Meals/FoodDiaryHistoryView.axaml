@@ -48,6 +48,96 @@
                     Content="Следующий →"
                     Command="{Binding NextDayCommand}" />
             </Grid>
+            <Grid
+                ColumnDefinitions="Auto,*,Auto"
+                ColumnSpacing="10">
+
+                <Button
+                    Grid.Column="0"
+                    Content="← Неделя"
+                    Command="{Binding PreviousWeekCommand}" />
+
+                <TextBlock
+                    Grid.Column="1"
+                    Text="{Binding WeekSummary}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold" />
+
+                <Button
+                    Grid.Column="2"
+                    Content="Неделя →"
+                    Command="{Binding NextWeekCommand}" />
+            </Grid>
+
+            <ScrollViewer
+                HorizontalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Disabled">
+
+                <ItemsControl ItemsSource="{Binding WeekDays}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel
+                                Orientation="Horizontal"
+                                Spacing="6" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate
+                            x:DataType="mealVm:FoodDiaryWeekDayViewModel">
+
+                            <Button
+                                Command="{Binding SelectCommand}"
+                                IsEnabled="{Binding IsAvailable}"
+                                Padding="8">
+
+                                <StackPanel
+                                    Width="82"
+                                    Spacing="3">
+
+                                    <TextBlock
+                                        Text="{Binding DayOfWeekSummary}"
+                                        HorizontalAlignment="Center"
+                                        Opacity="0.75" />
+
+                                    <TextBlock
+                                        Text="{Binding DayOfMonthSummary}"
+                                        HorizontalAlignment="Center"
+                                        FontSize="20"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        Text="{Binding CaloriesSummary}"
+                                        HorizontalAlignment="Center"
+                                        FontSize="12" />
+
+                                    <TextBlock
+                                        Text="{Binding StatusSummary}"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"
+                                        TextWrapping="Wrap"
+                                        FontSize="11"
+                                        Opacity="0.75" />
+
+                                    <TextBlock
+                                        IsVisible="{Binding HasContextSummary}"
+                                        Text="{Binding ContextSummary}"
+                                        HorizontalAlignment="Center"
+                                        FontSize="11"
+                                        FontStyle="Italic" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <TextBlock
+                Text="{Binding WeekDataQualitySummary}"
+                TextWrapping="Wrap"
+                HorizontalAlignment="Center"
+                Opacity="0.7" />
 
             <Button
                 Content="Вернуться к сегодня"

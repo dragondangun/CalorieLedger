@@ -519,7 +519,7 @@ public partial class MainViewModel:ViewModelBase {
 
     private void RefreshAfterFoodDiaryChange() {
         Today = CreateTodayDashboardViewModel();
-        FoodDiaryHistory?.RefreshCurrentDay();
+        FoodDiaryHistory?.Refresh();
         RefreshAdaptiveEnergyAssessment();
     }
 

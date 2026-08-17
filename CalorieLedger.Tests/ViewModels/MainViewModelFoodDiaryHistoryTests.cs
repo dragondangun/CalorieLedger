@@ -119,6 +119,20 @@ public sealed class MainViewModelFoodDiaryHistoryTests {
             history.ConsumedCaloriesKcal
         );
 
+        var selectedWeekDay = Assert.Single(history.WeekDays, day => day.IsSelected);
+
+        Assert.Equal(
+            previousDate,
+            selectedWeekDay.Date
+        );
+
+        Assert.Equal(
+            "300 ккал",
+            selectedWeekDay.CaloriesSummary
+        );
+
+        Assert.False(selectedWeekDay.IsComplete);
+
         Assert.Equal(
             0m,
             viewModel.Today.ConsumedCaloriesKcal
