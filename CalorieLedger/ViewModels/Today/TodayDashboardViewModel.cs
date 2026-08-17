@@ -128,7 +128,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         foreach(var meal in snapshot.Meals) {
             MealGroups.Add(
                 FoodDiaryPresentationFactory.CreateMealGroup(
-                    meal:meal,
+                    meal: meal,
                     editFood: editFood,
                     deleteFood: deleteFood
                 )
@@ -184,22 +184,48 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         return time is null ? "" : time.Value.ToString("HH:mm");
     }
 
-    public string WeeklyCaloriesAverageSummary => $"{weeklySummary.AverageCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал в среднем за 7 дней";
+    public string WeeklyCaloriesAverageSummary => weeklySummary.AverageCaloriesKcal is decimal averageCaloriesKcal
+        ? $"{averageCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал в среднем"
+        : "Средняя калорийность пока недоступна";
 
     public string WeeklyMacrosAverageSummary =>
-        $"Б: {weeklySummary.AverageProteinG:0.#} г · " +
-        $"Ж: {weeklySummary.AverageFatG:0.#} г · " +
-        $"У: {weeklySummary.AverageCarbsG:0.#} г";
+        weeklySummary.AverageProteinG is decimal averageProteinG
+        && weeklySummary.AverageFatG is decimal averageFatG
+        && weeklySummary.AverageCarbsG is decimal averageCarbsG
+            ? $"Б: {averageProteinG:0.#} г · Ж: {averageFatG:0.#} г · У: {averageCarbsG:0.#} г"
+            : "Среднее БЖУ пока недоступно";
 
     public string WeeklyBalanceSummary {
         get {
-            var balance = weeklySummary.AverageCaloriesKcal - TargetCaloriesKcal;
+            if(weeklySummary.AverageCaloriesKcal is not decimal averageCaloriesKcal) {
+                return "Завершите хотя бы один день для расчёта среднего.";
+            }
+
+            var balance = averageCaloriesKcal - TargetCaloriesKcal;
 
             return balance switch {
                 > 100m => $"Средний профицит: +{balance:0} ккал/день",
                 < -100m => $"Средний дефицит: {balance:0} ккал/день",
                 _ => "В среднем около цели"
             };
+        }
+    }
+
+    public string WeeklyDataQualitySummary {
+        get {
+            if(weeklySummary.Days.Count == 0) {
+                return "Нет данных за последние дни.";
+            }
+
+            if(weeklySummary.EnergyCompleteDayCount == 0) {
+                return "Нет завершённых дней с полной калорийностью.";
+            }
+
+            if(weeklySummary.MacroCompleteDayCount == weeklySummary.EnergyCompleteDayCount) {
+                return $"Для среднего использовано {weeklySummary.EnergyCompleteDayCount} из {weeklySummary.Days.Count} дней.";
+            }
+
+            return $"Калории: {weeklySummary.EnergyCompleteDayCount} из {weeklySummary.Days.Count} дней · БЖУ: {weeklySummary.MacroCompleteDayCount} из {weeklySummary.Days.Count} дней.";
         }
     }
 

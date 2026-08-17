@@ -49,7 +49,9 @@ public sealed class FoodDiaryDaySnapshotProvider {
                 .Range(0, dayCount)
                 .Select(
                     offset => CreateDaySnapshot(
-                        startDate.AddDays(offset),
+                        startDate.AddDays(
+                            offset
+                        ),
                         mealsByDate,
                         foodEntriesByMealId,
                         completedDates
@@ -73,20 +75,23 @@ public sealed class FoodDiaryDaySnapshotProvider {
                     Role: meal.Role,
                     EatenAt: meal.EatenAt,
                     FoodItems: [
-                        .. foodEntriesByMealId[meal.Id]
-                            .Select(CreateFoodItem),
+                        .. foodEntriesByMealId[meal.Id].Select(CreateFoodItem),
                     ]
                 )
             ),
         ];
 
-        var consumedTotals = CalculateTotals(meals.SelectMany(meal => foodEntriesByMealId[meal.Id]));
+        var nutrition = CalculateNutrition(meals.SelectMany(meal => foodEntriesByMealId[meal.Id]));
 
         return new FoodDiaryDaySnapshot(
             Date: date,
             Meals: mealSnapshots,
-            ConsumedTotals: consumedTotals,
-            IsComplete: completedDates.Contains(date)
+            ConsumedTotals: nutrition.Totals,
+            IsComplete: completedDates.Contains(date),
+            HasUnknownCalories: nutrition.HasUnknownCalories,
+            HasUnknownProtein: nutrition.HasUnknownProtein,
+            HasUnknownFat: nutrition.HasUnknownFat,
+            HasUnknownCarbs: nutrition.HasUnknownCarbs
         );
     }
 
@@ -104,11 +109,22 @@ public sealed class FoodDiaryDaySnapshotProvider {
         );
     }
 
-    private static NutritionTotals CalculateTotals(IEnumerable<FoodLogEntry> foodEntries) {
+    private static (
+        NutritionTotals Totals,
+        bool HasUnknownCalories,
+        bool HasUnknownProtein,
+        bool HasUnknownFat,
+        bool HasUnknownCarbs
+    ) CalculateNutrition(IEnumerable<FoodLogEntry> foodEntries) {
         var caloriesKcal = 0m;
         var proteinG = 0m;
         var fatG = 0m;
         var carbsG = 0m;
+
+        var hasUnknownCalories = false;
+        var hasUnknownProtein = false;
+        var hasUnknownFat = false;
+        var hasUnknownCarbs = false;
 
         foreach(var foodEntry in foodEntries) {
             var totals = NutritionCalculator.CalculateTotal(
@@ -116,17 +132,46 @@ public sealed class FoodDiaryDaySnapshotProvider {
                 foodEntry.Quantity
             );
 
-            caloriesKcal += totals.CaloriesKcal ?? 0m;
-            proteinG += totals.ProteinG ?? 0m;
-            fatG += totals.FatG ?? 0m;
-            carbsG += totals.CarbsG ?? 0m;
+            if(totals.CaloriesKcal is decimal calories) {
+                caloriesKcal += calories;
+            }
+            else {
+                hasUnknownCalories = true;
+            }
+
+            if(totals.ProteinG is decimal protein) {
+                proteinG += protein;
+            }
+            else {
+                hasUnknownProtein = true;
+            }
+
+            if(totals.FatG is decimal fat) {
+                fatG += fat;
+            }
+            else {
+                hasUnknownFat = true;
+            }
+
+            if(totals.CarbsG is decimal carbs) {
+                carbsG += carbs;
+            }
+            else {
+                hasUnknownCarbs = true;
+            }
         }
 
-        return new NutritionTotals(
-            CaloriesKcal:caloriesKcal,
-            ProteinG: proteinG,
-            FatG: fatG,
-            CarbsG: carbsG
+        return (
+            Totals: new NutritionTotals(
+                CaloriesKcal: caloriesKcal,
+                ProteinG: proteinG,
+                FatG: fatG,
+                CarbsG: carbsG
+            ),
+            HasUnknownCalories: hasUnknownCalories,
+            HasUnknownProtein: hasUnknownProtein,
+            HasUnknownFat: hasUnknownFat,
+            HasUnknownCarbs: hasUnknownCarbs
         );
     }
 }

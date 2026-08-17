@@ -72,6 +72,10 @@
                         Text="{Binding CompletionSummary}"
                         FontStyle="Italic"
                         Opacity="0.75" />
+                    <TextBlock
+                        Text="{Binding DataQualitySummary}"
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
                 </StackPanel>
             </Border>
 

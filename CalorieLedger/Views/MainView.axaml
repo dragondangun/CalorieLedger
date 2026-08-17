@@ -187,15 +187,19 @@
             CornerRadius="16"
             BorderThickness="1">
           <StackPanel Spacing="8">
-            <TextBlock
-                Text="Среднее за 7 дней"
-                FontSize="18"
-                FontWeight="SemiBold" />
+              <TextBlock
+                  Text="Последние 7 дней"
+                  FontSize="18"
+                  FontWeight="SemiBold" />
 
             <TextBlock
                 Text="{Binding Today.WeeklyCaloriesAverageSummary}"
                 FontSize="18"
                 FontWeight="Bold" />
+              <TextBlock
+                Text="{Binding Today.WeeklyDataQualitySummary}"
+                TextWrapping="Wrap"
+                Opacity="0.7" />
 
             <TextBlock
                 Text="{Binding Today.WeeklyMacrosAverageSummary}" />

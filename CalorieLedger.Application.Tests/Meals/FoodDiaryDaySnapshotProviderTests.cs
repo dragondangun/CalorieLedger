@@ -180,4 +180,90 @@ public sealed class FoodDiaryDaySnapshotProviderTests {
             Source: FoodLogSource.Manual
         );
     }
+
+    [Fact]
+    public void GetDay_CompletedDayWithUnknownCalories_IsNotEnergyComplete() {
+        var date = new DateOnly(2026, 8, 17);
+        var store = new InMemoryFoodDiaryStore();
+        var meal = CreateMeal(date);
+
+        store.SaveMeal(meal);
+
+        store.SaveFoodEntry(
+            new FoodLogEntry(
+                Id: Guid.NewGuid(),
+                MealEntryId: meal.Id,
+                Name: "Неизвестное блюдо",
+                Quantity: FoodQuantity.Portions(1m),
+                Nutrition: new NutritionFacts(
+                    Basis: NutritionBasis.Total,
+                    CaloriesKcal: null,
+                    ProteinG: null,
+                    FatG: null,
+                    CarbsG: null
+                ),
+                Source: FoodLogSource.Approximation,
+                IsApproximate: true
+            )
+        );
+
+        store.SetDateComplete(date, true);
+
+        var provider = new FoodDiaryDaySnapshotProvider(store);
+
+        var result = provider.GetDay(date);
+
+        Assert.True(result.IsComplete);
+        Assert.True(result.HasUnknownCalories);
+        Assert.False(result.IsEnergyComplete);
+        Assert.False(result.AreMacrosComplete);
+    }
+
+    [Fact]
+    public void GetDay_CompletedApproximationWithKnownCalories_IsEnergyCompleteButNotMacroComplete() {
+        var date = new DateOnly(2026, 8, 17);
+
+        var store = new InMemoryFoodDiaryStore();
+
+        var meal = CreateMeal(date);
+
+        store.SaveMeal(meal);
+
+        store.SaveFoodEntry(
+            new FoodLogEntry(
+                Id: Guid.NewGuid(),
+                MealEntryId: meal.Id,
+                Name: "Ресторан",
+                Quantity: FoodQuantity.Portions(1m),
+                Nutrition: new NutritionFacts(
+                    Basis: NutritionBasis.Total,
+                    CaloriesKcal: 1300m,
+                    ProteinG: null,
+                    FatG: null,
+                    CarbsG: null
+                ),
+                Source: FoodLogSource.Approximation,
+                IsApproximate: true
+            )
+        );
+
+        store.SetDateComplete(date, true);
+
+        var provider = new FoodDiaryDaySnapshotProvider(store);
+
+        var result = provider.GetDay(date);
+
+        Assert.True(result.IsComplete);
+
+        Assert.False(result.HasUnknownCalories);
+
+        Assert.True(result.IsEnergyComplete);
+
+        Assert.False(result.AreMacrosComplete);
+
+        Assert.Equal(
+            1300m,
+            result.ConsumedTotals.CaloriesKcal
+        );
+    }
 }

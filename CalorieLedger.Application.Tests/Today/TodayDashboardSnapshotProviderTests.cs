@@ -110,6 +110,21 @@ public sealed class TodayDashboardSnapshotProviderTests {
                 .CaloriesKcal
         );
 
+        Assert.Equal(
+            1,
+            result.WeeklySummary.EnergyCompleteDayCount
+        );
+
+        Assert.Equal(
+            1,
+            result.WeeklySummary.MacroCompleteDayCount
+        );
+
+        Assert.Equal(
+            300m,
+            result.WeeklySummary.AverageCaloriesKcal
+        );
+
         Assert.True(result.IsFoodLogComplete);
 
         Assert.Empty(result.Activities);

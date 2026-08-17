@@ -45,6 +45,9 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
     [NotifyPropertyChangedFor(nameof(CompletionActionText))]
     private bool isComplete;
 
+    [ObservableProperty]
+    private string dataQualitySummary = string.Empty;
+
     public ObservableCollection<FoodDiaryMealGroupViewModel> MealGroups { get; } = [];
 
     public bool HasMeals => MealGroups.Count > 0;
@@ -157,7 +160,7 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
         CarbsG = snapshot.ConsumedTotals.CarbsG ?? 0m;
 
         IsComplete = snapshot.IsComplete;
-
+        DataQualitySummary = FormatDataQuality(snapshot);
         MealGroups.Clear();
 
         foreach(var meal in snapshot.Meals) {
@@ -184,5 +187,21 @@ public partial class FoodDiaryHistoryViewModel:ViewModelBase {
 
     private static string FormatDate(DateOnly date) {
         return date.ToString("d MMMM yyyy", RussianCulture);
+    }
+
+    private static string FormatDataQuality(FoodDiaryDaySnapshot snapshot) {
+        if(!snapshot.IsComplete) {
+            return "День открыт и пока не используется для недельного среднего или адаптивной оценки.";
+        }
+
+        if(snapshot.HasUnknownCalories) {
+            return "В завершённом дне есть еда без известной калорийности. Для энергетической статистики день считается неполным.";
+        }
+
+        if(!snapshot.AreMacrosComplete) {
+            return "Калорийность дня полна. Некоторые БЖУ неизвестны, поэтому день не входит в среднее БЖУ.";
+        }
+
+        return "День завершён, данные полны.";
     }
 }

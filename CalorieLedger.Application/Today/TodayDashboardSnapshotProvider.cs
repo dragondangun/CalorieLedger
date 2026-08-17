@@ -69,7 +69,9 @@ public sealed class TodayDashboardSnapshotProvider:ITodayDashboardSnapshotProvid
                 .. diaryDays.Select(
                     day => new DailyNutritionSummarySnapshot(
                         Date: day.Date,
-                        ConsumedTotals: day.ConsumedTotals
+                        ConsumedTotals: day.ConsumedTotals,
+                        IsEnergyComplete: day.IsEnergyComplete,
+                        AreMacrosComplete: day.AreMacrosComplete
                     )
                 ),
             ]

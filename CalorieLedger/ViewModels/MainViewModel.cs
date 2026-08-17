@@ -476,19 +476,6 @@ public partial class MainViewModel:ViewModelBase {
         );
     }
 
-    private void OpenFoodLogEditor(FoodLogDraft draft) {
-        var currentDate = currentDateProvider.GetCurrentDate();
-
-        FoodLogEditor = new FoodLogEditorViewModel(
-            editorService: foodLogEditorService,
-            productCatalogService: productCatalogService,
-            draft: draft,
-            currentDate: currentDate,
-            onSaved: OnFoodLogSaved,
-            onCancelled: CloseFoodLogEditor
-        );
-    }
-
     private void OnFoodLogSaved() {
         FoodLogEditor = null;
         RefreshAfterFoodDiaryChange();
@@ -528,31 +515,6 @@ public partial class MainViewModel:ViewModelBase {
         foodDiaryStore.SetDateComplete(date, isComplete);
 
         RefreshAfterFoodDiaryChange();
-    }
-
-    private MealEntry GetOrCreateTodayMeal(
-        DateOnly date,
-        string name,
-        MealGroupRole role
-    ) {
-        var existingMeal = foodDiaryStore
-            .GetMeals(date, date)
-            .FirstOrDefault(meal => meal.Name == name && meal.Role == role);
-
-        if(existingMeal is not null) {
-            return existingMeal;
-        }
-
-        var meal = new MealEntry(
-            Id: Guid.NewGuid(),
-            Date: date,
-            Name: name,
-            Role: role
-        );
-
-        foodDiaryStore.SaveMeal(meal);
-
-        return meal;
     }
 
     private void RefreshAfterFoodDiaryChange() {
