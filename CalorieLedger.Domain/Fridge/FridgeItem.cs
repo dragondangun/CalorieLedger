@@ -1,14 +1,16 @@
-﻿using CalorieLedger.Domain.Common;
+using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
 
 namespace CalorieLedger.Domain.Fridge;
 
-// конкретный остаток продукта в холодильнике
+// конкретный остаток продукта или блюда в холодильнике
 public sealed record FridgeItem(
-    Guid Id,                         // id конкретного остатка в холодильнике
-    string Name,                     // название
-    FoodQuantity Quantity,           // сколько осталось
-    NutritionFacts Nutrition,        // КБЖУ
-    DateOnly? ExpirationDate = null, // срок годности
-    string? Note = null,             // комментарий
-    Guid? CatalogProductId = null);  // ссылка на базу продуктов
+    Guid Id,
+    string Name,
+    FoodQuantity Quantity,
+    NutritionFacts Nutrition,
+    DateOnly? ExpirationDate = null,
+    string? Note = null,
+    FridgeItemSource Source = FridgeItemSource.Manual,
+    Guid? SourceId = null
+);

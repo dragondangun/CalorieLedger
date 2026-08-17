@@ -1,3 +1,4 @@
+using CalorieLedger.Application.Fridge;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
@@ -9,11 +10,16 @@ namespace CalorieLedger.Application.Meals;
 
 public sealed class FoodLogEditorService {
     private readonly IFoodDiaryStore foodDiaryStore;
-
-    public FoodLogEditorService(IFoodDiaryStore foodDiaryStore) {
+    private readonly IFridgeStore? fridgeStore;
+    public FoodLogEditorService(
+        IFoodDiaryStore foodDiaryStore,
+        IFridgeStore? fridgeStore = null
+    ) {
         ArgumentNullException.ThrowIfNull(foodDiaryStore);
 
         this.foodDiaryStore = foodDiaryStore;
+
+        this.fridgeStore = fridgeStore;
     }
 
     public FoodLogDraft CreateNew(DateOnly date) {
@@ -127,6 +133,17 @@ public sealed class FoodLogEditorService {
         }
 
         var existingEntry = foodDiaryStore.GetFoodEntry(draft.Id);
+        var fridgeError = ValidateFridgeStockChange(
+            existingEntry,
+            draft
+        );
+
+        if(fridgeError is not null) {
+            return new FoodLogSaveResult(
+                IsSuccess: false,
+                Errors: [fridgeError.Value]
+            );
+        }
 
         MealEntry? existingMeal = null;
 
@@ -152,29 +169,32 @@ public sealed class FoodLogEditorService {
             foodDiaryStore.SaveMeal(targetMeal);
         }
 
-        foodDiaryStore.SaveFoodEntry(
-            new FoodLogEntry(
-                Id: draft.Id,
-                MealEntryId: targetMeal.Id,
-                Name: draft.Name.Trim(),
-                Quantity: new FoodQuantity(
-                    draft.QuantityValue!.Value,
-                    draft.QuantityUnit
-                ),
-                Nutrition: new NutritionFacts(
-                    Basis: draft.NutritionBasis,
-                    CaloriesKcal: draft.CaloriesKcal,
-                    ProteinG: draft.ProteinG,
-                    FatG: draft.FatG,
-                    CarbsG: draft.CarbsG
-                ),
-                Source: ResolveSource(draft),
-                SourceId: draft.SourceId,
-                IsApproximate: draft.IsApproximate,
-                Note: string.IsNullOrWhiteSpace(draft.Note)
-                    ? null
-                    : draft.Note.Trim()
-            )
+        var savedEntry = new FoodLogEntry(
+            Id: draft.Id,
+            MealEntryId: targetMeal.Id,
+            Name: draft.Name.Trim(),
+            Quantity: new FoodQuantity(
+                draft.QuantityValue!.Value,
+                draft.QuantityUnit
+            ),
+            Nutrition: new NutritionFacts(
+                Basis: draft.NutritionBasis,
+                CaloriesKcal: draft.CaloriesKcal,
+                ProteinG: draft.ProteinG,
+                FatG: draft.FatG,
+                CarbsG: draft.CarbsG
+            ),
+            Source: ResolveSource(draft),
+            SourceId: draft.SourceId,
+            IsApproximate: draft.IsApproximate,
+            Note: string.IsNullOrWhiteSpace(draft.Note) ? null: draft.Note.Trim()
+        );
+
+        foodDiaryStore.SaveFoodEntry(savedEntry);
+
+        ApplyFridgeStockChange(
+            existingEntry,
+            savedEntry
         );
 
         if(existingMeal is not null && existingMeal.Id != targetMeal.Id) {
@@ -212,6 +232,8 @@ public sealed class FoodLogEditorService {
         if(!foodDiaryStore.DeleteFoodEntry(id)) {
             return false;
         }
+
+        RestoreFridgeStock(foodEntry);
 
         RemoveMealIfEmpty(meal.Id);
 
@@ -315,5 +337,114 @@ public sealed class FoodLogEditorService {
                 null
             )
         };
+    }
+
+    private FoodLogValidationError? ValidateFridgeStockChange(
+        FoodLogEntry? existingEntry,
+        FoodLogDraft draft
+    ) {
+        if(draft.Source != FoodLogSource.FridgeItem) {
+            return null;
+        }
+
+        if(fridgeStore is null
+            || draft.SourceId is not Guid fridgeItemId
+        ) {
+            return FoodLogValidationError.MissingFridgeItem;
+        }
+
+        var fridgeItem = fridgeStore.Get(fridgeItemId);
+
+        if(fridgeItem is null) {
+            return FoodLogValidationError.MissingFridgeItem;
+        }
+
+        if(fridgeItem.Quantity.Unit != draft.QuantityUnit) {
+            return FoodLogValidationError.IncompatibleFridgeQuantity;
+        }
+
+        var availableQuantity = fridgeItem.Quantity.Value;
+
+        if(existingEntry is not null
+            && existingEntry.Source == FoodLogSource.FridgeItem
+            && existingEntry.SourceId == fridgeItemId
+        ) {
+            if(existingEntry.Quantity.Unit
+                != fridgeItem.Quantity.Unit) {
+                return FoodLogValidationError.IncompatibleFridgeQuantity;
+            }
+
+            availableQuantity += existingEntry.Quantity.Value;
+        }
+
+        if(draft.QuantityValue is decimal requestedQuantity
+            && requestedQuantity > availableQuantity) {
+            return FoodLogValidationError.InsufficientFridgeQuantity;
+        }
+
+        return null;
+    }
+
+    private void ApplyFridgeStockChange(
+        FoodLogEntry? existingEntry,
+        FoodLogEntry savedEntry
+    ) {
+        if(fridgeStore is null) {
+            return;
+        }
+
+        if(existingEntry is not null) {
+            RestoreFridgeStock(existingEntry);
+        }
+
+        ConsumeFridgeStock(savedEntry);
+    }
+
+    private void RestoreFridgeStock(FoodLogEntry foodEntry) {
+        if(fridgeStore is null
+            || foodEntry.Source != FoodLogSource.FridgeItem
+            || foodEntry.SourceId is not Guid fridgeItemId
+        ) {
+            return;
+        }
+
+        var fridgeItem = fridgeStore.Get(fridgeItemId);
+
+        if(fridgeItem is null || fridgeItem.Quantity.Unit != foodEntry.Quantity.Unit) {
+            return;
+        }
+
+        fridgeStore.Save(
+            fridgeItem with {
+                Quantity = new FoodQuantity(
+                    fridgeItem.Quantity.Value + foodEntry.Quantity.Value,
+                    fridgeItem.Quantity.Unit
+                ),
+            }
+        );
+    }
+
+    private void ConsumeFridgeStock(FoodLogEntry foodEntry) {
+        if(fridgeStore is null
+            || foodEntry.Source != FoodLogSource.FridgeItem
+            || foodEntry.SourceId is not Guid fridgeItemId) {
+            return;
+        }
+
+        var fridgeItem = fridgeStore.Get(fridgeItemId);
+
+        if(fridgeItem is null || fridgeItem.Quantity.Unit != foodEntry.Quantity.Unit) {
+            return;
+        }
+
+        fridgeStore.Save(
+            fridgeItem with {
+                Quantity = new FoodQuantity(
+                    fridgeItem.Quantity.Value
+                    - foodEntry.Quantity.Value,
+                    fridgeItem.Quantity.Unit
+                ),
+            }
+        );
     }
 }

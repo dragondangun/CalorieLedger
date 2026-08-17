@@ -23,7 +23,7 @@
 
             <TextBox
                 Text="{Binding Name, Mode=TwoWay}"
-                Watermark="Например: курица с картофелем" />
+                PlaceholderText="Например: курица с картофелем" />
 
             <Border
                 Padding="14"
@@ -38,7 +38,7 @@
 
                     <TextBox
                         Text="{Binding CatalogSearchQuery, Mode=TwoWay}"
-                        Watermark="Название, бренд или штрихкод" />
+                        PlaceholderText="Название, бренд или штрихкод" />
 
                     <ComboBox
                         ItemsSource="{Binding CatalogResults}"
@@ -175,7 +175,7 @@
                 AcceptsReturn="True"
                 MinHeight="72"
                 TextWrapping="Wrap"
-                Watermark="Необязательно" />
+                PlaceholderText="Необязательно" />
 
             <Border
                 Padding="12"

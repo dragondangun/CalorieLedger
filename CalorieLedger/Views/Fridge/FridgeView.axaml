@@ -1,0 +1,227 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Fridge.FridgeView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:fridgeVm="using:CalorieLedger.ViewModels.Fridge"
+    x:DataType="fridgeVm:FridgeManagerViewModel">
+
+    <ScrollViewer>
+        <StackPanel
+            Margin="24"
+            Spacing="14"
+            MaxWidth="760"
+            HorizontalAlignment="Center">
+
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Холодильник"
+                    FontSize="26"
+                    FontWeight="Bold" />
+
+                <Button
+                    Grid.Column="1"
+                    Content="Закрыть"
+                    Command="{Binding CloseCommand}" />
+            </Grid>
+
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="Добавить продукт из каталога"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBox
+                        Text="{Binding CatalogSearchQuery, Mode=TwoWay}"
+                        PlaceholderText="Название, бренд или штрихкод" />
+
+                    <ComboBox
+                        ItemsSource="{Binding CatalogResults}"
+                        SelectedItem="{Binding SelectedCatalogProduct, Mode=TwoWay}"
+                        PlaceholderText="Выберите продукт">
+
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <StackPanel>
+                                    <TextBlock
+                                        Text="{Binding Name}"
+                                        FontWeight="SemiBold" />
+
+                                    <TextBlock
+                                        Text="{Binding Brand}"
+                                        Opacity="0.7" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <NumericUpDown
+                        Value="{Binding CatalogQuantityValue, Mode=TwoWay}"
+                        Minimum="0"
+                        Maximum="100000"
+                        Increment="1"
+                        FormatString="0.##" />
+
+                    <Button
+                        Content="Добавить продукт"
+                        Command="{Binding AddCatalogProductCommand}"
+                        HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="Добавить приготовленное блюдо"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBox
+                        Text="{Binding CookingSearchQuery, Mode=TwoWay}"
+                        PlaceholderText="Название приготовления" />
+
+                    <ComboBox
+                        ItemsSource="{Binding CookingResults}"
+                        SelectedItem="{Binding SelectedCookingSession, Mode=TwoWay}"
+                        PlaceholderText="Выберите блюдо">
+
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Button
+                        Content="Добавить всё приготовление"
+                        Command="{Binding AddCookingSessionCommand}"
+                        HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                Text="Срок годности"
+                FontWeight="SemiBold" />
+
+            <DatePicker
+                SelectedDate="{Binding ExpirationDate, Mode=TwoWay}" />
+
+            <TextBlock
+                Text="Комментарий"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Note, Mode=TwoWay}"
+                PlaceholderText="Необязательно" />
+
+            <TextBlock
+                Text="{Binding ActionSummary}"
+                TextWrapping="Wrap"
+                Opacity="0.75" />
+
+            <TextBox
+                Text="{Binding SearchQuery, Mode=TwoWay}"
+                PlaceholderText="Поиск по холодильнику" />
+
+            <TextBlock
+                IsVisible="{Binding HasNoItems}"
+                Text="Холодильник пока пуст."
+                Opacity="0.75" />
+
+            <ItemsControl
+                IsVisible="{Binding HasItems}"
+                ItemsSource="{Binding Items}">
+
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="10" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate
+                        x:DataType="fridgeVm:FridgeItemViewModel">
+
+                        <Border
+                            Padding="12"
+                            BorderThickness="1"
+                            CornerRadius="10">
+
+                            <StackPanel Spacing="5">
+                                <TextBlock
+                                    Text="{Binding Name}"
+                                    FontSize="17"
+                                    FontWeight="SemiBold" />
+
+                                <TextBlock
+                                    Text="{Binding QuantitySummary}" />
+
+                                <TextBlock
+                                    Text="{Binding NutritionSummary}"
+                                    TextWrapping="Wrap" />
+
+                                <TextBlock
+                                    Text="{Binding ExpirationSummary}"
+                                    Opacity="0.75" />
+
+                                <TextBlock
+                                    Text="{Binding SourceSummary}"
+                                    FontStyle="Italic"
+                                    Opacity="0.7" />
+
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Spacing="8"
+                                    IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                    <Button
+                                        Content="Съесть"
+                                        Command="{Binding LogFoodCommand}" />
+
+                                    <Button
+                                        Content="Удалить"
+                                        Command="{Binding DeleteCommand}" />
+                                </StackPanel>
+
+                                <Border
+                                    Padding="10"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                    <StackPanel Spacing="8">
+                                        <TextBlock
+                                            Text="Удалить остаток из холодильника?"
+                                            FontWeight="SemiBold" />
+
+                                        <StackPanel
+                                            Orientation="Horizontal"
+                                            Spacing="8">
+
+                                            <Button
+                                                Content="Отмена"
+                                                Command="{Binding CancelDeleteCommand}" />
+
+                                            <Button
+                                                Content="Удалить"
+                                                Command="{Binding ConfirmDeleteCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

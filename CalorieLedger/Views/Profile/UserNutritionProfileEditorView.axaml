@@ -28,7 +28,7 @@
 
       <TextBox
           Text="{Binding DisplayName, Mode=TwoWay}"
-          Watermark="Имя пользователя"
+          PlaceholderText="Имя пользователя"
           MaxLength="100" />
 
       <TextBlock

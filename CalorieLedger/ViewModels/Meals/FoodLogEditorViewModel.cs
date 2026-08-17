@@ -397,33 +397,18 @@ public partial class FoodLogEditorViewModel:ViewModelBase {
 
     private static string FormatValidationError(FoodLogValidationError error) {
         return error switch {
-            FoodLogValidationError.MissingId =>
-                "Не удалось определить запись еды.",
-
-            FoodLogValidationError.FutureDate =>
-                "Дата записи не может быть в будущем.",
-
-            FoodLogValidationError.MissingName =>
-                "Введите название продукта или блюда.",
-
-            FoodLogValidationError.InvalidQuantity =>
-                "Укажите количество больше 0.",
-
-            FoodLogValidationError.IncompatibleNutritionBasis =>
-                "Единица количества не соответствует способу задания КБЖУ.",
-
-            FoodLogValidationError.InvalidCalories =>
-                "Калорийность не может быть отрицательной.",
-
-            FoodLogValidationError.InvalidProtein =>
-                "Количество белка не может быть отрицательным.",
-
-            FoodLogValidationError.InvalidFat =>
-                "Количество жира не может быть отрицательным.",
-
-            FoodLogValidationError.InvalidCarbs =>
-                "Количество углеводов не может быть отрицательным.",
-
+            FoodLogValidationError.MissingId => "Не удалось определить запись еды.",
+            FoodLogValidationError.FutureDate => "Дата записи не может быть в будущем.",
+            FoodLogValidationError.MissingName => "Введите название продукта или блюда.",
+            FoodLogValidationError.InvalidQuantity => "Укажите количество больше 0.",
+            FoodLogValidationError.IncompatibleNutritionBasis => "Единица количества не соответствует способу задания КБЖУ.",
+            FoodLogValidationError.InvalidCalories => "Калорийность не может быть отрицательной.",
+            FoodLogValidationError.InvalidProtein => "Количество белка не может быть отрицательным.",
+            FoodLogValidationError.InvalidFat => "Количество жира не может быть отрицательным.",
+            FoodLogValidationError.InvalidCarbs => "Количество углеводов не может быть отрицательным.",
+            FoodLogValidationError.MissingFridgeItem => "Этот остаток больше не существует в холодильнике.",
+            FoodLogValidationError.InsufficientFridgeQuantity => "В холодильнике недостаточно этого продукта или блюда.",
+            FoodLogValidationError.IncompatibleFridgeQuantity => "Единица количества не соответствует остатку в холодильнике.",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(error),
                 error,

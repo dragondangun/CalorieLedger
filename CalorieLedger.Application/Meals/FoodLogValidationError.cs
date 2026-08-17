@@ -9,5 +9,8 @@ public enum FoodLogValidationError {
     InvalidCalories,
     InvalidProtein,
     InvalidFat,
-    InvalidCarbs
+    InvalidCarbs,
+    MissingFridgeItem,
+    InsufficientFridgeQuantity,
+    IncompatibleFridgeQuantity
 }

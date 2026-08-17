@@ -33,7 +33,7 @@ public sealed class FoodDiaryHistoryViewModelTests {
 
         Assert.Equal(
             3,
-            viewModel.WeekDays.Count(day =>day.IsAvailable)
+            viewModel.WeekDays.Count(day => day.IsAvailable)
         );
 
         Assert.Equal(

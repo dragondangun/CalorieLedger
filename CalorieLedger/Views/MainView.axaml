@@ -11,6 +11,7 @@
     xmlns:productViews="using:CalorieLedger.Views.Products"
     xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
     xmlns:cookingViews="using:CalorieLedger.Views.Cooking"
+    xmlns:fridgeViews="using:CalorieLedger.Views.Fridge"
     x:DataType="vm:MainViewModel">
 
     <Grid>
@@ -43,6 +44,12 @@
         <Button
             Content="Приготовленные блюда"
             Command="{Binding OpenCookingSessionsCommand}"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Center"
+            Padding="12,10" />
+        <Button
+            Content="Холодильник"
+            Command="{Binding OpenFridgeCommand}"
             HorizontalAlignment="Stretch"
             HorizontalContentAlignment="Center"
             Padding="12,10" />
@@ -436,6 +443,13 @@
 
             <mealViews:FoodDiaryHistoryView
                 DataContext="{Binding FoodDiaryHistory}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsFridgeOpen}"
+            Panel.ZIndex="1">
+
+            <fridgeViews:FridgeView
+                DataContext="{Binding FridgeManager}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsFoodLogEditorOpen}"

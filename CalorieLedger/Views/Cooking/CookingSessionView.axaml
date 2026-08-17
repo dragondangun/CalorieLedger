@@ -29,7 +29,7 @@
 
                 <TextBox
                     Text="{Binding SearchQuery, Mode=TwoWay}"
-                    Watermark="Поиск по названию блюда" />
+                    PlaceholderText="Поиск по названию блюда" />
 
                 <Button
                     Content="Новое приготовление"

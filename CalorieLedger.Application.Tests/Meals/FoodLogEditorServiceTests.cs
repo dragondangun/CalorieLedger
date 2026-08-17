@@ -1,5 +1,7 @@
+using CalorieLedger.Application.Fridge;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Domain.Common;
+using CalorieLedger.Domain.Fridge;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
 
@@ -347,5 +349,210 @@ public sealed class FoodLogEditorServiceTests {
         Assert.True(draft.IsApproximate);
 
         Assert.Null(draft.CaloriesKcal);
+    }
+
+    [Fact]
+    public void Save_FridgeFood_DeductsConsumedQuantity() {
+        var date = new DateOnly(2026, 8, 17);
+
+        var diaryStore =new InMemoryFoodDiaryStore();
+
+        var fridgeStore = new InMemoryFridgeStore();
+
+        var fridgeItem = CreateFridgeItem(500m);
+
+        fridgeStore.Save(fridgeItem);
+
+        var service = new FoodLogEditorService(diaryStore, fridgeStore);
+
+        var draft = new FoodLogDraft(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: fridgeItem.Name,
+            MealRole: MealGroupRole.Snack,
+            QuantityValue: 200m,
+            QuantityUnit: FoodUnit.Gram,
+            NutritionBasis: NutritionBasis.Per100Grams,
+            CaloriesKcal: fridgeItem.Nutrition.CaloriesKcal,
+            ProteinG: fridgeItem.Nutrition.ProteinG,
+            FatG: fridgeItem.Nutrition.FatG,
+            CarbsG: fridgeItem.Nutrition.CarbsG,
+            Source: FoodLogSource.FridgeItem,
+            SourceId: fridgeItem.Id
+        );
+
+        var result = service.Save(draft, date);
+
+        Assert.True(result.IsSuccess);
+
+        Assert.Equal(
+            300m,
+            fridgeStore.Get(fridgeItem.Id)?.Quantity.Value
+        );
+    }
+
+    [Fact]
+    public void Save_ExistingFridgeFood_QuantityChange_AppliesOnlyDifference() {
+        var date = new DateOnly(2026, 8, 17);
+
+        var diaryStore = new InMemoryFoodDiaryStore();
+
+        var fridgeStore = new InMemoryFridgeStore();
+
+        var fridgeItem = CreateFridgeItem(500m);
+
+        fridgeStore.Save(fridgeItem);
+
+        var service = new FoodLogEditorService(
+            diaryStore,
+            fridgeStore
+        );
+
+        var draft = new FoodLogDraft(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: fridgeItem.Name,
+            MealRole: MealGroupRole.Snack,
+            QuantityValue: 200m,
+            QuantityUnit: FoodUnit.Gram,
+            NutritionBasis: NutritionBasis.Per100Grams,
+            CaloriesKcal: fridgeItem.Nutrition.CaloriesKcal,
+            ProteinG: fridgeItem.Nutrition.ProteinG,
+            FatG: fridgeItem.Nutrition.FatG,
+            CarbsG: fridgeItem.Nutrition.CarbsG,
+            Source: FoodLogSource.FridgeItem,
+            SourceId: fridgeItem.Id
+        );
+
+        Assert.True(service.Save(draft, date).IsSuccess);
+
+        Assert.Equal(
+            300m,
+            fridgeStore.Get(fridgeItem.Id)?.Quantity.Value
+        );
+
+        Assert.True(
+            service.Save(
+                draft with {
+                    QuantityValue = 250m,
+                },
+                date
+            ).IsSuccess
+        );
+
+        Assert.Equal(
+            250m,
+            fridgeStore.Get(fridgeItem.Id)?.Quantity.Value
+        );
+    }
+
+    [Fact]
+    public void Delete_FridgeFood_RestoresConsumedQuantity() {
+        var date = new DateOnly(2026, 8, 17);
+
+        var diaryStore = new InMemoryFoodDiaryStore();
+
+        var fridgeStore = new InMemoryFridgeStore();
+
+        var fridgeItem = CreateFridgeItem(500m);
+
+        fridgeStore.Save(fridgeItem);
+
+        var service = new FoodLogEditorService(
+            diaryStore,
+            fridgeStore
+        );
+
+        var draft = new FoodLogDraft(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: fridgeItem.Name,
+            MealRole: MealGroupRole.Snack,
+            QuantityValue: 200m,
+            QuantityUnit: FoodUnit.Gram,
+            NutritionBasis: NutritionBasis.Per100Grams,
+            CaloriesKcal: fridgeItem.Nutrition.CaloriesKcal,
+            ProteinG: fridgeItem.Nutrition.ProteinG,
+            FatG: fridgeItem.Nutrition.FatG,
+            CarbsG: fridgeItem.Nutrition.CarbsG,
+            Source: FoodLogSource.FridgeItem,
+            SourceId: fridgeItem.Id
+        );
+
+        Assert.True(service.Save(draft, date).IsSuccess);
+
+        Assert.True(service.Delete(draft.Id));
+
+        Assert.Equal(
+            500m,
+            fridgeStore.Get(fridgeItem.Id)?.Quantity.Value
+        );
+    }
+
+    [Fact]
+    public void Save_FridgeFood_ExceedingAvailableQuantity_DoesNotPersist() {
+        var date = new DateOnly(2026, 8, 17);
+
+        var diaryStore = new InMemoryFoodDiaryStore();
+
+        var fridgeStore = new InMemoryFridgeStore();
+
+        var fridgeItem = CreateFridgeItem(100m);
+
+        fridgeStore.Save(fridgeItem);
+
+        var service = new FoodLogEditorService(
+            diaryStore,
+            fridgeStore
+        );
+
+        var draft = new FoodLogDraft(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: fridgeItem.Name,
+            MealRole: MealGroupRole.Snack,
+            QuantityValue: 150m,
+            QuantityUnit: FoodUnit.Gram,
+            NutritionBasis: NutritionBasis.Per100Grams,
+            CaloriesKcal: fridgeItem.Nutrition.CaloriesKcal,
+            ProteinG: fridgeItem.Nutrition.ProteinG,
+            FatG: fridgeItem.Nutrition.FatG,
+            CarbsG: fridgeItem.Nutrition.CarbsG,
+            Source: FoodLogSource.FridgeItem,
+            SourceId: fridgeItem.Id
+        );
+
+        var result = service.Save(draft, date);
+
+        Assert.False(result.IsSuccess);
+
+        Assert.Contains(
+            FoodLogValidationError.InsufficientFridgeQuantity,
+            result.Errors
+        );
+
+        Assert.Empty(
+            diaryStore.GetMeals(date, date)
+        );
+
+        Assert.Equal(
+            100m,
+            fridgeStore.Get(fridgeItem.Id)?.Quantity.Value
+        );
+    }
+
+    private static FridgeItem CreateFridgeItem(decimal quantityG) {
+        return new FridgeItem(
+            Id: Guid.NewGuid(),
+            Name: "Творог",
+            Quantity: FoodQuantity.Grams(quantityG),
+            Nutrition: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 120m,
+                ProteinG: 17m,
+                FatG: 5m,
+                CarbsG: 3m
+            )
+        );
     }
 }
