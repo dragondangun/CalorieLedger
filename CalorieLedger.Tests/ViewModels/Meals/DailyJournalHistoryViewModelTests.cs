@@ -284,6 +284,50 @@ public sealed class DailyJournalHistoryViewModelTests {
         Assert.Equal(1, viewModel.WeeklySummary.WeightMeasurementCount);
     }
 
+    [Fact]
+    public void Constructor_BuildsEightWeekTrendEndingWithSelectedWeek() {
+        var currentDate = new DateOnly(2026, 8, 19);
+
+        var viewModel = CreateViewModel(
+            currentDate,
+            new InMemoryFoodDiaryStore()
+        );
+
+        Assert.Equal(8, viewModel.RecentWeeks.Count);
+
+        Assert.Equal(
+            new DateOnly(2026, 6, 29),
+            viewModel.RecentWeeks[0].WeekStartDate
+        );
+
+        Assert.Equal(
+            new DateOnly(2026, 8, 17),
+            viewModel.RecentWeeks[^1].WeekStartDate
+        );
+
+        Assert.True(viewModel.RecentWeeks[^1].IsSelectedWeek);
+        Assert.False(viewModel.RecentWeeks[0].IsSelectedWeek);
+    }
+
+    [Fact]
+    public void PreviousWeek_ShiftsEightWeekTrendWindow() {
+        var currentDate = new DateOnly(2026, 8, 19);
+
+        var viewModel = CreateViewModel(
+            currentDate,
+            new InMemoryFoodDiaryStore()
+        );
+
+        viewModel.PreviousWeekCommand.Execute(null);
+
+        Assert.Equal(
+            new DateOnly(2026, 8, 10),
+            viewModel.RecentWeeks[^1].WeekStartDate
+        );
+
+        Assert.True(viewModel.RecentWeeks[^1].IsSelectedWeek);
+    }
+
     private static DailyJournalHistoryViewModel CreateViewModel(
         DateOnly currentDate,
         IFoodDiaryStore foodDiaryStore,

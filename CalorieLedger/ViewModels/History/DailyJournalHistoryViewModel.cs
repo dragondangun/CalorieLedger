@@ -5,6 +5,7 @@ using CalorieLedger.ViewModels.Meals;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
@@ -26,6 +27,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     private readonly Action<Guid> deleteActivity;
     private readonly Action onClosed;
     private readonly WeeklyJournalSummaryProvider weeklySummaryProvider;
+    private const int RecentWeekCount = 8;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DateSummary))]
@@ -64,6 +66,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     public ObservableCollection<FoodDiaryMealGroupViewModel> MealGroups { get; } = [];
     public ObservableCollection<ActivityItemViewModel> Activities { get; } = [];
     public ObservableCollection<DailyJournalWeekDayViewModel> WeekDays { get; } = [];
+    public ObservableCollection<JournalTrendWeekViewModel> RecentWeeks { get; } = [];
 
     public bool HasMeals => MealGroups.Count > 0;
     public bool HasNoMeals => MealGroups.Count == 0;
@@ -94,6 +97,8 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
 
     public string CompletionSummary => IsComplete ? "День завершён" : "День открыт";
     public string CompletionActionText => IsComplete ? "Открыть день снова" : "Завершить день";
+
+    public string WeekComparisonSummary { get; private set; } = string.Empty;
 
     public DailyJournalHistoryViewModel(
         DailyJournalDaySnapshotProvider snapshotProvider,
@@ -272,9 +277,28 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
                 selectDate: SelectDate));
         }
 
-        WeeklySummary = new WeeklyJournalSummaryViewModel(
-            weeklySummaryProvider.GetWeek(SelectedDate, currentDate)
+        var summaries = weeklySummaryProvider.GetRecentWeeks(
+            SelectedDate,
+            currentDate,
+            RecentWeekCount
         );
+
+        WeeklySummary = new WeeklyJournalSummaryViewModel(summaries[^1]);
+
+        RecentWeeks.Clear();
+
+        foreach(var summary in summaries) {
+            RecentWeeks.Add(
+                new JournalTrendWeekViewModel(
+                    summary,
+                    summary.WeekStartDate == weekStart
+                )
+            );
+        }
+
+        WeekComparisonSummary = FormatWeekComparison(summaries);
+
+        OnPropertyChanged(nameof(WeekComparisonSummary));
     }
 
     private void SelectDate(DateOnly date) {
@@ -321,5 +345,28 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
 
     private static string FormatShortDate(DateOnly date) {
         return date.ToString("d MMM", RussianCulture);
+    }
+
+    private static string FormatWeekComparison(
+        IReadOnlyList<WeeklyJournalSummarySnapshot> summaries
+    ) {
+        if(summaries.Count < 2) {
+            return string.Empty;
+        }
+
+        var previous = summaries[^2].AverageActivityAdjustedCaloriesKcal;
+        var current = summaries[^1].AverageActivityAdjustedCaloriesKcal;
+
+        if(previous is null || current is null) {
+            return "Для сравнения двух последних недель нужны завершённые дни в обеих неделях.";
+        }
+
+        var difference = current.Value - previous.Value;
+
+        return difference switch {
+            > 0m => $"К предыдущей неделе: +{difference:0} ккал/день",
+            < 0m => $"К предыдущей неделе: {difference:0} ккал/день",
+            _ => "Скорректированное среднее совпадает с предыдущей неделей."
+        };
     }
 }

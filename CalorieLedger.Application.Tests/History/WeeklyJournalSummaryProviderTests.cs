@@ -117,6 +117,86 @@ public sealed class WeeklyJournalSummaryProviderTests {
         Assert.Null(result.WeightChangeKg);
     }
 
+    [Fact]
+    public void GetRecentWeeks_ReturnsChronologicalWeeklySummaries() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var selectedWeek = new DateOnly(2026, 8, 17);
+        var previousWeek = selectedWeek.AddDays(-7);
+        var olderWeek = selectedWeek.AddDays(-14);
+
+        var foodStore = new InMemoryFoodDiaryStore();
+        var activityStore = new InMemoryActivityStore();
+        var bodyStore = new InMemoryBodyMeasurementStore();
+
+        AddFood(foodStore, olderWeek, 1800m, isComplete: true);
+        AddFood(foodStore, previousWeek, 2000m, isComplete: true);
+        AddFood(foodStore, selectedWeek, 2200m, isComplete: true);
+
+        activityStore.Save(
+            new ActivityEntry(
+                Id: Guid.NewGuid(),
+                Date: previousWeek,
+                Name: "HEMA",
+                BurnedCaloriesKcal: 300m
+            )
+        );
+
+        activityStore.Save(
+            new ActivityEntry(
+                Id: Guid.NewGuid(),
+                Date: selectedWeek,
+                Name: "Ходьба",
+                BurnedCaloriesKcal: 100m
+            )
+        );
+
+        var provider = CreateProvider(foodStore, activityStore, bodyStore);
+
+        var result = provider.GetRecentWeeks(
+        currentDate,
+        currentDate,
+        3
+    );
+
+        Assert.Equal(3, result.Count);
+
+        Assert.Equal(olderWeek, result[0].WeekStartDate);
+        Assert.Equal(previousWeek, result[1].WeekStartDate);
+        Assert.Equal(selectedWeek, result[2].WeekStartDate);
+
+        Assert.Equal(1800m, result[0].AverageActivityAdjustedCaloriesKcal);
+        Assert.Equal(1700m, result[1].AverageActivityAdjustedCaloriesKcal);
+        Assert.Equal(2100m, result[2].AverageActivityAdjustedCaloriesKcal);
+    }
+
+    [Fact]
+    public void GetRecentWeeks_CurrentWeek_UsesOnlyElapsedDays() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var currentWeekStart = new DateOnly(2026, 8, 17);
+
+        var provider = CreateProvider(
+            new InMemoryFoodDiaryStore(),
+            new InMemoryActivityStore(),
+            new InMemoryBodyMeasurementStore()
+        );
+
+        var result = provider.GetRecentWeeks(
+            currentDate,
+            currentDate,
+            2
+        );
+
+        Assert.Equal(2, result.Count);
+
+        var previous = result[0];
+        Assert.Equal(7, previous.AvailableDayCount);
+
+        var current = result[1];
+        Assert.Equal(currentWeekStart, current.WeekStartDate);
+        Assert.Equal(currentDate, current.AvailableEndDate);
+        Assert.Equal(3, current.AvailableDayCount);
+    }
+
     private static WeeklyJournalSummaryProvider CreateProvider(
         IFoodDiaryStore foodStore,
         IActivityStore activityStore,
