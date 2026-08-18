@@ -568,6 +568,11 @@
                                             IsVisible="{Binding ArePrimaryActionsVisible}">
 
                                             <Button
+                                                IsVisible="{Binding HasRepeatAction}"
+                                                Content="Повторить сегодня"
+                                                Command="{Binding RepeatCommand}" />
+
+                                            <Button
                                                 Content="Изменить"
                                                 Command="{Binding EditCommand}" />
 

@@ -54,6 +54,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly WeeklyJournalSummaryProvider weeklyJournalSummaryProvider;
     private readonly ActivityEnergySuggestionService activityEnergySuggestionService;
     private readonly ActivityPresetCatalogService activityPresetCatalogService;
+    private readonly ActivityRepeatService activityRepeatService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -344,6 +345,11 @@ public partial class MainViewModel:ViewModelBase {
 
         bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
         activityEnergySuggestionService = new ActivityEnergySuggestionService(bodyMeasurementHistoryService);
+        activityRepeatService = new ActivityRepeatService(
+            this.activityStore,
+            activityPresetCatalogService,
+            activityEnergySuggestionService
+        );
         weeklyJournalSummaryProvider = new WeeklyJournalSummaryProvider(
             dailyJournalSnapshotProvider,
             bodyMeasurementHistoryService
@@ -490,7 +496,8 @@ public partial class MainViewModel:ViewModelBase {
             addActivity: OpenActivityEditorForDate,
             editActivity: EditActivity,
             deleteActivity: DeleteActivity,
-            onClosed: CloseDailyJournalHistory
+            onClosed: CloseDailyJournalHistory,
+            repeatActivity: RepeatActivity
         );
     }
 
@@ -1030,7 +1037,20 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnActivityEditorChanged(ActivityEditorViewModel? value) {
         OnPropertyChanged(nameof(IsActivityEditorOpen));
-
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
+    }
+
+    private void RepeatActivity(Guid id) {
+        var draft = activityRepeatService.CreateDraft(
+            id,
+            currentDateProvider.GetCurrentDate()
+        );
+
+        if(draft is null) {
+            DailyJournalHistory?.Refresh();
+            return;
+        }
+
+        OpenActivityEditor(draft, isNew: true);
     }
 }

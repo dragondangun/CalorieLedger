@@ -6,7 +6,6 @@ using CalorieLedger.Domain.Nutrition;
 namespace CalorieLedger.Application.Nutrition;
 
 public sealed class DailyEnergyIntakeHistoryProvider:IDailyEnergyIntakeHistoryProvider {
-    private readonly IActivityStore? activityStore;
     private readonly DailyJournalDaySnapshotProvider snapshotProvider;
 
     public DailyEnergyIntakeHistoryProvider(

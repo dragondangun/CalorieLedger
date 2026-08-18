@@ -383,11 +383,44 @@ public sealed class DailyJournalHistoryViewModelTests {
         Assert.Equal(new DateOnly(2026, 8, 10), selectedPoint.WeekStartDate);
     }
 
+    [Fact]
+    public void ActivityRepeatCommand_PassesSourceActivityId() {
+        var currentDate = new DateOnly(2026, 8, 18);
+        var activityId = Guid.NewGuid();
+        var activityStore = new InMemoryActivityStore();
+        Guid? repeatedId = null;
+
+        activityStore.Save(
+            new ActivityEntry(
+                Id: activityId,
+                Date: currentDate,
+                Name: "HEMA",
+                BurnedCaloriesKcal: 300m
+            )
+        );
+
+        var viewModel = CreateViewModel(
+            currentDate,
+            new InMemoryFoodDiaryStore(),
+            activityStore: activityStore,
+            repeatActivity: id => repeatedId = id
+        );
+
+        var activity = Assert.Single(viewModel.Activities);
+
+        Assert.True(activity.HasRepeatAction);
+
+        activity.RepeatCommand.Execute(null);
+
+        Assert.Equal(activityId, repeatedId);
+    }
+
     private static DailyJournalHistoryViewModel CreateViewModel(
         DateOnly currentDate,
         IFoodDiaryStore foodDiaryStore,
         IActivityStore? activityStore = null,
-        IBodyMeasurementStore? bodyMeasurementStore = null
+        IBodyMeasurementStore? bodyMeasurementStore = null,
+        Action<Guid>? repeatActivity = null
     ) {
         var journalProvider = new DailyJournalDaySnapshotProvider(
             new FoodDiaryDaySnapshotProvider(foodDiaryStore),
@@ -411,7 +444,8 @@ public sealed class DailyJournalHistoryViewModelTests {
             addActivity: _ => { },
             editActivity: _ => { },
             deleteActivity: _ => { },
-            onClosed: () => { }
+            onClosed: () => { },
+            repeatActivity: repeatActivity
         );
     }
 

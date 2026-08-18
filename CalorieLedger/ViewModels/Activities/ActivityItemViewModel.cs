@@ -7,7 +7,7 @@ namespace CalorieLedger.ViewModels.Activities;
 public sealed partial class ActivityItemViewModel:ViewModelBase {
     private readonly Action<Guid> edit;
     private readonly Action<Guid> delete;
-
+    private readonly Action<Guid>? repeat;
     public Guid Id { get; }
     public string Name { get; }
     public decimal BurnedCaloriesKcal { get; }
@@ -23,6 +23,8 @@ public sealed partial class ActivityItemViewModel:ViewModelBase {
 
     public bool ArePrimaryActionsVisible => !IsDeleteConfirmationVisible;
 
+    public bool HasRepeatAction => repeat is not null;
+
     public ActivityItemViewModel(
         Guid id,
         string name,
@@ -31,7 +33,8 @@ public sealed partial class ActivityItemViewModel:ViewModelBase {
         TimeSpan? duration,
         string? note,
         Action<Guid> edit,
-        Action<Guid> delete
+        Action<Guid> delete,
+        Action<Guid>? repeat = null
     ) {
         ArgumentNullException.ThrowIfNull(edit);
         ArgumentNullException.ThrowIfNull(delete);
@@ -45,6 +48,7 @@ public sealed partial class ActivityItemViewModel:ViewModelBase {
 
         this.edit = edit;
         this.delete = delete;
+        this.repeat = repeat;
     }
 
     [RelayCommand]
@@ -66,6 +70,11 @@ public sealed partial class ActivityItemViewModel:ViewModelBase {
     [RelayCommand]
     private void CancelDelete() {
         IsDeleteConfirmationVisible = false;
+    }
+
+    [RelayCommand]
+    private void Repeat() {
+        repeat?.Invoke(Id);
     }
 
     partial void OnIsDeleteConfirmationVisibleChanged(bool value) {

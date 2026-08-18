@@ -25,6 +25,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     private readonly Action<DateOnly> addActivity;
     private readonly Action<Guid> editActivity;
     private readonly Action<Guid> deleteActivity;
+    private readonly Action<Guid>? repeatActivity;
     private readonly Action onClosed;
     private readonly WeeklyJournalSummaryProvider weeklySummaryProvider;
     private const int RecentWeekCount = 8;
@@ -114,7 +115,8 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         Action<DateOnly> addActivity,
         Action<Guid> editActivity,
         Action<Guid> deleteActivity,
-        Action onClosed
+        Action onClosed,
+        Action<Guid>? repeatActivity = null
     ) {
         ArgumentNullException.ThrowIfNull(snapshotProvider);
         ArgumentNullException.ThrowIfNull(addFood);
@@ -140,6 +142,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         this.deleteActivity = deleteActivity;
         this.onClosed = onClosed;
         this.weeklySummaryProvider = weeklySummaryProvider;
+        this.repeatActivity = repeatActivity;
 
         selectedDate = currentDate;
         Refresh();
@@ -240,21 +243,26 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
             MealGroups.Add(FoodDiaryPresentationFactory.CreateMealGroup(
                 meal: meal,
                 editFood: editFood,
-                deleteFood: deleteFood));
+                deleteFood: deleteFood)
+            );
         }
 
         Activities.Clear();
 
         foreach(var activity in snapshot.Activities) {
-            Activities.Add(new ActivityItemViewModel(
-                id: activity.Id,
-                name: activity.Name,
-                burnedCaloriesKcal: activity.BurnedCaloriesKcal,
-                startedAt: activity.StartedAt,
-                duration: activity.Duration,
-                note: activity.Note,
-                edit: editActivity,
-                delete: deleteActivity));
+            Activities.Add(
+                new ActivityItemViewModel(
+                    id: activity.Id,
+                    name: activity.Name,
+                    burnedCaloriesKcal: activity.BurnedCaloriesKcal,
+                    startedAt: activity.StartedAt,
+                    duration: activity.Duration,
+                    note: activity.Note,
+                    edit: editActivity,
+                    delete: deleteActivity,
+                    repeat: repeatActivity
+                )
+            );
         }
 
         OnPropertyChanged(nameof(HasMeals));
