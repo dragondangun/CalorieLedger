@@ -277,6 +277,9 @@ public sealed class DailyJournalHistoryViewModelTests {
         );
 
         viewModel.PreviousWeekCommand.Execute(null);
+        Assert.Equal(8, viewModel.TrendChartPoints.Count);
+        Assert.Equal("10.08", viewModel.TrendChartPoints[^1].Label);
+        Assert.False(viewModel.TrendChartPoints[^1].IsPartialWeek);
 
         Assert.Equal(previousWeekDate, viewModel.SelectedDate);
         Assert.Equal(1800m, viewModel.WeeklySummary.AverageFoodCaloriesKcal);
@@ -307,6 +310,20 @@ public sealed class DailyJournalHistoryViewModelTests {
 
         Assert.True(viewModel.RecentWeeks[^1].IsSelectedWeek);
         Assert.False(viewModel.RecentWeeks[0].IsSelectedWeek);
+        Assert.Equal(8, viewModel.TrendChartPoints.Count);
+
+        Assert.Equal(
+            "29.06",
+            viewModel.TrendChartPoints[0].Label
+        );
+
+        Assert.Equal(
+            "17.08*",
+            viewModel.TrendChartPoints[^1].Label
+        );
+
+        Assert.False(viewModel.TrendChartPoints[0].IsPartialWeek);
+        Assert.True(viewModel.TrendChartPoints[^1].IsPartialWeek);
     }
 
     [Fact]

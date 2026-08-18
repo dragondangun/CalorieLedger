@@ -5,6 +5,7 @@
     xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
     xmlns:historyVm="using:CalorieLedger.ViewModels.History"
     xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
+    xmlns:controls="using:CalorieLedger.Controls"
     x:DataType="historyVm:DailyJournalHistoryViewModel">
 
     <ScrollViewer>
@@ -184,6 +185,63 @@
                     Text="{Binding WeekComparisonSummary}"
                     TextWrapping="Wrap"
                     Opacity="0.75" />
+
+                <Border
+    Padding="10"
+    BorderThickness="1"
+    CornerRadius="8">
+
+                    <StackPanel Spacing="8">
+                        <controls:WeeklyTrendChart
+                            Points="{Binding TrendChartPoints}"
+                            Height="280"
+                            FoodBrush="DodgerBlue"
+                            AdjustedBrush="MediumSeaGreen"
+                            WeightBrush="Goldenrod"
+                            GridBrush="Gray" />
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            Spacing="16"
+                            HorizontalAlignment="Center">
+
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Border
+                                    Width="12"
+                                    Height="4"
+                                    Background="DodgerBlue"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock Text="Потребление" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Border
+                                    Width="12"
+                                    Height="4"
+                                    Background="MediumSeaGreen"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock Text="После активности" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Border
+                                    Width="12"
+                                    Height="4"
+                                    Background="Goldenrod"
+                                    VerticalAlignment="Center" />
+
+                                <TextBlock Text="Вес" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock
+                            Text="* неполная неделя"
+                            FontSize="11"
+                            Opacity="0.7" />
+                    </StackPanel>
+                </Border>
 
                 <ItemsControl ItemsSource="{Binding RecentWeeks}">
                     <ItemsControl.ItemsPanel>

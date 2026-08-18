@@ -62,6 +62,8 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     private string dataQualitySummary = string.Empty;
     [ObservableProperty]
     private WeeklyJournalSummaryViewModel weeklySummary = null!;
+    [ObservableProperty]
+    private IReadOnlyList<WeeklyTrendChartPoint> trendChartPoints = [];
 
     public ObservableCollection<FoodDiaryMealGroupViewModel> MealGroups { get; } = [];
     public ObservableCollection<ActivityItemViewModel> Activities { get; } = [];
@@ -295,6 +297,19 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
                 )
             );
         }
+
+        TrendChartPoints = [
+            .. summaries.Select(
+                summary => new WeeklyTrendChartPoint(
+                    Label: $"{summary.WeekStartDate:dd.MM}"
+                        + (summary.AvailableEndDate < summary.WeekEndDate ? "*" : ""),
+                    FoodCaloriesKcal: summary.AverageFoodCaloriesKcal,
+                    AdjustedCaloriesKcal: summary.AverageActivityAdjustedCaloriesKcal,
+                    WeightKg: summary.LastWeightKg,
+                    IsPartialWeek: summary.AvailableEndDate < summary.WeekEndDate
+                )
+            )
+        ];
 
         WeekComparisonSummary = FormatWeekComparison(summaries);
 
