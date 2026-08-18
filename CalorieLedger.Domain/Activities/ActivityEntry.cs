@@ -1,4 +1,4 @@
-﻿namespace CalorieLedger.Domain.Activities;
+namespace CalorieLedger.Domain.Activities;
 
 public sealed record ActivityEntry(
     Guid Id,
@@ -7,4 +7,6 @@ public sealed record ActivityEntry(
     decimal BurnedCaloriesKcal,
     TimeOnly? StartedAt = null,
     TimeSpan? Duration = null,
-    string? Note = null);
+    string? Note = null,
+    ActivityEnergyCalculation? EnergyCalculation = null
+);

@@ -52,6 +52,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly ActivityEditorService activityEditorService;
     private readonly DailyJournalDaySnapshotProvider dailyJournalSnapshotProvider;
     private readonly WeeklyJournalSummaryProvider weeklyJournalSummaryProvider;
+    private readonly ActivityEnergySuggestionService activityEnergySuggestionService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -336,6 +337,7 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+        activityEnergySuggestionService = new ActivityEnergySuggestionService(bodyMeasurementHistoryService);
         weeklyJournalSummaryProvider = new WeeklyJournalSummaryProvider(
             dailyJournalSnapshotProvider,
             bodyMeasurementHistoryService
@@ -990,7 +992,8 @@ public partial class MainViewModel:ViewModelBase {
             currentDate: currentDateProvider.GetCurrentDate(),
             isNew: isNew,
             onSaved: OnActivitySaved,
-            onCancelled: CloseActivityEditor
+            onCancelled: CloseActivityEditor,
+            activityEnergySuggestionService
         );
     }
 

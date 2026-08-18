@@ -100,6 +100,33 @@ public sealed class JsonActivityStoreTests:IDisposable {
         Assert.Null(reopenedStore.Get(entry.Id));
     }
 
+    [Fact]
+    public void Save_EstimatedActivity_PreservesCalculationMetadata() {
+        var activity = new ActivityEntry(
+            Id: Guid.NewGuid(),
+            Date: new DateOnly(2026, 8, 18),
+            Name: "Фехтование",
+            BurnedCaloriesKcal: 300m,
+            Duration: TimeSpan.FromHours(1),
+            EnergyCalculation: new ActivityEnergyCalculation(
+                PresetCode: "15200",
+                MetValue: 6m,
+                WeightKg: 60m,
+                DurationMinutes: 60m
+            )
+        );
+
+        var firstStore = new JsonActivityStore(filePath);
+        firstStore.Save(activity);
+
+        var secondStore = new JsonActivityStore(filePath);
+        var saved = secondStore.Get(activity.Id);
+
+        Assert.NotNull(saved);
+        Assert.Equal(activity.EnergyCalculation, saved.EnergyCalculation);
+        Assert.Equal(300m, saved.BurnedCaloriesKcal);
+    }
+
     public void Dispose() {
         if(Directory.Exists(directoryPath)) {
             Directory.Delete(

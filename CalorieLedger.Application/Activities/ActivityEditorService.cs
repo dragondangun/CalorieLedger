@@ -36,7 +36,8 @@ public sealed class ActivityEditorService {
             BurnedCaloriesKcal: entry.BurnedCaloriesKcal,
             StartedAt: entry.StartedAt,
             Duration: entry.Duration,
-            Note: entry.Note
+            Note: entry.Note,
+            EnergyCalculation: entry.EnergyCalculation
         );
     }
 
@@ -66,7 +67,8 @@ public sealed class ActivityEditorService {
                 BurnedCaloriesKcal: draft.BurnedCaloriesKcal!.Value,
                 StartedAt: draft.StartedAt,
                 Duration: draft.Duration,
-                Note: NormalizeOptionalText(draft.Note)
+                Note: NormalizeOptionalText(draft.Note),
+                EnergyCalculation: draft.EnergyCalculation
             )
         );
 

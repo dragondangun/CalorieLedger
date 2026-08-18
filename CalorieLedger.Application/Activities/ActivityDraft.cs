@@ -1,3 +1,4 @@
+using CalorieLedger.Domain.Activities;
 using System;
 
 namespace CalorieLedger.Application.Activities;
@@ -9,5 +10,6 @@ public sealed record ActivityDraft(
     decimal? BurnedCaloriesKcal,
     TimeOnly? StartedAt = null,
     TimeSpan? Duration = null,
-    string? Note = null
+    string? Note = null,
+    ActivityEnergyCalculation? EnergyCalculation = null
 );

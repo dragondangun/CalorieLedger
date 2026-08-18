@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
+    xmlns:activityApp="using:CalorieLedger.Application.Activities"
     x:DataType="activityVm:ActivityEditorViewModel">
 
     <ScrollViewer>
@@ -28,6 +29,34 @@
             <TextBlock
                 Text="Дополнительный расход, ккал"
                 FontWeight="SemiBold" />
+
+            <StackPanel Spacing="6">
+                <TextBlock Text="Рассчитать по типу активности" FontWeight="SemiBold" />
+
+                <ComboBox
+                    ItemsSource="{Binding ActivityPresets}"
+                    SelectedItem="{Binding SelectedPreset, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch">
+
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="activityApp:ActivityPreset">
+                            <TextBlock Text="{Binding Summary}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button
+                    Content="Рассчитать расход"
+                    Command="{Binding EstimateCaloriesCommand}"
+                    HorizontalAlignment="Left" />
+
+                <TextBlock
+                    IsVisible="{Binding HasEstimateSummary}"
+                    Text="{Binding EstimateSummary}"
+                    TextWrapping="Wrap"
+                    Opacity="0.75" />
+            </StackPanel>
+            
 
             <NumericUpDown
                 Value="{Binding BurnedCaloriesKcal, Mode=TwoWay}"
