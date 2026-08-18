@@ -55,6 +55,9 @@ public partial class MainViewModel:ViewModelBase {
     private readonly ActivityEnergySuggestionService activityEnergySuggestionService;
     private readonly ActivityPresetCatalogService activityPresetCatalogService;
     private readonly ActivityRepeatService activityRepeatService;
+    private readonly RecentActivityService recentActivityService;
+    private readonly PlannedActivityService plannedActivityService;
+    private readonly PlannedActivityCompletionService plannedActivityCompletionService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -85,6 +88,10 @@ public partial class MainViewModel:ViewModelBase {
     private FridgeManagerViewModel? fridgeManager;
     [ObservableProperty]
     private ActivityEditorViewModel? activityEditor;
+    [ObservableProperty]
+    private PlannedActivityManagerViewModel? plannedActivityManager;
+
+    public bool IsPlannedActivityManagerOpen => PlannedActivityManager is not null;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -295,7 +302,8 @@ public partial class MainViewModel:ViewModelBase {
         IFridgeStore? fridgeStore = null,
         ICookingBatchStore? cookingBatchStore = null,
         IActivityStore? activityStore = null,
-        IActivityPresetStore? activityPresetStore = null
+        IActivityPresetStore? activityPresetStore = null,
+        IPlannedActivityStore? plannedActivityStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -350,9 +358,19 @@ public partial class MainViewModel:ViewModelBase {
             activityPresetCatalogService,
             activityEnergySuggestionService
         );
+        recentActivityService = new RecentActivityService(this.activityStore);
         weeklyJournalSummaryProvider = new WeeklyJournalSummaryProvider(
             dailyJournalSnapshotProvider,
             bodyMeasurementHistoryService
+        );
+
+        var resolvedPlannedActivityStore = plannedActivityStore ?? new InMemoryPlannedActivityStore();
+
+        plannedActivityService = new PlannedActivityService(resolvedPlannedActivityStore);
+        plannedActivityCompletionService = new PlannedActivityCompletionService(
+            resolvedPlannedActivityStore,
+            activityPresetCatalogService,
+            activityEnergySuggestionService
         );
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
@@ -420,7 +438,8 @@ public partial class MainViewModel:ViewModelBase {
         && DailyJournalHistory is null
         && CookingSessionManager is null
         && FridgeManager is null
-        && ActivityEditor is null;
+        && ActivityEditor is null
+        && PlannedActivityManager is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -499,6 +518,47 @@ public partial class MainViewModel:ViewModelBase {
             onClosed: CloseDailyJournalHistory,
             repeatActivity: RepeatActivity
         );
+    }
+
+    [RelayCommand]
+    private void OpenPlannedActivities() {
+        PlannedActivityManager = new PlannedActivityManagerViewModel(
+            plannedActivityService,
+            activityPresetCatalogService,
+            currentDateProvider.GetCurrentDate(),
+            CompletePlannedActivity,
+            ClosePlannedActivities
+        );
+    }
+
+    private void ClosePlannedActivities() {
+        PlannedActivityManager = null;
+    }
+
+    private void CompletePlannedActivity(Guid id) {
+        var draft = plannedActivityCompletionService.CreateCompletionDraft(
+        id,
+        currentDateProvider.GetCurrentDate()
+    );
+
+        if(draft is null) {
+            PlannedActivityManager?.Refresh();
+            return;
+        }
+
+        OpenActivityEditor(
+            draft,
+            true,
+            () => {
+                plannedActivityService.Delete(id);
+                PlannedActivityManager?.Refresh();
+            }
+        );
+    }
+
+    partial void OnPlannedActivityManagerChanged(PlannedActivityManagerViewModel? value) {
+        OnPropertyChanged(nameof(IsPlannedActivityManagerOpen));
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
     private void CloseDailyJournalHistory() {
@@ -997,17 +1057,23 @@ public partial class MainViewModel:ViewModelBase {
 
     private void OpenActivityEditor(
         ActivityDraft draft,
-        bool isNew
+        bool isNew,
+        Action? afterSaved = null
     ) {
         ActivityEditor = new ActivityEditorViewModel(
-            editorService: activityEditorService,
-            draft: draft,
-            currentDate: currentDateProvider.GetCurrentDate(),
-            isNew: isNew,
-            onSaved: OnActivitySaved,
-            onCancelled: CloseActivityEditor,
+            activityEditorService,
+            draft,
+            draft.Date,
+            isNew,
+            () => {
+                OnActivitySaved();
+                afterSaved?.Invoke();
+            },
+            CloseActivityEditor,
             activityPresetCatalogService,
-            activityEnergySuggestionService
+            activityEnergySuggestionService,
+            recentActivityService,
+            activityRepeatService
         );
     }
 

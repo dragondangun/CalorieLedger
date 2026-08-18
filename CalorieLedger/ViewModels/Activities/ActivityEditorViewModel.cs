@@ -24,6 +24,8 @@ public partial class ActivityEditorViewModel:ViewModelBase {
     private bool isApplyingEstimate;
     private readonly ActivityPresetCatalogService activityPresetCatalogService;
     private bool isRefreshingPresets;
+    private readonly ActivityRepeatService activityRepeatService;
+    private bool isApplyingRepeatedActivity;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EstimateCaloriesCommand))]
@@ -54,6 +56,8 @@ public partial class ActivityEditorViewModel:ViewModelBase {
 
     public ObservableCollection<string> ValidationMessages { get; } = [];
     public IReadOnlyList<ActivityPreset> ActivityPresets { get; private set; } = [];
+    public ObservableCollection<RecentActivityItemViewModel> RecentActivities { get; } = [];
+    public bool HasRecentActivities => RecentActivities.Count > 0;
 
     [ObservableProperty]
     private ActivityPresetManagerViewModel? presetManager;
@@ -70,7 +74,9 @@ public partial class ActivityEditorViewModel:ViewModelBase {
         Action onSaved,
         Action onCancelled,
         ActivityPresetCatalogService activityPresetCatalogService,
-        ActivityEnergySuggestionService energySuggestionService
+        ActivityEnergySuggestionService energySuggestionService,
+        RecentActivityService recentActivityService,
+        ActivityRepeatService activityRepeatService
     ) {
         ArgumentNullException.ThrowIfNull(editorService);
         ArgumentNullException.ThrowIfNull(draft);
@@ -78,7 +84,10 @@ public partial class ActivityEditorViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(onCancelled);
         ArgumentNullException.ThrowIfNull(energySuggestionService);
         ArgumentNullException.ThrowIfNull(activityPresetCatalogService);
+        ArgumentNullException.ThrowIfNull(recentActivityService);
+        ArgumentNullException.ThrowIfNull(activityRepeatService);
 
+        this.activityRepeatService = activityRepeatService;
         this.activityPresetCatalogService = activityPresetCatalogService;
         this.energySuggestionService = energySuggestionService;
 
@@ -108,6 +117,14 @@ public partial class ActivityEditorViewModel:ViewModelBase {
             : (decimal)draft.Duration.Value.TotalMinutes;
 
         Note = draft.Note;
+
+        if(isNew) {
+            foreach(var activity in recentActivityService.GetRecent(activityDate)) {
+                RecentActivities.Add(new RecentActivityItemViewModel(activity, ApplyRecentActivity));
+            }
+        }
+
+        OnPropertyChanged(nameof(HasRecentActivities));
     }
 
     [RelayCommand]
@@ -235,7 +252,7 @@ public partial class ActivityEditorViewModel:ViewModelBase {
     }
 
     partial void OnBurnedCaloriesKcalChanged(decimal? value) {
-        if(!isApplyingEstimate) {
+        if(!isApplyingEstimate && !isApplyingRepeatedActivity) {
             ClearEnergyCalculation();
         }
     }
@@ -243,20 +260,19 @@ public partial class ActivityEditorViewModel:ViewModelBase {
     partial void OnDurationMinutesChanged(decimal? value) {
         EstimateCaloriesCommand.NotifyCanExecuteChanged();
 
-        if(energyCalculation is not null) {
+        if(energyCalculation is not null && !isApplyingRepeatedActivity) {
             ClearEnergyCalculation();
         }
     }
 
     partial void OnSelectedPresetChanged(ActivityPreset? value) {
-        if(isRefreshingPresets) {
+        EstimateCaloriesCommand.NotifyCanExecuteChanged();
+
+        if(isRefreshingPresets || isApplyingRepeatedActivity) {
             return;
         }
 
-        EstimateCaloriesCommand.NotifyCanExecuteChanged();
-
-        if(energyCalculation is not null
-            && value?.Code != energyCalculation.PresetCode) {
+        if(energyCalculation is not null && value?.Code != energyCalculation.PresetCode) {
             ClearEnergyCalculation();
         }
     }
@@ -276,7 +292,32 @@ public partial class ActivityEditorViewModel:ViewModelBase {
             return string.Empty;
         }
 
-        return $"Оценка: {calculation.MetValue:0.#} MET · "
-            + $"{calculation.WeightKg:0.#} кг · {calculation.DurationMinutes:0} мин";
+        return $"Оценка: {calculation.MetValue:0.#} MET · {calculation.WeightKg:0.#} кг · {calculation.DurationMinutes:0} мин";
+    }
+
+    private void ApplyRecentActivity(Guid sourceId) {
+        var draft = activityRepeatService.CreateDraft(sourceId, activityDate);
+
+        if(draft is null) {
+            return;
+        }
+
+        isApplyingRepeatedActivity = true;
+
+        Name = draft.Name;
+        StartedAtTime = null;
+        DurationMinutes = draft.Duration is null
+            ? null
+            : (decimal)draft.Duration.Value.TotalMinutes;
+        Note = null;
+        BurnedCaloriesKcal = draft.BurnedCaloriesKcal;
+
+        energyCalculation = draft.EnergyCalculation;
+        SelectedPreset = activityPresetCatalogService.Find(draft.EnergyCalculation?.PresetCode);
+        EstimateSummary = FormatEstimateSummary(energyCalculation);
+
+        isApplyingRepeatedActivity = false;
+
+        OnPropertyChanged(nameof(HasEstimateSummary));
     }
 }

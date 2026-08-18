@@ -1,0 +1,77 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Activities.PlannedActivityEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:activityApp="using:CalorieLedger.Application.Activities"
+    xmlns:vm="using:CalorieLedger.ViewModels.Activities"
+    x:DataType="vm:PlannedActivityEditorViewModel">
+
+    <ScrollViewer>
+        <StackPanel Spacing="10">
+            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" />
+
+            <TextBlock Text="Дата" />
+            <DatePicker SelectedDate="{Binding Date, Mode=TwoWay}" />
+
+            <TextBlock Text="Название" />
+            <TextBox Text="{Binding Name, Mode=TwoWay}" />
+
+            <TextBlock Text="Планируемое время" />
+            <TimePicker
+                SelectedTime="{Binding PlannedAtTime, Mode=TwoWay}"
+                ClockIdentifier="24HourClock"
+                MinuteIncrement="5" />
+
+            <TextBlock Text="Длительность, мин" />
+            <NumericUpDown
+                Value="{Binding DurationMinutes, Mode=TwoWay}"
+                Minimum="1"
+                Increment="5" />
+
+            <TextBlock Text="Тип активности" />
+
+            <ComboBox
+                ItemsSource="{Binding ActivityPresets}"
+                SelectedItem="{Binding SelectedPreset, Mode=TwoWay}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="activityApp:ActivityPreset">
+                        <TextBlock Text="{Binding Summary}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <Button
+                Content="Использовать ручной расход"
+                Command="{Binding UseManualEnergyCommand}"
+                HorizontalAlignment="Left" />
+
+            <StackPanel IsVisible="{Binding IsManualEnergyVisible}" Spacing="5">
+                <TextBlock Text="Планируемый расход, ккал (необязательно)" />
+                <NumericUpDown
+                    Value="{Binding ManualBurnedCaloriesKcal, Mode=TwoWay}"
+                    Minimum="1"
+                    Increment="10" />
+            </StackPanel>
+
+            <TextBlock
+                Text="Для MET-типа расход будет пересчитан по актуальному весу при выполнении."
+                TextWrapping="Wrap"
+                Opacity="0.7" />
+
+            <TextBlock Text="Заметка" />
+            <TextBox
+                Text="{Binding Note, Mode=TwoWay}"
+                AcceptsReturn="True"
+                MinHeight="70" />
+
+            <ItemsControl
+                IsVisible="{Binding HasValidationErrors}"
+                ItemsSource="{Binding ValidationMessages}" />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Сохранить" Command="{Binding SaveCommand}" />
+                <Button Content="Отмена" Command="{Binding CancelCommand}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

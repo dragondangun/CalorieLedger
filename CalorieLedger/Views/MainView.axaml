@@ -242,10 +242,15 @@
                             Text="{Binding Today.ActivitySummary}"
                             FontSize="18"
                             FontWeight="Bold" />
-                        <Button
-                            Content="Добавить активность"
-                            Command="{Binding Today.AddActivityCommand}"
-                            HorizontalAlignment="Left" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button
+                                Content="Добавить активность"
+                                Command="{Binding Today.AddActivityCommand}" />
+
+                            <Button
+                                Content="Планы"
+                                Command="{Binding OpenPlannedActivitiesCommand}" />
+                        </StackPanel>
 
                         <ItemsControl ItemsSource="{Binding Today.Activities}">
                             <ItemsControl.ItemTemplate>
@@ -510,6 +515,13 @@
 
             <fridgeViews:FridgeView
                 DataContext="{Binding FridgeManager}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsPlannedActivityManagerOpen}"
+            Panel.ZIndex="1">
+
+            <activityViews:PlannedActivityManagerView
+                DataContext="{Binding PlannedActivityManager}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsActivityEditorOpen}"

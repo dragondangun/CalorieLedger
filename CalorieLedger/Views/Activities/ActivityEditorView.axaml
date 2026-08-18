@@ -19,6 +19,59 @@
                 FontSize="26"
                 FontWeight="Bold" />
 
+            <Border
+                IsVisible="{Binding HasRecentActivities}"
+                Padding="12"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        Text="Недавние активности"
+                        FontSize="16"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        Text="Выберите запись, чтобы использовать её как основу."
+                        Opacity="0.7" />
+
+                    <ItemsControl ItemsSource="{Binding RecentActivities}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="activityVm:RecentActivityItemViewModel">
+                                <Button
+                                    Command="{Binding ApplyCommand}"
+                                    HorizontalContentAlignment="Stretch"
+                                    Margin="0,0,0,5">
+
+                                    <Grid
+                                        ColumnDefinitions="Auto,*,Auto"
+                                        ColumnSpacing="10">
+
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            Text="{Binding DateSummary}"
+                                            VerticalAlignment="Center"
+                                            Opacity="0.7" />
+
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Text="{Binding Name}"
+                                            VerticalAlignment="Center"
+                                            FontWeight="SemiBold" />
+
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            Text="{Binding DetailsSummary}"
+                                            VerticalAlignment="Center"
+                                            Opacity="0.75" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
             <TextBlock
                 Text="Название"
                 FontWeight="SemiBold" />
@@ -71,7 +124,6 @@
                     TextWrapping="Wrap"
                     Opacity="0.75" />
             </StackPanel>
-            
 
             <NumericUpDown
                 Value="{Binding BurnedCaloriesKcal, Mode=TwoWay}"
