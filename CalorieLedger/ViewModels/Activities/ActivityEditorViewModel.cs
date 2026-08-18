@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Xml.Linq;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -21,6 +22,8 @@ public partial class ActivityEditorViewModel:ViewModelBase {
     private readonly ActivityEnergySuggestionService energySuggestionService;
     private ActivityEnergyCalculation? energyCalculation;
     private bool isApplyingEstimate;
+    private readonly ActivityPresetCatalogService activityPresetCatalogService;
+    private bool isRefreshingPresets;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EstimateCaloriesCommand))]
@@ -50,7 +53,12 @@ public partial class ActivityEditorViewModel:ViewModelBase {
     public string Title { get; }
 
     public ObservableCollection<string> ValidationMessages { get; } = [];
-    public IReadOnlyList<ActivityPreset> ActivityPresets => BuiltInActivityPresetCatalog.All;
+    public IReadOnlyList<ActivityPreset> ActivityPresets { get; private set; } = [];
+
+    [ObservableProperty]
+    private ActivityPresetManagerViewModel? presetManager;
+
+    public bool IsPresetManagerOpen => PresetManager is not null;
 
     public bool HasValidationErrors => ValidationMessages.Count > 0;
 
@@ -61,6 +69,7 @@ public partial class ActivityEditorViewModel:ViewModelBase {
         bool isNew,
         Action onSaved,
         Action onCancelled,
+        ActivityPresetCatalogService activityPresetCatalogService,
         ActivityEnergySuggestionService energySuggestionService
     ) {
         ArgumentNullException.ThrowIfNull(editorService);
@@ -68,10 +77,13 @@ public partial class ActivityEditorViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(onSaved);
         ArgumentNullException.ThrowIfNull(onCancelled);
         ArgumentNullException.ThrowIfNull(energySuggestionService);
+        ArgumentNullException.ThrowIfNull(activityPresetCatalogService);
+
+        this.activityPresetCatalogService = activityPresetCatalogService;
         this.energySuggestionService = energySuggestionService;
 
         energyCalculation = draft.EnergyCalculation;
-        selectedPreset = BuiltInActivityPresetCatalog.Find(draft.EnergyCalculation?.PresetCode);
+        RefreshActivityPresets(draft.EnergyCalculation?.PresetCode);
         EstimateSummary = FormatEstimateSummary(energyCalculation);
 
         this.editorService = editorService;
@@ -153,6 +165,37 @@ public partial class ActivityEditorViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasEstimateSummary));
     }
 
+    [RelayCommand]
+    private void ManagePresets() {
+        PresetManager = new ActivityPresetManagerViewModel(
+            activityPresetCatalogService,
+            RefreshActivityPresets,
+            ClosePresetManager
+        );
+    }
+
+    private void ClosePresetManager() {
+        PresetManager = null;
+    }
+
+    private void RefreshActivityPresets() {
+        RefreshActivityPresets(SelectedPreset?.Code);
+    }
+
+    private void RefreshActivityPresets(string? selectedCode) {
+        isRefreshingPresets = true;
+
+        ActivityPresets = activityPresetCatalogService.GetAll();
+        OnPropertyChanged(nameof(ActivityPresets));
+
+        SelectedPreset = ActivityPresets.FirstOrDefault(preset => preset.Code == selectedCode);
+        isRefreshingPresets = false;
+    }
+
+    partial void OnPresetManagerChanged(ActivityPresetManagerViewModel? value) {
+        OnPropertyChanged(nameof(IsPresetManagerOpen));
+    }
+
     private ActivityDraft CreateDraft() {
         return new ActivityDraft(
             Id: activityId,
@@ -206,6 +249,10 @@ public partial class ActivityEditorViewModel:ViewModelBase {
     }
 
     partial void OnSelectedPresetChanged(ActivityPreset? value) {
+        if(isRefreshingPresets) {
+            return;
+        }
+
         EstimateCaloriesCommand.NotifyCanExecuteChanged();
 
         if(energyCalculation is not null

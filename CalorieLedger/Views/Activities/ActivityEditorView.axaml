@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
     xmlns:activityApp="using:CalorieLedger.Application.Activities"
+    xmlns:activityViews="using:CalorieLedger.Views.Activities"
     x:DataType="activityVm:ActivityEditorViewModel">
 
     <ScrollViewer>
@@ -44,6 +45,20 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <Button
+                    Content="Мои типы активности"
+                    Command="{Binding ManagePresetsCommand}"
+                    HorizontalAlignment="Left" />
+
+                <Border
+                    IsVisible="{Binding IsPresetManagerOpen}"
+                    Padding="12"
+                    BorderThickness="1"
+                    CornerRadius="8">
+
+                    <activityViews:ActivityPresetManagerView
+                        DataContext="{Binding PresetManager}" />
+                </Border>
 
                 <Button
                     Content="Рассчитать расход"

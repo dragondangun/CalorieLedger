@@ -1,0 +1,94 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Activities.ActivityPresetManagerView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="using:CalorieLedger.Views.Activities"
+    xmlns:vm="using:CalorieLedger.ViewModels.Activities"
+    x:DataType="vm:ActivityPresetManagerViewModel">
+
+    <Grid>
+        <StackPanel
+            IsVisible="{Binding IsListVisible}"
+            Spacing="10">
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock
+                    Text="Мои типы активности"
+                    FontSize="18"
+                    FontWeight="SemiBold" />
+
+                <Button
+                    Content="Добавить"
+                    Command="{Binding AddPresetCommand}" />
+
+                <Button
+                    Content="Закрыть"
+                    Command="{Binding CloseCommand}" />
+            </StackPanel>
+
+            <TextBlock
+                IsVisible="{Binding HasNoPresets}"
+                Text="Пользовательских типов пока нет."
+                Opacity="0.75" />
+
+            <ItemsControl ItemsSource="{Binding Presets}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ActivityPresetListItemViewModel">
+                        <Border
+                            Padding="10"
+                            Margin="0,0,0,6"
+                            BorderThickness="1"
+                            CornerRadius="8">
+
+                            <StackPanel Spacing="6">
+                                <TextBlock
+                                    Text="{Binding Name}"
+                                    FontWeight="SemiBold" />
+
+                                <TextBlock
+                                    Text="{Binding MetSummary}"
+                                    Opacity="0.75" />
+
+                                <StackPanel
+                                    IsVisible="{Binding ArePrimaryActionsVisible}"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+
+                                    <Button
+                                        Content="Изменить"
+                                        Command="{Binding EditCommand}" />
+
+                                    <Button
+                                        Content="Удалить"
+                                        Command="{Binding DeleteCommand}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    IsVisible="{Binding IsDeleteConfirmationVisible}"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+
+                                    <TextBlock
+                                        Text="Удалить?"
+                                        VerticalAlignment="Center" />
+
+                                    <Button
+                                        Content="Отмена"
+                                        Command="{Binding CancelDeleteCommand}" />
+
+                                    <Button
+                                        Content="Удалить"
+                                        Command="{Binding ConfirmDeleteCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <Grid IsVisible="{Binding IsEditorOpen}">
+            <views:ActivityPresetEditorView DataContext="{Binding Editor}" />
+        </Grid>
+    </Grid>
+</UserControl>

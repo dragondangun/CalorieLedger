@@ -53,6 +53,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly DailyJournalDaySnapshotProvider dailyJournalSnapshotProvider;
     private readonly WeeklyJournalSummaryProvider weeklyJournalSummaryProvider;
     private readonly ActivityEnergySuggestionService activityEnergySuggestionService;
+    private readonly ActivityPresetCatalogService activityPresetCatalogService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -129,7 +130,8 @@ public partial class MainViewModel:ViewModelBase {
         JsonCookingSessionStore.CreateDefault(),
         JsonFridgeStore.CreateDefault(),
         JsonCookingBatchStore.CreateDefault(),
-        JsonActivityStore.CreateDefault()
+        JsonActivityStore.CreateDefault(),
+        JsonActivityPresetStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -291,7 +293,8 @@ public partial class MainViewModel:ViewModelBase {
         ICookingSessionStore? cookingSessionStore = null,
         IFridgeStore? fridgeStore = null,
         ICookingBatchStore? cookingBatchStore = null,
-        IActivityStore? activityStore = null
+        IActivityStore? activityStore = null,
+        IActivityPresetStore? activityPresetStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -312,6 +315,9 @@ public partial class MainViewModel:ViewModelBase {
         this.activityStore = activityStore ?? new InMemoryActivityStore();
 
         activityEditorService = new ActivityEditorService(this.activityStore);
+        activityPresetCatalogService = new ActivityPresetCatalogService(
+            activityPresetStore ?? new InMemoryActivityPresetStore()
+        );
 
         var resolvedFridgeStore = fridgeStore ?? new InMemoryFridgeStore();
         foodLogEditorService = new FoodLogEditorService(foodDiaryStore, resolvedFridgeStore);
@@ -993,6 +999,7 @@ public partial class MainViewModel:ViewModelBase {
             isNew: isNew,
             onSaved: OnActivitySaved,
             onCancelled: CloseActivityEditor,
+            activityPresetCatalogService,
             activityEnergySuggestionService
         );
     }
