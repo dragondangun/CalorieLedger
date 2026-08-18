@@ -104,7 +104,7 @@ public static class AdaptiveEnergyAdjustmentCalculator {
 
         if(weeklyChangeDifference <= weeklyChangeTolerance) {
             return new AdaptiveEnergyAdjustmentResult(
-                Status:AdaptiveEnergyAdjustmentStatus.WithinTolerance,
+                Status: AdaptiveEnergyAdjustmentStatus.WithinTolerance,
                 DataQuality: dataQuality,
                 CurrentTargetCaloriesKcal: currentTargetCaloriesKcal,
                 AverageDailyCaloriesKcal: averageDailyCalories,

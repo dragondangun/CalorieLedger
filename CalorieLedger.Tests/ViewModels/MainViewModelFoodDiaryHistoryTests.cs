@@ -5,6 +5,7 @@ using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Tests.TestDoubles;
 using CalorieLedger.ViewModels;
+using CalorieLedger.ViewModels.History;
 using CalorieLedger.ViewModels.Meals;
 
 namespace CalorieLedger.Tests.ViewModels;
@@ -35,10 +36,10 @@ public sealed class MainViewModelFoodDiaryHistoryTests {
             store
         );
 
-        viewModel.OpenFoodDiaryHistoryCommand.Execute(null);
+        viewModel.OpenDailyJournalHistoryCommand.Execute(null);
 
-        var history = Assert.IsType<FoodDiaryHistoryViewModel>(
-            viewModel.FoodDiaryHistory
+        var history = Assert.IsType<DailyJournalHistoryViewModel>(
+            viewModel.DailyJournalHistory
         );
 
         Assert.Equal(
@@ -81,9 +82,9 @@ public sealed class MainViewModelFoodDiaryHistoryTests {
             store
         );
 
-        viewModel.OpenFoodDiaryHistoryCommand.Execute(null);
+        viewModel.OpenDailyJournalHistoryCommand.Execute(null);
 
-        var history = Assert.IsType<FoodDiaryHistoryViewModel>(viewModel.FoodDiaryHistory);
+        var history = Assert.IsType<DailyJournalHistoryViewModel>(viewModel.DailyJournalHistory);
 
         history.PreviousDayCommand.Execute(null);
 
@@ -107,7 +108,7 @@ public sealed class MainViewModelFoodDiaryHistoryTests {
 
         Assert.Null(viewModel.FoodLogEditor);
 
-        Assert.NotNull(viewModel.FoodDiaryHistory);
+        Assert.NotNull(viewModel.DailyJournalHistory);
 
         Assert.Equal(
             previousDate,
@@ -156,10 +157,10 @@ public sealed class MainViewModelFoodDiaryHistoryTests {
             store
         );
 
-        viewModel.OpenFoodDiaryHistoryCommand.Execute(null);
+        viewModel.OpenDailyJournalHistoryCommand.Execute(null);
 
-        var history = Assert.IsType<FoodDiaryHistoryViewModel>(
-            viewModel.FoodDiaryHistory
+        var history = Assert.IsType<DailyJournalHistoryViewModel>(
+            viewModel.DailyJournalHistory
         );
 
         history.PreviousDayCommand.Execute(null);

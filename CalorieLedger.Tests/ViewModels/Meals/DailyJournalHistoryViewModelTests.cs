@@ -1,12 +1,16 @@
+using CalorieLedger.Application.Activities;
+using CalorieLedger.Application.History;
 using CalorieLedger.Application.Meals;
+using CalorieLedger.Domain.Activities;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.ViewModels.History;
 using CalorieLedger.ViewModels.Meals;
 
 namespace CalorieLedger.Tests.ViewModels.Meals;
 
-public sealed class FoodDiaryHistoryViewModelTests {
+public sealed class DailyJournalHistoryViewModelTests {
     [Fact]
     public void Constructor_CurrentWeek_BuildsSevenDaysAndDisablesFutureDays() {
         var currentDate = new DateOnly(2026, 8, 19);
@@ -188,15 +192,57 @@ public sealed class FoodDiaryHistoryViewModelTests {
         );
     }
 
-    private static FoodDiaryHistoryViewModel CreateViewModel(DateOnly currentDate, IFoodDiaryStore foodDiaryStore) {
-        return new FoodDiaryHistoryViewModel(
-            snapshotProvider: new FoodDiaryDaySnapshotProvider(foodDiaryStore),
+    [Fact]
+    public void SelectDay_LoadsActivityAndAdjustedCalories() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var selectedDate = currentDate.AddDays(-1);
+
+        var foodStore = new InMemoryFoodDiaryStore();
+        var activityStore = new InMemoryActivityStore();
+
+        activityStore.Save(new ActivityEntry(
+            Id: Guid.NewGuid(),
+            Date: selectedDate,
+            Name: "HEMA",
+            BurnedCaloriesKcal: 350m,
+            Duration: TimeSpan.FromMinutes(75))
+        );
+
+        var viewModel = CreateViewModel(currentDate, foodStore, activityStore);
+
+        Assert.Single(viewModel.WeekDays, x => x.Date == selectedDate).SelectCommand.Execute(null);
+
+        Assert.Equal(selectedDate, viewModel.SelectedDate);
+        Assert.Equal(350m, viewModel.ExtraActivityBurnedCaloriesKcal);
+        Assert.Equal(-350m, viewModel.ActivityAdjustedCaloriesKcal);
+
+        var activity = Assert.Single(viewModel.Activities);
+        Assert.Equal("HEMA", activity.Name);
+        Assert.Equal("1,3 ч", activity.DurationSummary);
+
+        var weekDay = Assert.Single(viewModel.WeekDays, x => x.Date == selectedDate);
+        Assert.Equal("+350 акт.", weekDay.ActivitySummary);
+    }
+
+    private static DailyJournalHistoryViewModel CreateViewModel(
+        DateOnly currentDate,
+        IFoodDiaryStore foodDiaryStore,
+        IActivityStore? activityStore = null
+    ) {
+        return new DailyJournalHistoryViewModel(
+            snapshotProvider: new DailyJournalDaySnapshotProvider(
+                new FoodDiaryDaySnapshotProvider(foodDiaryStore),
+                activityStore ?? new InMemoryActivityStore()
+            ),
             currentDate: currentDate,
             addFood: _ => { },
             addApproximateFood: _ => { },
             editFood: _ => { },
             deleteFood: _ => { },
             setFoodLogComplete: (_, _) => { },
+            addActivity: _ => { },
+            editActivity: _ => { },
+            deleteActivity: _ => { },
             onClosed: () => { }
         );
     }

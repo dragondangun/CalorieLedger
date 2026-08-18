@@ -13,6 +13,8 @@
     xmlns:cookingViews="using:CalorieLedger.Views.Cooking"
     xmlns:fridgeViews="using:CalorieLedger.Views.Fridge"
     xmlns:activityViews="using:CalorieLedger.Views.Activities"
+    xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
+    xmlns:historyViews="using:CalorieLedger.Views.History"
     x:DataType="vm:MainViewModel">
 
     <Grid>
@@ -55,8 +57,8 @@
                     HorizontalContentAlignment="Center"
                     Padding="12,10" />
                 <Button
-                    Content="История питания"
-                    Command="{Binding OpenFoodDiaryHistoryCommand}"
+                    Content="История дня"
+                    Command="{Binding OpenDailyJournalHistoryCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Padding="12,10" />
@@ -247,7 +249,7 @@
 
                         <ItemsControl ItemsSource="{Binding Today.Activities}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="todayVm:TodayActivityItemViewModel">
+                                <DataTemplate x:DataType="activityVm:ActivityItemViewModel">
                                     <Border
                                         Padding="8"
                                         Margin="0,0,0,6"
@@ -489,11 +491,11 @@
             DataContext="{Binding ProfileEditor}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsFoodDiaryHistoryOpen}"
+            IsVisible="{Binding IsDailyJournalHistoryOpen}"
             Panel.ZIndex="1">
 
-            <mealViews:FoodDiaryHistoryView
-                DataContext="{Binding FoodDiaryHistory}" />
+            <historyViews:DailyJournalHistoryView
+                DataContext="{Binding DailyJournalHistory}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsCookingSessionManagerOpen}"

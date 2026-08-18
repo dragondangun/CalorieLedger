@@ -1,14 +1,15 @@
 using CalorieLedger.Application.Today;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Profile;
+using CalorieLedger.ViewModels.Activities;
+using CalorieLedger.ViewModels.Meals;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using CalorieLedger.Domain.Profile;
-using CalorieLedger.ViewModels.Meals;
 
 namespace CalorieLedger.ViewModels.Today;
 
@@ -66,7 +67,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     private readonly WeeklyNutritionSummarySnapshot weeklySummary;
 
-    public ObservableCollection<TodayActivityItemViewModel> Activities { get; } = [];
+    public ObservableCollection<ActivityItemViewModel> Activities { get; } = [];
 
     private readonly Func<GoalNextAction, bool> tryExecuteGoalAction;
 
@@ -151,17 +152,15 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         }
 
         foreach(var activity in snapshot.Activities) {
-            Activities.Add(
-                new TodayActivityItemViewModel(
-                    id: activity.Id,
-                    name: activity.Name,
-                    burnedCaloriesKcal: activity.BurnedCaloriesKcal,
-                    timeSummary: FormatTime(activity.StartedAt),
-                    durationSummary: FormatDuration(activity.Duration),
-                    note: activity.Note,
-                    edit: editActivity,
-                    delete: deleteActivity
-                )
+            Activities.Add(new ActivityItemViewModel(
+                id: activity.Id,
+                name: activity.Name,
+                burnedCaloriesKcal: activity.BurnedCaloriesKcal,
+                startedAt: activity.StartedAt,
+                duration: activity.Duration,
+                note: activity.Note,
+                edit: editActivity,
+                delete: deleteActivity)
             );
         }
 

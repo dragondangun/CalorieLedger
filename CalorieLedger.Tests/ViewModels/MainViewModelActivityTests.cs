@@ -5,6 +5,7 @@ using CalorieLedger.Domain.Activities;
 using CalorieLedger.Tests.TestDoubles;
 using CalorieLedger.ViewModels;
 using CalorieLedger.ViewModels.Activities;
+using CalorieLedger.ViewModels.History;
 
 namespace CalorieLedger.Tests.ViewModels;
 
@@ -133,6 +134,41 @@ public sealed class MainViewModelActivityTests {
             0m,
             viewModel.Today.ActivityBurnedCaloriesKcal
         );
+    }
+
+    [Fact]
+    public void DailyJournal_AddActivity_PersistsActivityForSelectedPastDate() {
+        var currentDate = new DateOnly(2026, 8, 18);
+        var selectedDate = currentDate.AddDays(-1);
+        var activityStore = new InMemoryActivityStore();
+
+        var viewModel = CreateViewModel(currentDate, activityStore);
+
+        viewModel.OpenDailyJournalHistoryCommand.Execute(null);
+
+        var history = Assert.IsType<DailyJournalHistoryViewModel>(viewModel.DailyJournalHistory);
+
+        history.PreviousDayCommand.Execute(null);
+        Assert.Equal(selectedDate, history.SelectedDate);
+
+        history.AddActivityCommand.Execute(null);
+
+        var editor = Assert.IsType<ActivityEditorViewModel>(viewModel.ActivityEditor);
+
+        editor.Name = "Ходьба";
+        editor.BurnedCaloriesKcal = 180m;
+        editor.DurationMinutes = 45m;
+        editor.SaveCommand.Execute(null);
+
+        var saved = Assert.Single(activityStore.Get(selectedDate, selectedDate));
+
+        Assert.Equal("Ходьба", saved.Name);
+        Assert.Equal(180m, saved.BurnedCaloriesKcal);
+        Assert.Empty(activityStore.Get(currentDate, currentDate));
+
+        Assert.Equal(selectedDate, history.SelectedDate);
+        Assert.Single(history.Activities);
+        Assert.Equal(180m, history.ExtraActivityBurnedCaloriesKcal);
     }
 
     private static MainViewModel CreateViewModel(

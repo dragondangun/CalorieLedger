@@ -2,26 +2,20 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 
-namespace CalorieLedger.ViewModels.Today;
+namespace CalorieLedger.ViewModels.Activities;
 
-public sealed partial class TodayActivityItemViewModel:ViewModelBase {
+public sealed partial class ActivityItemViewModel:ViewModelBase {
     private readonly Action<Guid> edit;
     private readonly Action<Guid> delete;
 
     public Guid Id { get; }
-
     public string Name { get; }
-
     public decimal BurnedCaloriesKcal { get; }
-
-    public string TimeSummary { get; }
-
-    public string DurationSummary { get; }
-
     public string? Note { get; }
 
     public string CaloriesSummary => $"{BurnedCaloriesKcal:0} ккал";
-
+    public string TimeSummary { get; }
+    public string DurationSummary { get; }
     public bool HasNote => !string.IsNullOrWhiteSpace(Note);
 
     [ObservableProperty]
@@ -29,12 +23,12 @@ public sealed partial class TodayActivityItemViewModel:ViewModelBase {
 
     public bool ArePrimaryActionsVisible => !IsDeleteConfirmationVisible;
 
-    public TodayActivityItemViewModel(
+    public ActivityItemViewModel(
         Guid id,
         string name,
         decimal burnedCaloriesKcal,
-        string timeSummary,
-        string durationSummary,
+        TimeOnly? startedAt,
+        TimeSpan? duration,
         string? note,
         Action<Guid> edit,
         Action<Guid> delete
@@ -45,8 +39,8 @@ public sealed partial class TodayActivityItemViewModel:ViewModelBase {
         Id = id;
         Name = name;
         BurnedCaloriesKcal = burnedCaloriesKcal;
-        TimeSummary = timeSummary;
-        DurationSummary = durationSummary;
+        TimeSummary = startedAt?.ToString("HH:mm") ?? string.Empty;
+        DurationSummary = FormatDuration(duration);
         Note = note;
 
         this.edit = edit;
@@ -66,7 +60,6 @@ public sealed partial class TodayActivityItemViewModel:ViewModelBase {
     [RelayCommand]
     private void ConfirmDelete() {
         IsDeleteConfirmationVisible = false;
-
         delete(Id);
     }
 
@@ -77,5 +70,15 @@ public sealed partial class TodayActivityItemViewModel:ViewModelBase {
 
     partial void OnIsDeleteConfirmationVisibleChanged(bool value) {
         OnPropertyChanged(nameof(ArePrimaryActionsVisible));
+    }
+
+    private static string FormatDuration(TimeSpan? duration) {
+        if(duration is null) {
+            return string.Empty;
+        }
+
+        return duration.Value.TotalHours >= 1
+            ? $"{duration.Value.TotalHours:0.#} ч"
+            : $"{duration.Value.TotalMinutes:0} мин";
     }
 }

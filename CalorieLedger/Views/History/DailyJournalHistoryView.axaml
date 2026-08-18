@@ -1,9 +1,11 @@
 <UserControl
-    x:Class="CalorieLedger.Views.Meals.FoodDiaryHistoryView"
+    x:Class="CalorieLedger.Views.History.DailyJournalHistoryView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
+    xmlns:historyVm="using:CalorieLedger.ViewModels.History"
     xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
-    x:DataType="mealVm:FoodDiaryHistoryViewModel">
+    x:DataType="historyVm:DailyJournalHistoryViewModel">
 
     <ScrollViewer>
         <StackPanel
@@ -15,7 +17,7 @@
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock
                     Grid.Column="0"
-                    Text="История питания"
+                    Text="История дня"
                     FontSize="26"
                     FontWeight="Bold"
                     VerticalAlignment="Center" />
@@ -85,7 +87,7 @@
 
                     <ItemsControl.ItemTemplate>
                         <DataTemplate
-                            x:DataType="mealVm:FoodDiaryWeekDayViewModel">
+                            x:DataType="historyVm:DailyJournalWeekDayViewModel">
 
                             <Button
                                 Command="{Binding SelectCommand}"
@@ -111,6 +113,12 @@
                                         Text="{Binding CaloriesSummary}"
                                         HorizontalAlignment="Center"
                                         FontSize="12" />
+
+                                    <TextBlock
+                                        Text="{Binding ActivitySummary}"
+                                        HorizontalAlignment="Center"
+                                        FontSize="11"
+                                        Opacity="0.75" />
 
                                     <TextBlock
                                         Text="{Binding StatusSummary}"
@@ -323,6 +331,118 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        Text="Дополнительная активность"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock Text="{Binding ActivitySummary}" />
+
+                    <TextBlock
+                        Text="{Binding ActivityAdjustedCaloriesSummary}"
+                        Opacity="0.75" />
+
+                    <Button
+                        Content="Добавить активность"
+                        Command="{Binding AddActivityCommand}"
+                        HorizontalAlignment="Left" />
+
+                    <TextBlock
+                        IsVisible="{Binding HasNoActivities}"
+                        Text="В этот день дополнительная активность не записана."
+                        Opacity="0.75" />
+
+                    <ItemsControl
+                        IsVisible="{Binding HasActivities}"
+                        ItemsSource="{Binding Activities}">
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="activityVm:ActivityItemViewModel">
+                                <Border
+                                    Padding="10"
+                                    Margin="0,0,0,8"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+
+                                    <StackPanel Spacing="5">
+                                        <TextBlock
+                                            Text="{Binding Name}"
+                                            FontWeight="SemiBold" />
+
+                                        <TextBlock Text="{Binding CaloriesSummary}" />
+
+                                        <StackPanel
+                                            Orientation="Horizontal"
+                                            Spacing="8">
+
+                                            <TextBlock
+                                                Text="{Binding TimeSummary}"
+                                                Opacity="0.75" />
+
+                                            <TextBlock
+                                                Text="{Binding DurationSummary}"
+                                                Opacity="0.75" />
+                                        </StackPanel>
+
+                                        <TextBlock
+                                            IsVisible="{Binding HasNote}"
+                                            Text="{Binding Note}"
+                                            TextWrapping="Wrap"
+                                            Opacity="0.75" />
+
+                                        <StackPanel
+                                            Orientation="Horizontal"
+                                            Spacing="8"
+                                            IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                            <Button
+                                                Content="Изменить"
+                                                Command="{Binding EditCommand}" />
+
+                                            <Button
+                                                Content="Удалить"
+                                                Command="{Binding DeleteCommand}" />
+                                        </StackPanel>
+
+                                        <Border
+                                            Padding="10"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                            <StackPanel Spacing="8">
+                                                <TextBlock
+                                                    Text="Удалить эту активность?"
+                                                    FontWeight="SemiBold" />
+
+                                                <StackPanel
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <Button
+                                                        Content="Отмена"
+                                                        Command="{Binding CancelDeleteCommand}" />
+
+                                                    <Button
+                                                        Content="Удалить"
+                                                        Command="{Binding ConfirmDeleteCommand}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -1,4 +1,5 @@
 using CalorieLedger.Application.Activities;
+using CalorieLedger.Application.History;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
@@ -65,8 +66,10 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
-            new FoodDiaryDaySnapshotProvider(store),
-            new InMemoryActivityStore(),
+            new DailyJournalDaySnapshotProvider(
+                new FoodDiaryDaySnapshotProvider(store),
+                new InMemoryActivityStore()
+            ),
             new FixedCurrentDateProvider(currentDate)
         );
 
@@ -139,8 +142,9 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
-            new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
-            new InMemoryActivityStore(),
+            new DailyJournalDaySnapshotProvider(
+                new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
+                new InMemoryActivityStore()),
             new FixedCurrentDateProvider(currentDate)
         );
 
@@ -198,11 +202,12 @@ public sealed class TodayDashboardSnapshotProviderTests {
         );
 
         var provider = new TodayDashboardSnapshotProvider(
-            new SampleUserNutritionProfileProvider(),
+        new SampleUserNutritionProfileProvider(),
+        new DailyJournalDaySnapshotProvider(
             new FoodDiaryDaySnapshotProvider(store),
-            new InMemoryActivityStore(),
-            new FixedCurrentDateProvider(currentDate)
-        );
+            new InMemoryActivityStore()),
+        new FixedCurrentDateProvider(currentDate)
+    );
 
         var result = provider.GetToday();
 
@@ -262,8 +267,10 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
-            new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
-            activityStore,
+            new DailyJournalDaySnapshotProvider(
+                new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
+                activityStore
+            ),
             new FixedCurrentDateProvider(currentDate)
         );
 

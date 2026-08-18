@@ -1,35 +1,26 @@
-using CalorieLedger.Application.Meals;
+using CalorieLedger.Application.History;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Globalization;
 
-namespace CalorieLedger.ViewModels.Meals;
+namespace CalorieLedger.ViewModels.History;
 
-public partial class FoodDiaryWeekDayViewModel:ViewModelBase {
+public partial class DailyJournalWeekDayViewModel:ViewModelBase {
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
-
     private readonly Action<DateOnly> selectDate;
 
     public DateOnly Date { get; }
-
     public bool IsAvailable { get; }
-
     public bool IsSelected { get; }
-
     public bool IsToday { get; }
-
     public bool IsComplete { get; }
-
     public bool IsEnergyComplete { get; }
-
     public bool AreMacrosComplete { get; }
 
     public string DayOfWeekSummary => Date.ToString("ddd", RussianCulture).TrimEnd('.');
-
     public string DayOfMonthSummary => Date.Day.ToString(RussianCulture);
-
     public string CaloriesSummary { get; }
-
+    public string ActivitySummary { get; }
     public string StatusSummary { get; }
 
     public bool HasContextSummary => IsSelected || IsToday;
@@ -44,36 +35,36 @@ public partial class FoodDiaryWeekDayViewModel:ViewModelBase {
                 return "выбрано";
             }
 
-            if(IsToday) {
-                return "сегодня";
-            }
-
-            return string.Empty;
+            return IsToday ? "сегодня" : string.Empty;
         }
     }
 
-    public FoodDiaryWeekDayViewModel(
+    public DailyJournalWeekDayViewModel(
         DateOnly date,
         DateOnly currentDate,
         bool isSelected,
-        FoodDiaryDaySnapshot? snapshot,
+        DailyJournalDaySnapshot? snapshot,
         Action<DateOnly> selectDate
     ) {
         ArgumentNullException.ThrowIfNull(selectDate);
 
         Date = date;
-
         IsAvailable = date <= currentDate;
         IsSelected = isSelected;
         IsToday = date == currentDate;
-        IsComplete = snapshot?.IsComplete == true;
-        IsEnergyComplete = snapshot?.IsEnergyComplete == true;
 
-        AreMacrosComplete = snapshot?.AreMacrosComplete == true;
+        var food = snapshot?.FoodDiary;
+
+        IsComplete = food?.IsComplete == true;
+        IsEnergyComplete = food?.IsEnergyComplete == true;
+        AreMacrosComplete = food?.AreMacrosComplete == true;
+
         CaloriesSummary = FormatCalories(snapshot);
+        ActivitySummary = snapshot?.ExtraActivityBurnedCaloriesKcal > 0m
+            ? $"+{snapshot.ExtraActivityBurnedCaloriesKcal:0} акт."
+            : string.Empty;
 
         StatusSummary = FormatStatus(snapshot);
-
         this.selectDate = selectDate;
     }
 
@@ -86,34 +77,37 @@ public partial class FoodDiaryWeekDayViewModel:ViewModelBase {
         return IsAvailable;
     }
 
-    private static string FormatCalories(FoodDiaryDaySnapshot? snapshot) {
+    private static string FormatCalories(DailyJournalDaySnapshot? snapshot) {
         if(snapshot is null) {
             return "—";
         }
 
-        var calories =snapshot.ConsumedTotals.CaloriesKcal ?? 0m;
+        var food = snapshot.FoodDiary;
+        var calories = food.ConsumedTotals.CaloriesKcal ?? 0m;
 
-        if(!snapshot.HasUnknownCalories) {
+        if(!food.HasUnknownCalories) {
             return $"{calories:0} ккал";
         }
 
-        return calories > 0m ? $"≥ {calories:0} ккал" : "ккал неизвестны";
+        return calories > 0m ? $"≥ {calories:0} ккал" : "ккал ?";
     }
 
-    private static string FormatStatus(FoodDiaryDaySnapshot? snapshot) {
+    private static string FormatStatus(DailyJournalDaySnapshot? snapshot) {
         if(snapshot is null) {
             return "ещё не наступил";
         }
 
-        if(!snapshot.IsComplete) {
-            return snapshot.Meals.Count > 0 ? "день открыт" : "нет записей";
+        var food = snapshot.FoodDiary;
+
+        if(!food.IsComplete) {
+            return food.Meals.Count > 0 ? "день открыт" : "нет еды";
         }
 
-        if(!snapshot.IsEnergyComplete) {
+        if(!food.IsEnergyComplete) {
             return "калории неполны";
         }
 
-        if(!snapshot.AreMacrosComplete) {
+        if(!food.AreMacrosComplete) {
             return "калории полны";
         }
 
