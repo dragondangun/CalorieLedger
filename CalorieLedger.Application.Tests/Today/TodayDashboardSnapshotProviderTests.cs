@@ -1,7 +1,9 @@
+using CalorieLedger.Application.Activities;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
 using CalorieLedger.Application.Today;
+using CalorieLedger.Domain.Activities;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
@@ -64,6 +66,7 @@ public sealed class TodayDashboardSnapshotProviderTests {
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
             new FoodDiaryDaySnapshotProvider(store),
+            new InMemoryActivityStore(),
             new FixedCurrentDateProvider(currentDate)
         );
 
@@ -137,6 +140,7 @@ public sealed class TodayDashboardSnapshotProviderTests {
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
             new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
+            new InMemoryActivityStore(),
             new FixedCurrentDateProvider(currentDate)
         );
 
@@ -196,6 +200,7 @@ public sealed class TodayDashboardSnapshotProviderTests {
         var provider = new TodayDashboardSnapshotProvider(
             new SampleUserNutritionProfileProvider(),
             new FoodDiaryDaySnapshotProvider(store),
+            new InMemoryActivityStore(),
             new FixedCurrentDateProvider(currentDate)
         );
 
@@ -223,6 +228,77 @@ public sealed class TodayDashboardSnapshotProviderTests {
 
         Assert.Null(
             food.Totals.ProteinG
+        );
+    }
+
+    [Fact]
+    public void GetToday_ActivityStore_ReturnsOnlyCurrentDateActivities() {
+        var currentDate = new DateOnly(2026, 8, 18);
+
+        var activityStore = new InMemoryActivityStore();
+
+        activityStore.Save(
+            new ActivityEntry(
+                Id: Guid.NewGuid(),
+                Date: currentDate.AddDays(-1),
+                Name: "Вчера",
+                BurnedCaloriesKcal: 200m
+            )
+        );
+
+        var todayActivityId = Guid.NewGuid();
+
+        activityStore.Save(
+            new ActivityEntry(
+                Id: todayActivityId,
+                Date: currentDate,
+                Name: "HEMA",
+                BurnedCaloriesKcal: 350m,
+                StartedAt: new TimeOnly(18, 30),
+                Duration: TimeSpan.FromMinutes(75),
+                Note: "Тренировка"
+            )
+        );
+
+        var provider = new TodayDashboardSnapshotProvider(
+            new SampleUserNutritionProfileProvider(),
+            new FoodDiaryDaySnapshotProvider(new InMemoryFoodDiaryStore()),
+            activityStore,
+            new FixedCurrentDateProvider(currentDate)
+        );
+
+        var result = provider.GetToday();
+
+        var activity = Assert.Single(result.Activities);
+
+        Assert.Equal(
+            todayActivityId,
+            activity.Id
+        );
+
+        Assert.Equal(
+            "HEMA",
+            activity.Name
+        );
+
+        Assert.Equal(
+            350m,
+            activity.BurnedCaloriesKcal
+        );
+
+        Assert.Equal(
+            new TimeOnly(18, 30),
+            activity.StartedAt
+        );
+
+        Assert.Equal(
+            TimeSpan.FromMinutes(75),
+            activity.Duration
+        );
+
+        Assert.Equal(
+            "Тренировка",
+            activity.Note
         );
     }
 

@@ -1,3 +1,4 @@
+using CalorieLedger.Application.Activities;
 using CalorieLedger.Application.Adaptive;
 using CalorieLedger.Application.Cooking;
 using CalorieLedger.Application.Fridge;
@@ -13,6 +14,7 @@ using CalorieLedger.Domain.Nutrition;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
+using CalorieLedger.ViewModels.Activities;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Cooking;
 using CalorieLedger.ViewModels.Fridge;
@@ -46,8 +48,9 @@ public partial class MainViewModel:ViewModelBase {
     private readonly FoodDiaryDaySnapshotProvider foodDiaryDaySnapshotProvider;
     private readonly CookingSessionService cookingSessionService;
     private readonly FridgeInventoryService fridgeInventoryService;
-
     private readonly CookingExecutionService cookingExecutionService;
+    private readonly IActivityStore activityStore;
+    private readonly ActivityEditorService activityEditorService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -76,6 +79,8 @@ public partial class MainViewModel:ViewModelBase {
     private CookingSessionManagerViewModel? cookingSessionManager;
     [ObservableProperty]
     private FridgeManagerViewModel? fridgeManager;
+    [ObservableProperty]
+    private ActivityEditorViewModel? activityEditor;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -104,6 +109,8 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsFridgeOpen => FridgeManager is not null;
 
+    public bool IsActivityEditorOpen => ActivityEditor is not null;
+
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
         IFoodDiaryStore foodDiaryStore
@@ -118,7 +125,8 @@ public partial class MainViewModel:ViewModelBase {
         new SystemCurrentDateProvider(),
         JsonCookingSessionStore.CreateDefault(),
         JsonFridgeStore.CreateDefault(),
-        JsonCookingBatchStore.CreateDefault()
+        JsonCookingBatchStore.CreateDefault(),
+        JsonActivityStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -254,6 +262,23 @@ public partial class MainViewModel:ViewModelBase {
         fridgeStore
     ) { }
 
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IUserNutritionProfileStore profileStore,
+        IFoodDiaryStore foodDiaryStore,
+        IActivityStore activityStore,
+        ICurrentDateProvider currentDateProvider
+    ) : this(
+        bodyMeasurementStore,
+        profileStore,
+        foodDiaryStore,
+        new InMemoryProductCatalogStore(),
+        CreateInMemoryAdaptiveProvider,
+        currentDateProvider,
+        activityStore:
+            activityStore
+    ) { }
+
     private MainViewModel(
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
@@ -263,7 +288,8 @@ public partial class MainViewModel:ViewModelBase {
         ICurrentDateProvider currentDateProvider,
         ICookingSessionStore? cookingSessionStore = null,
         IFridgeStore? fridgeStore = null,
-        ICookingBatchStore? cookingBatchStore = null
+        ICookingBatchStore? cookingBatchStore = null,
+        IActivityStore? activityStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -281,6 +307,9 @@ public partial class MainViewModel:ViewModelBase {
 
         this.currentDateProvider = currentDateProvider;
         this.foodDiaryStore = foodDiaryStore;
+        this.activityStore = activityStore ?? new InMemoryActivityStore();
+
+        activityEditorService = new ActivityEditorService(this.activityStore);
 
         var resolvedFridgeStore = fridgeStore ?? new InMemoryFridgeStore();
         foodLogEditorService = new FoodLogEditorService(foodDiaryStore, resolvedFridgeStore);
@@ -314,6 +343,7 @@ public partial class MainViewModel:ViewModelBase {
         todayProvider = new TodayDashboardSnapshotProvider(
             profileProvider: currentProfileProvider,
             foodDiaryDaySnapshotProvider: foodDiaryDaySnapshotProvider,
+            activityStore: this.activityStore,
             currentDateProvider: currentDateProvider
         );
 
@@ -363,7 +393,8 @@ public partial class MainViewModel:ViewModelBase {
         && ProductCatalogManager is null
         && FoodDiaryHistory is null
         && CookingSessionManager is null
-        && FridgeManager is null;
+        && FridgeManager is null
+        && ActivityEditor is null;
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -575,7 +606,10 @@ public partial class MainViewModel:ViewModelBase {
             setFoodLogComplete: SetTodayFoodLogComplete,
             editFood: EditFoodLog,
             deleteFood: DeleteFoodLog,
-            initialGoalActionSummary: actionSummary
+            initialGoalActionSummary: actionSummary,
+            addActivity: OpenActivityEditor,
+            editActivity: EditActivity,
+            deleteActivity: DeleteActivity
         );
     }
 
@@ -902,5 +936,64 @@ public partial class MainViewModel:ViewModelBase {
         }
 
         RefreshAfterFoodDiaryChange();
+    }
+
+    private void OpenActivityEditor() {
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        OpenActivityEditor(activityEditorService.CreateNew(currentDate), isNew: true);
+    }
+
+    private void EditActivity(Guid id) {
+        var draft = activityEditorService.Load(id);
+
+        if(draft is null) {
+            RefreshAfterActivityChange();
+            return;
+        }
+
+        OpenActivityEditor(draft, isNew: false);
+    }
+
+    private void OpenActivityEditor(
+        ActivityDraft draft,
+        bool isNew
+    ) {
+        ActivityEditor = new ActivityEditorViewModel(
+            editorService: activityEditorService,
+            draft: draft,
+            currentDate: currentDateProvider.GetCurrentDate(),
+            isNew: isNew,
+            onSaved: OnActivitySaved,
+            onCancelled: CloseActivityEditor
+        );
+    }
+
+    private void OnActivitySaved() {
+        ActivityEditor = null;
+
+        RefreshAfterActivityChange();
+    }
+
+    private void CloseActivityEditor() {
+        ActivityEditor = null;
+    }
+
+    private void DeleteActivity(Guid id) {
+        if(!activityEditorService.Delete(id)) {
+            return;
+        }
+
+        RefreshAfterActivityChange();
+    }
+
+    private void RefreshAfterActivityChange() {
+        Today = CreateTodayDashboardViewModel();
+    }
+
+    partial void OnActivityEditorChanged(ActivityEditorViewModel? value) {
+        OnPropertyChanged(nameof(IsActivityEditorOpen));
+
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 }

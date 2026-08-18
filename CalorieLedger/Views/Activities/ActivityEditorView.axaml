@@ -1,0 +1,106 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Activities.ActivityEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
+    x:DataType="activityVm:ActivityEditorViewModel">
+
+    <ScrollViewer>
+        <StackPanel
+            Margin="24"
+            Spacing="14"
+            MaxWidth="640"
+            HorizontalAlignment="Center">
+
+            <TextBlock
+                Text="{Binding Title}"
+                FontSize="26"
+                FontWeight="Bold" />
+
+            <TextBlock
+                Text="Название"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Name, Mode=TwoWay}"
+                PlaceholderText="Например: тренировка HEMA" />
+
+            <TextBlock
+                Text="Дополнительный расход, ккал"
+                FontWeight="SemiBold" />
+
+            <NumericUpDown
+                Value="{Binding BurnedCaloriesKcal, Mode=TwoWay}"
+                Minimum="1"
+                Maximum="10000"
+                Increment="10"
+                FormatString="0.##" />
+
+            <TextBlock
+                Text="Время начала"
+                FontWeight="SemiBold" />
+
+            <TimePicker
+                SelectedTime="{Binding StartedAtTime, Mode=TwoWay}"
+                ClockIdentifier="24HourClock"
+                MinuteIncrement="5" />
+
+            <TextBlock
+                Text="Продолжительность, мин"
+                FontWeight="SemiBold" />
+
+            <NumericUpDown
+                Value="{Binding DurationMinutes, Mode=TwoWay}"
+                Minimum="1"
+                Maximum="1440"
+                Increment="5"
+                FormatString="0.##" />
+
+            <TextBlock
+                Text="Комментарий"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding Note, Mode=TwoWay}"
+                AcceptsReturn="True"
+                MinHeight="72"
+                TextWrapping="Wrap"
+                PlaceholderText="Необязательно" />
+
+            <Border
+                IsVisible="{Binding HasValidationErrors}"
+                Padding="12"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                <ItemsControl ItemsSource="{Binding ValidationMessages}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock
+                                Text="{Binding}"
+                                TextWrapping="Wrap"
+                                Margin="0,2" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <Grid
+                ColumnDefinitions="*,*"
+                ColumnSpacing="12">
+
+                <Button
+                    Grid.Column="0"
+                    Content="Отмена"
+                    Command="{Binding CancelCommand}"
+                    HorizontalAlignment="Stretch" />
+
+                <Button
+                    Grid.Column="1"
+                    Content="Сохранить"
+                    Command="{Binding SaveCommand}"
+                    HorizontalAlignment="Stretch" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

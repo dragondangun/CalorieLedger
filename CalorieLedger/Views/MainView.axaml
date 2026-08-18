@@ -12,423 +12,474 @@
     xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
     xmlns:cookingViews="using:CalorieLedger.Views.Cooking"
     xmlns:fridgeViews="using:CalorieLedger.Views.Fridge"
+    xmlns:activityViews="using:CalorieLedger.Views.Activities"
     x:DataType="vm:MainViewModel">
 
     <Grid>
-    <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
-      <StackPanel Spacing="16" Margin="20">
+        <ScrollViewer IsVisible="{Binding IsTodayDashboardVisible}">
+            <StackPanel Spacing="16" Margin="20">
 
-        <TextBlock
-            Text="Сегодня"
-            FontSize="28"
-            FontWeight="Bold" />
+                <TextBlock
+                    Text="Сегодня"
+                    FontSize="28"
+                    FontWeight="Bold" />
 
-        <Button
-            Content="Добавить измерение тела"
-            Command="{Binding AddBodyMeasurementCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
-        <Button
-            Content="Редактировать профиль"
-            Command="{Binding EditProfileCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
-        <Button
-            Content="Каталог продуктов"
-            Command="{Binding OpenProductCatalogCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
-        <Button
-            Content="Приготовленные блюда"
-            Command="{Binding OpenCookingSessionsCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
-        <Button
-            Content="Холодильник"
-            Command="{Binding OpenFridgeCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
-        <Button
-            Content="История питания"
-            Command="{Binding OpenFoodDiaryHistoryCommand}"
-            HorizontalAlignment="Stretch"
-            HorizontalContentAlignment="Center"
-            Padding="12,10" />
-        <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
-        <adaptiveViews:AdaptiveEnergyAssessmentView DataContext="{Binding AdaptiveEnergyAssessment}" />
-        <Border
-            Padding="16"
-            CornerRadius="16"
-            BorderThickness="1">
+                <Button
+                    Content="Добавить измерение тела"
+                    Command="{Binding AddBodyMeasurementCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="Редактировать профиль"
+                    Command="{Binding EditProfileCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="Каталог продуктов"
+                    Command="{Binding OpenProductCatalogCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="Приготовленные блюда"
+                    Command="{Binding OpenCookingSessionsCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="Холодильник"
+                    Command="{Binding OpenFridgeCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="История питания"
+                    Command="{Binding OpenFoodDiaryHistoryCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <profileViews:BodyTrendsView DataContext="{Binding BodyTrends}" />
+                <adaptiveViews:AdaptiveEnergyAssessmentView DataContext="{Binding AdaptiveEnergyAssessment}" />
+                <Border
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
 
-          <StackPanel Spacing="10">
-
-            <TextBlock
-                Text="История измерений"
-                FontSize="18"
-                FontWeight="SemiBold" />
-
-            <TextBlock
-                IsVisible="{Binding HasNoBodyMeasurements}"
-                Text="Измерений пока нет."
-                TextWrapping="Wrap"
-                Opacity="0.75" />
-
-            <ItemsControl
-                IsVisible="{Binding HasBodyMeasurements}"
-                ItemsSource="{Binding VisibleBodyMeasurements}">
-
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Spacing="8" />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate
-                        x:DataType="profileVm:BodyMeasurementListItemViewModel">
-
-                        <profileViews:BodyMeasurementListItemView />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <Button
-                IsVisible="{Binding CanToggleBodyMeasurementHistory}"
-                Content="{Binding BodyMeasurementHistoryToggleText}"
-                Command="{Binding ToggleBodyMeasurementHistoryCommand}"
-                HorizontalAlignment="Left"
-                Margin="0,4,0,0" />
-          </StackPanel>
-        </Border>
-
-        <Border
-            Padding="16"
-            CornerRadius="16"
-            BorderThickness="1">
-          <StackPanel Spacing="8">
-            <TextBlock
-                Text="Калории"
-                FontSize="18"
-                FontWeight="SemiBold" />
-
-            <TextBlock
-                Text="{Binding Today.CaloriesSummary}"
-                FontSize="24"
-                FontWeight="Bold" />
-
-            <TextBlock
-                Text="{Binding Today.RemainingCaloriesSummary}"
-                FontSize="16" />
-          </StackPanel>
-        </Border>
-
-        <Border
-            Padding="16"
-            CornerRadius="16"
-            BorderThickness="1">
-          <StackPanel Spacing="8">
-            <TextBlock
-                Text="КБЖУ"
-                FontSize="18"
-                FontWeight="SemiBold" />
-
-            <TextBlock
-                Text="{Binding Today.MacrosSummary}"
-                FontSize="18" />
-          </StackPanel>
-        </Border>
-
-        <Border
-            Padding="16"
-            CornerRadius="16"
-            BorderThickness="1">
-          <StackPanel Spacing="8">
-            <TextBlock
-                Text="Текущая цель"
-                FontSize="18"
-                FontWeight="SemiBold" />
-
-            <TextBlock
-                Text="{Binding Today.GoalStatusSummary}"
-                FontSize="18"
-                FontWeight="Bold" />
-
-            <TextBlock
-                Text="{Binding Today.GoalDetailsSummary}"
-                TextWrapping="Wrap"
-                Opacity="0.85" />
-
-            <TextBlock
-                Text="Доступные действия"
-                Margin="0,6,0,0"
-                FontWeight="SemiBold" />
-
-            <ItemsControl ItemsSource="{Binding Today.GoalActions}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
-                  <Button
-                      Content="{Binding Title}"
-                      Command="{Binding SelectCommand}"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Left"
-                      Padding="12,8"
-                      Margin="0,0,0,6" />
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <Border
-                Padding="10"
-                Margin="0,4,0,0"
-                CornerRadius="8"
-                BorderThickness="1">
-              <TextBlock
-                  Text="{Binding Today.GoalActionSelectionSummary}"
-                  TextWrapping="Wrap"
-                  FontStyle="Italic"
-                  Opacity="0.85" />
-            </Border>
-          </StackPanel>
-        </Border>
-
-        <Border
-            Padding="16"
-            CornerRadius="16"
-            BorderThickness="1">
-          <StackPanel Spacing="8">
-              <TextBlock
-                  Text="Последние 7 дней"
-                  FontSize="18"
-                  FontWeight="SemiBold" />
-
-            <TextBlock
-                Text="{Binding Today.WeeklyCaloriesAverageSummary}"
-                FontSize="18"
-                FontWeight="Bold" />
-              <TextBlock
-                Text="{Binding Today.WeeklyDataQualitySummary}"
-                TextWrapping="Wrap"
-                Opacity="0.7" />
-
-            <TextBlock
-                Text="{Binding Today.WeeklyMacrosAverageSummary}" />
-
-            <TextBlock
-                Text="{Binding Today.WeeklyBalanceSummary}"
-                FontStyle="Italic"
-                Opacity="0.85" />
-          </StackPanel>
-        </Border>
-
-        <Border
-      Padding="16"
-      CornerRadius="16"
-      BorderThickness="1">
-          <StackPanel Spacing="8">
-            <TextBlock
-                Text="Активность сверх образа жизни"
-                FontSize="18"
-                FontWeight="SemiBold" />
-
-            <TextBlock
-                Text="{Binding Today.ActivitySummary}"
-                FontSize="18"
-                FontWeight="Bold" />
-
-            <ItemsControl ItemsSource="{Binding Today.Activities}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="todayVm:TodayActivityItemViewModel">
-                  <Border
-                      Padding="8"
-                      Margin="0,0,0,6"
-                      BorderThickness="1"
-                      CornerRadius="8">
-                    <StackPanel Spacing="4">
-                      <TextBlock
-                          Text="{Binding Name}"
-                          FontWeight="SemiBold" />
-
-                      <TextBlock
-                          Text="{Binding CaloriesSummary}" />
-
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock
-                            Text="{Binding TimeSummary}"
-                            Opacity="0.75" />
+                    <StackPanel Spacing="10">
 
                         <TextBlock
-                            Text="{Binding DurationSummary}"
+                            Text="История измерений"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            IsVisible="{Binding HasNoBodyMeasurements}"
+                            Text="Измерений пока нет."
+                            TextWrapping="Wrap"
                             Opacity="0.75" />
-                      </StackPanel>
+
+                        <ItemsControl
+                            IsVisible="{Binding HasBodyMeasurements}"
+                            ItemsSource="{Binding VisibleBodyMeasurements}">
+
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Spacing="8" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate
+                                    x:DataType="profileVm:BodyMeasurementListItemViewModel">
+
+                                    <profileViews:BodyMeasurementListItemView />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Button
+                            IsVisible="{Binding CanToggleBodyMeasurementHistory}"
+                            Content="{Binding BodyMeasurementHistoryToggleText}"
+                            Command="{Binding ToggleBodyMeasurementHistoryCommand}"
+                            HorizontalAlignment="Left"
+                            Margin="0,4,0,0" />
                     </StackPanel>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </Border>
+                </Border>
 
-          <Button
-              Content="Добавить еду"
-              Command="{Binding Today.AddFoodCommand}"
-              HorizontalAlignment="Stretch" />
-
-          <Button
-              Content="Быстрая оценка"
-              Command="{Binding Today.AddApproximateFoodCommand}"
-              HorizontalAlignment="Stretch" />
-
-        <Button
-              Content="{Binding Today.FoodLogCompletionActionText}"
-              Command="{Binding Today.ToggleFoodLogCompletionCommand}"
-              HorizontalAlignment="Stretch" />
-
-        <Border
-            Padding="16"
-            CornerRadius="16"
-            BorderThickness="1">
-          <StackPanel Spacing="12">
-            <TextBlock
-                Text="Съедено сегодня"
-                FontSize="18"
-                FontWeight="SemiBold" />
-
-            <ItemsControl ItemsSource="{Binding Today.MealGroups}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate x:DataType="mealVm:FoodDiaryMealGroupViewModel">
-                  <Border
-                      Padding="10"
-                      Margin="0,0,0,10"
-                      BorderThickness="1"
-                      CornerRadius="10">
+                <Border
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
                     <StackPanel Spacing="8">
-                      <StackPanel Spacing="4">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock
-                              Text="{Binding Name}"
-                              FontWeight="SemiBold" />
-
-                          <TextBlock
-                              Text="{Binding TimeSummary}"
-                              Opacity="0.7" />
-
-                          <TextBlock
-                              Text="·"
-                              Opacity="0.7" />
-
-                          <TextBlock
-                              Text="{Binding CaloriesSummary}"
-                              Opacity="0.85" />
-                        </StackPanel>
+                        <TextBlock
+                            Text="Калории"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
 
                         <TextBlock
-                            Text="{Binding MacrosSummary}"
-                            Opacity="0.85" />
-                      </StackPanel>
+                            Text="{Binding Today.CaloriesSummary}"
+                            FontSize="24"
+                            FontWeight="Bold" />
 
-                      <ItemsControl ItemsSource="{Binding FoodItems}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate x:DataType="mealVm:FoodDiaryFoodItemViewModel">
-                            <Border
-                                Padding="8"
-                                Margin="0,0,0,6"
-                                BorderThickness="1"
-                                CornerRadius="8">
-                              <StackPanel Spacing="4">
-                                <TextBlock
-                                    Text="{Binding Name}"
-                                    FontWeight="SemiBold" />
-
-                                <TextBlock
-                                    Text="{Binding QuantitySummary}" />
-
-                                <TextBlock
-                                    Text="{Binding CaloriesSummary}" />
-
-                                <TextBlock
-                                    Text="{Binding MacrosSummary}" />
-
-                                <TextBlock
-                                    Text="{Binding AccuracySummary}"
-                                    FontStyle="Italic"
-                                    Opacity="0.75" />
-                                  <StackPanel
-    Orientation="Horizontal"
-    Spacing="8"
-    IsVisible="{Binding ArePrimaryActionsVisible}">
-
-                                      <Button
-                                          Content="Изменить"
-                                          Command="{Binding EditCommand}" />
-
-                                      <Button
-                                          Content="Удалить"
-                                          Command="{Binding DeleteCommand}" />
-                                  </StackPanel>
-
-                                  <Border
-                                      Padding="10"
-                                      BorderThickness="1"
-                                      CornerRadius="8"
-                                      IsVisible="{Binding IsDeleteConfirmationVisible}">
-
-                                      <StackPanel Spacing="8">
-                                          <TextBlock
-                                              Text="Удалить эту запись?"
-                                              FontWeight="SemiBold" />
-
-                                          <TextBlock
-                                              Text="Она будет удалена из дневника питания."
-                                              TextWrapping="Wrap"
-                                              Opacity="0.75" />
-
-                                          <StackPanel
-                                              Orientation="Horizontal"
-                                              Spacing="8">
-
-                                              <Button
-                                                  Content="Отмена"
-                                                  Command="{Binding CancelDeleteCommand}" />
-
-                                              <Button
-                                                  Content="Удалить"
-                                                  Command="{Binding ConfirmDeleteCommand}" />
-                                          </StackPanel>
-                                      </StackPanel>
-                                  </Border>
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
+                        <TextBlock
+                            Text="{Binding Today.RemainingCaloriesSummary}"
+                            FontSize="16" />
                     </StackPanel>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
-        </Border>
+                </Border>
 
-      </StackPanel>
-    </ScrollViewer>
-    <Grid
-        IsVisible="{Binding IsGoalEditorOpen}"
-        Panel.ZIndex="1">
-      <profileViews:NutritionGoalEditorView
-          DataContext="{Binding GoalEditor}" />
-    </Grid>
-    <Grid
-        IsVisible="{Binding IsBodyMeasurementEditorOpen}"
-        Panel.ZIndex="1">
+                <Border
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="КБЖУ"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
 
-      <profileViews:BodyMeasurementEditorView
-          DataContext="{Binding BodyMeasurementEditor}" />
-    </Grid>
+                        <TextBlock
+                            Text="{Binding Today.MacrosSummary}"
+                            FontSize="18" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Текущая цель"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            Text="{Binding Today.GoalStatusSummary}"
+                            FontSize="18"
+                            FontWeight="Bold" />
+
+                        <TextBlock
+                            Text="{Binding Today.GoalDetailsSummary}"
+                            TextWrapping="Wrap"
+                            Opacity="0.85" />
+
+                        <TextBlock
+                            Text="Доступные действия"
+                            Margin="0,6,0,0"
+                            FontWeight="SemiBold" />
+
+                        <ItemsControl ItemsSource="{Binding Today.GoalActions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="todayVm:TodayGoalActionViewModel">
+                                    <Button
+                                        Content="{Binding Title}"
+                                        Command="{Binding SelectCommand}"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="12,8"
+                                        Margin="0,0,0,6" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border
+                            Padding="10"
+                            Margin="0,4,0,0"
+                            CornerRadius="8"
+                            BorderThickness="1">
+                            <TextBlock
+                                Text="{Binding Today.GoalActionSelectionSummary}"
+                                TextWrapping="Wrap"
+                                FontStyle="Italic"
+                                Opacity="0.85" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Последние 7 дней"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            Text="{Binding Today.WeeklyCaloriesAverageSummary}"
+                            FontSize="18"
+                            FontWeight="Bold" />
+                        <TextBlock
+                          Text="{Binding Today.WeeklyDataQualitySummary}"
+                          TextWrapping="Wrap"
+                          Opacity="0.7" />
+
+                        <TextBlock
+                            Text="{Binding Today.WeeklyMacrosAverageSummary}" />
+
+                        <TextBlock
+                            Text="{Binding Today.WeeklyBalanceSummary}"
+                            FontStyle="Italic"
+                            Opacity="0.85" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+              Padding="16"
+              CornerRadius="16"
+              BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Активность сверх образа жизни"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <TextBlock
+                            Text="{Binding Today.ActivitySummary}"
+                            FontSize="18"
+                            FontWeight="Bold" />
+                        <Button
+                            Content="Добавить активность"
+                            Command="{Binding Today.AddActivityCommand}"
+                            HorizontalAlignment="Left" />
+
+                        <ItemsControl ItemsSource="{Binding Today.Activities}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="todayVm:TodayActivityItemViewModel">
+                                    <Border
+                                        Padding="8"
+                                        Margin="0,0,0,6"
+                                        BorderThickness="1"
+                                        CornerRadius="8">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock
+                                                Text="{Binding Name}"
+                                                FontWeight="SemiBold" />
+
+                                            <TextBlock
+                                                Text="{Binding CaloriesSummary}" />
+
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock
+                                                    Text="{Binding TimeSummary}"
+                                                    Opacity="0.75" />
+
+                                                <TextBlock
+                                                    Text="{Binding DurationSummary}"
+                                                    Opacity="0.75" />
+                                            </StackPanel>
+
+                                            <TextBlock
+                                                IsVisible="{Binding HasNote}"
+                                                Text="{Binding Note}"
+                                                TextWrapping="Wrap"
+                                                Opacity="0.75" />
+
+                                            <StackPanel
+                                                Orientation="Horizontal"
+                                                Spacing="8"
+                                                IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                                <Button
+                                                    Content="Изменить"
+                                                    Command="{Binding EditCommand}" />
+
+                                                <Button
+                                                    Content="Удалить"
+                                                    Command="{Binding DeleteCommand}" />
+                                            </StackPanel>
+
+                                            <Border
+                                                Padding="10"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                                <StackPanel Spacing="8">
+                                                    <TextBlock
+                                                        Text="Удалить эту активность?"
+                                                        FontWeight="SemiBold" />
+
+                                                    <StackPanel
+                                                        Orientation="Horizontal"
+                                                        Spacing="8">
+
+                                                        <Button
+                                                            Content="Отмена"
+                                                            Command="{Binding CancelDeleteCommand}" />
+
+                                                        <Button
+                                                            Content="Удалить"
+                                                            Command="{Binding ConfirmDeleteCommand}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Button
+                    Content="Добавить еду"
+                    Command="{Binding Today.AddFoodCommand}"
+                    HorizontalAlignment="Stretch" />
+
+                <Button
+                    Content="Быстрая оценка"
+                    Command="{Binding Today.AddApproximateFoodCommand}"
+                    HorizontalAlignment="Stretch" />
+
+                <Button
+                      Content="{Binding Today.FoodLogCompletionActionText}"
+                      Command="{Binding Today.ToggleFoodLogCompletionCommand}"
+                      HorizontalAlignment="Stretch" />
+
+                <Border
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
+                    <StackPanel Spacing="12">
+                        <TextBlock
+                            Text="Съедено сегодня"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <ItemsControl ItemsSource="{Binding Today.MealGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="mealVm:FoodDiaryMealGroupViewModel">
+                                    <Border
+                                        Padding="10"
+                                        Margin="0,0,0,10"
+                                        BorderThickness="1"
+                                        CornerRadius="10">
+                                        <StackPanel Spacing="8">
+                                            <StackPanel Spacing="4">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock
+                                                        Text="{Binding Name}"
+                                                        FontWeight="SemiBold" />
+
+                                                    <TextBlock
+                                                        Text="{Binding TimeSummary}"
+                                                        Opacity="0.7" />
+
+                                                    <TextBlock
+                                                        Text="·"
+                                                        Opacity="0.7" />
+
+                                                    <TextBlock
+                                                        Text="{Binding CaloriesSummary}"
+                                                        Opacity="0.85" />
+                                                </StackPanel>
+
+                                                <TextBlock
+                                                    Text="{Binding MacrosSummary}"
+                                                    Opacity="0.85" />
+                                            </StackPanel>
+
+                                            <ItemsControl ItemsSource="{Binding FoodItems}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="mealVm:FoodDiaryFoodItemViewModel">
+                                                        <Border
+                                                            Padding="8"
+                                                            Margin="0,0,0,6"
+                                                            BorderThickness="1"
+                                                            CornerRadius="8">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock
+                                                                    Text="{Binding Name}"
+                                                                    FontWeight="SemiBold" />
+
+                                                                <TextBlock
+                                                                    Text="{Binding QuantitySummary}" />
+
+                                                                <TextBlock
+                                                                    Text="{Binding CaloriesSummary}" />
+
+                                                                <TextBlock
+                                                                    Text="{Binding MacrosSummary}" />
+
+                                                                <TextBlock
+                                                                    Text="{Binding AccuracySummary}"
+                                                                    FontStyle="Italic"
+                                                                    Opacity="0.75" />
+                                                                <StackPanel
+                                                                  Orientation="Horizontal"
+                                                                  Spacing="8"
+                                                                  IsVisible="{Binding ArePrimaryActionsVisible}">
+
+                                                                    <Button
+                                                                        Content="Изменить"
+                                                                        Command="{Binding EditCommand}" />
+
+                                                                    <Button
+                                                                        Content="Удалить"
+                                                                        Command="{Binding DeleteCommand}" />
+                                                                </StackPanel>
+
+                                                                <Border
+                                                                    Padding="10"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="8"
+                                                                    IsVisible="{Binding IsDeleteConfirmationVisible}">
+
+                                                                    <StackPanel Spacing="8">
+                                                                        <TextBlock
+                                                                            Text="Удалить эту запись?"
+                                                                            FontWeight="SemiBold" />
+
+                                                                        <TextBlock
+                                                                            Text="Она будет удалена из дневника питания."
+                                                                            TextWrapping="Wrap"
+                                                                            Opacity="0.75" />
+
+                                                                        <StackPanel
+                                                                            Orientation="Horizontal"
+                                                                            Spacing="8">
+
+                                                                            <Button
+                                                                                Content="Отмена"
+                                                                                Command="{Binding CancelDeleteCommand}" />
+
+                                                                            <Button
+                                                                                Content="Удалить"
+                                                                                Command="{Binding ConfirmDeleteCommand}" />
+                                                                        </StackPanel>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+        <Grid
+            IsVisible="{Binding IsGoalEditorOpen}"
+            Panel.ZIndex="1">
+            <profileViews:NutritionGoalEditorView
+                DataContext="{Binding GoalEditor}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsBodyMeasurementEditorOpen}"
+            Panel.ZIndex="1">
+
+            <profileViews:BodyMeasurementEditorView
+                DataContext="{Binding BodyMeasurementEditor}" />
+        </Grid>
 
         <Grid
             IsVisible="{Binding IsProfileEditorOpen}"
@@ -445,11 +496,25 @@
                 DataContext="{Binding FoodDiaryHistory}" />
         </Grid>
         <Grid
+            IsVisible="{Binding IsCookingSessionManagerOpen}"
+            Panel.ZIndex="1">
+
+            <cookingViews:CookingSessionView
+                DataContext="{Binding CookingSessionManager}" />
+        </Grid>
+        <Grid
             IsVisible="{Binding IsFridgeOpen}"
             Panel.ZIndex="1">
 
             <fridgeViews:FridgeView
                 DataContext="{Binding FridgeManager}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsActivityEditorOpen}"
+            Panel.ZIndex="1">
+
+            <activityViews:ActivityEditorView
+                DataContext="{Binding ActivityEditor}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsFoodLogEditorOpen}"

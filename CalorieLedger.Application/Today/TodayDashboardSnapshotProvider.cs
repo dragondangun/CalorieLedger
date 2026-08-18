@@ -1,3 +1,4 @@
+using CalorieLedger.Application.Activities;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
@@ -14,42 +15,29 @@ public sealed class TodayDashboardSnapshotProvider:ITodayDashboardSnapshotProvid
     private readonly IUserNutritionProfileProvider profileProvider;
     private readonly FoodDiaryDaySnapshotProvider foodDiaryDaySnapshotProvider;
     private readonly ICurrentDateProvider currentDateProvider;
+    private readonly IActivityStore activityStore;
 
     public TodayDashboardSnapshotProvider(
         IUserNutritionProfileProvider profileProvider,
         FoodDiaryDaySnapshotProvider foodDiaryDaySnapshotProvider,
+        IActivityStore activityStore,
         ICurrentDateProvider currentDateProvider
     ) {
-        ArgumentNullException.ThrowIfNull(
-            profileProvider
-        );
+        ArgumentNullException.ThrowIfNull(profileProvider);
+        ArgumentNullException.ThrowIfNull(foodDiaryDaySnapshotProvider);
+        ArgumentNullException.ThrowIfNull(activityStore);
+        ArgumentNullException.ThrowIfNull(currentDateProvider);
 
-        ArgumentNullException.ThrowIfNull(
-            foodDiaryDaySnapshotProvider
-        );
-
-        ArgumentNullException.ThrowIfNull(
-            currentDateProvider
-        );
-
-        this.profileProvider =
-            profileProvider;
-
-        this.foodDiaryDaySnapshotProvider =
-            foodDiaryDaySnapshotProvider;
-
-        this.currentDateProvider =
-            currentDateProvider;
+        this.profileProvider = profileProvider;
+        this.foodDiaryDaySnapshotProvider = foodDiaryDaySnapshotProvider;
+        this.activityStore = activityStore;
+        this.currentDateProvider = currentDateProvider;
     }
 
     public TodayDashboardSnapshot GetToday() {
-        var currentDate =
-            currentDateProvider.GetCurrentDate();
+        var currentDate = currentDateProvider.GetCurrentDate();
 
-        var weekStartDate =
-            currentDate.AddDays(
-                -(WeeklyDayCount - 1)
-            );
+        var weekStartDate = currentDate.AddDays(-(WeeklyDayCount - 1));
 
         var profile = profileProvider.GetCurrentProfile();
 
@@ -77,12 +65,27 @@ public sealed class TodayDashboardSnapshotProvider:ITodayDashboardSnapshotProvid
             ]
         );
 
+        IReadOnlyList<TodayActivitySnapshotItem> activities = [
+            .. activityStore
+                .Get(currentDate, currentDate)
+                .Select(
+                    activity => new TodayActivitySnapshotItem(
+                        Id: activity.Id,
+                        Name: activity.Name,
+                        BurnedCaloriesKcal: activity.BurnedCaloriesKcal,
+                        StartedAt: activity.StartedAt,
+                        Duration: activity.Duration,
+                        Note: activity.Note
+                    )
+                ),
+        ];
+
         return new TodayDashboardSnapshot(
             Target: target,
             ConsumedTotals: todayDiary.ConsumedTotals,
             Meals: todayDiary.Meals,
             WeeklySummary: weeklySummary,
-            Activities: [],
+            Activities: activities,
             GoalDecision: goalDecision,
             IsFoodLogComplete: todayDiary.IsComplete
         );

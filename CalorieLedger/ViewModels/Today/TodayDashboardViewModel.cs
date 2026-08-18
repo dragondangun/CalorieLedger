@@ -80,6 +80,10 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     private readonly Action<Guid> editFood;
     private readonly Action<Guid> deleteFood;
 
+    private readonly Action addActivity;
+    private readonly Action<Guid> editActivity;
+    private readonly Action<Guid> deleteActivity;
+
     public bool IsFoodLogComplete { get; }
 
     public string FoodLogCompletionActionText => IsFoodLogComplete
@@ -94,6 +98,9 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         Action<bool> setFoodLogComplete,
         Action<Guid> editFood,
         Action<Guid> deleteFood,
+        Action addActivity,
+        Action<Guid> editActivity,
+        Action<Guid> deleteActivity,
         string? initialGoalActionSummary = null
     ) {
         ArgumentNullException.ThrowIfNull(snapshot);
@@ -103,6 +110,9 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         ArgumentNullException.ThrowIfNull(setFoodLogComplete);
         ArgumentNullException.ThrowIfNull(editFood);
         ArgumentNullException.ThrowIfNull(deleteFood);
+        ArgumentNullException.ThrowIfNull(addActivity);
+        ArgumentNullException.ThrowIfNull(editActivity);
+        ArgumentNullException.ThrowIfNull(deleteActivity);
 
         this.tryExecuteGoalAction = tryExecuteGoalAction;
         this.addFood = addFood;
@@ -110,6 +120,9 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         this.setFoodLogComplete = setFoodLogComplete;
         this.editFood = editFood;
         this.deleteFood = deleteFood;
+        this.addActivity = addActivity;
+        this.editActivity = editActivity;
+        this.deleteActivity = deleteActivity;
 
         IsFoodLogComplete = snapshot.IsFoodLogComplete;
 
@@ -138,10 +151,14 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         foreach(var activity in snapshot.Activities) {
             Activities.Add(
                 new TodayActivityItemViewModel(
-                    Name: activity.Name,
-                    BurnedCaloriesKcal: activity.BurnedCaloriesKcal,
-                    TimeSummary: FormatTime(activity.StartedAt),
-                    DurationSummary: FormatDuration(activity.Duration)
+                    id: activity.Id,
+                    name: activity.Name,
+                    burnedCaloriesKcal: activity.BurnedCaloriesKcal,
+                    timeSummary: FormatTime(activity.StartedAt),
+                    durationSummary: FormatDuration(activity.Duration),
+                    note: activity.Note,
+                    edit: editActivity,
+                    delete: deleteActivity
                 )
             );
         }
@@ -169,6 +186,11 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     [RelayCommand]
     private void AddApproximateFood() {
         addApproximateFood();
+    }
+
+    [RelayCommand]
+    private void AddActivity() {
+        addActivity();
     }
 
     [RelayCommand]
