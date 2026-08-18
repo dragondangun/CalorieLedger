@@ -25,6 +25,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     private readonly Action<Guid> editActivity;
     private readonly Action<Guid> deleteActivity;
     private readonly Action onClosed;
+    private readonly WeeklyJournalSummaryProvider weeklySummaryProvider;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DateSummary))]
@@ -57,6 +58,8 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
 
     [ObservableProperty]
     private string dataQualitySummary = string.Empty;
+    [ObservableProperty]
+    private WeeklyJournalSummaryViewModel weeklySummary = null!;
 
     public ObservableCollection<FoodDiaryMealGroupViewModel> MealGroups { get; } = [];
     public ObservableCollection<ActivityItemViewModel> Activities { get; } = [];
@@ -91,10 +94,10 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
 
     public string CompletionSummary => IsComplete ? "День завершён" : "День открыт";
     public string CompletionActionText => IsComplete ? "Открыть день снова" : "Завершить день";
-    public string WeekDataQualitySummary { get; private set; } = string.Empty;
 
     public DailyJournalHistoryViewModel(
         DailyJournalDaySnapshotProvider snapshotProvider,
+        WeeklyJournalSummaryProvider weeklySummaryProvider,
         DateOnly currentDate,
         Action<DateOnly> addFood,
         Action<DateOnly> addApproximateFood,
@@ -116,6 +119,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(editActivity);
         ArgumentNullException.ThrowIfNull(deleteActivity);
         ArgumentNullException.ThrowIfNull(onClosed);
+        ArgumentNullException.ThrowIfNull(weeklySummaryProvider);
 
         this.snapshotProvider = snapshotProvider;
         this.currentDate = currentDate;
@@ -128,6 +132,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         this.editActivity = editActivity;
         this.deleteActivity = deleteActivity;
         this.onClosed = onClosed;
+        this.weeklySummaryProvider = weeklySummaryProvider;
 
         selectedDate = currentDate;
         Refresh();
@@ -267,14 +272,9 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
                 selectDate: SelectDate));
         }
 
-        var availableDays = WeekDays.Count(x => x.IsAvailable);
-        var energyCompleteDays = WeekDays.Count(x => x.IsEnergyComplete);
-        var macroCompleteDays = WeekDays.Count(x => x.AreMacrosComplete);
-
-        WeekDataQualitySummary =
-            $"Полная калорийность: {energyCompleteDays} из {availableDays} дней · полные БЖУ: {macroCompleteDays} из {availableDays} дней";
-
-        OnPropertyChanged(nameof(WeekDataQualitySummary));
+        WeeklySummary = new WeeklyJournalSummaryViewModel(
+            weeklySummaryProvider.GetWeek(SelectedDate, currentDate)
+        );
     }
 
     private void SelectDate(DateOnly date) {

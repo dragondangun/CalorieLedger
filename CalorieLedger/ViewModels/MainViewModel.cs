@@ -51,6 +51,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly IActivityStore activityStore;
     private readonly ActivityEditorService activityEditorService;
     private readonly DailyJournalDaySnapshotProvider dailyJournalSnapshotProvider;
+    private readonly WeeklyJournalSummaryProvider weeklyJournalSummaryProvider;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -335,6 +336,10 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         bodyMeasurementHistoryService = new BodyMeasurementHistoryService(bodyMeasurementStore);
+        weeklyJournalSummaryProvider = new WeeklyJournalSummaryProvider(
+            dailyJournalSnapshotProvider,
+            bodyMeasurementHistoryService
+        );
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
@@ -467,6 +472,7 @@ public partial class MainViewModel:ViewModelBase {
     private void OpenDailyJournalHistory() {
         DailyJournalHistory = new DailyJournalHistoryViewModel(
             snapshotProvider: dailyJournalSnapshotProvider,
+            weeklySummaryProvider: weeklyJournalSummaryProvider,
             currentDate: currentDateProvider.GetCurrentDate(),
             addFood: OpenFoodLogEditorForDate,
             addApproximateFood: OpenApproximateFoodLogEditorForDate,
@@ -921,9 +927,8 @@ public partial class MainViewModel:ViewModelBase {
         var measurementSnapshot = GetCurrentBodyMeasurementSnapshot();
 
         RefreshBodyMeasurements(measurementSnapshot);
-
         RefreshBodyMeasurementDerivedState(measurementSnapshot);
-
+        DailyJournalHistory?.Refresh();
         RefreshAdaptiveEnergyAssessment(measurementSnapshot);
     }
 

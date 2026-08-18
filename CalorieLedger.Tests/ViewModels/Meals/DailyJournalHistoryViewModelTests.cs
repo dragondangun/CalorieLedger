@@ -1,10 +1,12 @@
 using CalorieLedger.Application.Activities;
 using CalorieLedger.Application.History;
 using CalorieLedger.Application.Meals;
+using CalorieLedger.Application.Profiles;
 using CalorieLedger.Domain.Activities;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
+using CalorieLedger.Domain.Profile;
 using CalorieLedger.ViewModels.History;
 using CalorieLedger.ViewModels.Meals;
 
@@ -224,16 +226,83 @@ public sealed class DailyJournalHistoryViewModelTests {
         Assert.Equal("+350 акт.", weekDay.ActivitySummary);
     }
 
+    [Fact]
+    public void PreviousWeek_RefreshesWeeklySummaryForSelectedWeek() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var previousWeekDate = currentDate.AddDays(-7);
+
+        var foodStore = new InMemoryFoodDiaryStore();
+        var bodyStore = new InMemoryBodyMeasurementStore();
+
+        var meal = new MealEntry(
+            Id: Guid.NewGuid(),
+            Date: previousWeekDate,
+            Name: "Другое",
+            Role: MealGroupRole.Custom
+        );
+
+        foodStore.SaveMeal(meal);
+
+        foodStore.SaveFoodEntry(
+            new FoodLogEntry(
+                Id: Guid.NewGuid(),
+                MealEntryId: meal.Id,
+                Name: "Еда",
+                Quantity: FoodQuantity.Portions(1m),
+                Nutrition: new NutritionFacts(
+                    Basis: NutritionBasis.Total,
+                    CaloriesKcal: 1800m,
+                    ProteinG: 90m,
+                    FatG: 60m,
+                    CarbsG: 200m
+                ),
+                Source: FoodLogSource.Manual
+            )
+        );
+
+        foodStore.SetDateComplete(previousWeekDate, true);
+
+        bodyStore.Save(
+            new BodyMeasurementEntry(
+                Id: Guid.NewGuid(),
+                Date: previousWeekDate,
+                WeightKg: 60m
+            )
+        );
+
+        var viewModel = CreateViewModel(
+            currentDate,
+            foodStore,
+            bodyMeasurementStore: bodyStore
+        );
+
+        viewModel.PreviousWeekCommand.Execute(null);
+
+        Assert.Equal(previousWeekDate, viewModel.SelectedDate);
+        Assert.Equal(1800m, viewModel.WeeklySummary.AverageFoodCaloriesKcal);
+        Assert.Equal(1, viewModel.WeeklySummary.EnergyCompleteDayCount);
+        Assert.Equal(1, viewModel.WeeklySummary.WeightMeasurementCount);
+    }
+
     private static DailyJournalHistoryViewModel CreateViewModel(
         DateOnly currentDate,
         IFoodDiaryStore foodDiaryStore,
-        IActivityStore? activityStore = null
+        IActivityStore? activityStore = null,
+        IBodyMeasurementStore? bodyMeasurementStore = null
     ) {
+        var journalProvider = new DailyJournalDaySnapshotProvider(
+            new FoodDiaryDaySnapshotProvider(foodDiaryStore),
+            activityStore ?? new InMemoryActivityStore()
+        );
+
+        var weeklySummaryProvider = new WeeklyJournalSummaryProvider(
+            journalProvider,
+            new BodyMeasurementHistoryService(bodyMeasurementStore ?? new InMemoryBodyMeasurementStore())
+        );
+
         return new DailyJournalHistoryViewModel(
-            snapshotProvider: new DailyJournalDaySnapshotProvider(
-                new FoodDiaryDaySnapshotProvider(foodDiaryStore),
-                activityStore ?? new InMemoryActivityStore()
-            ),
+            snapshotProvider: journalProvider,
+            weeklySummaryProvider: weeklySummaryProvider,
             currentDate: currentDate,
             addFood: _ => { },
             addApproximateFood: _ => { },

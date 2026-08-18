@@ -141,11 +141,39 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <TextBlock
-                Text="{Binding WeekDataQualitySummary}"
-                TextWrapping="Wrap"
-                HorizontalAlignment="Center"
-                Opacity="0.7" />
+            <Border
+                Padding="12"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="5">
+                    <TextBlock
+                        Text="Сводка недели"
+                        FontSize="17"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        Text="{Binding WeeklySummary.FoodSummary}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Text="{Binding WeeklySummary.ActivitySummary}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Text="{Binding WeeklySummary.AdjustedCaloriesSummary}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Text="{Binding WeeklySummary.WeightSummary}"
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Text="{Binding WeeklySummary.DataQualitySummary}"
+                        TextWrapping="Wrap"
+                        Opacity="0.7" />
+                </StackPanel>
+            </Border>
 
             <Button
                 Content="Вернуться к сегодня"
