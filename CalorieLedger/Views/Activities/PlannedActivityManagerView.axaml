@@ -10,6 +10,7 @@
         <StackPanel IsVisible="{Binding IsListVisible}" Spacing="10">
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <TextBlock Text="Планы активности" FontSize="20" FontWeight="SemiBold" />
+                <Button Content="Расписание" Command="{Binding OpenRecurringActivitiesCommand}" />
                 <Button Content="Добавить" Command="{Binding AddCommand}" />
                 <Button Content="Закрыть" Command="{Binding CloseCommand}" />
             </StackPanel>
@@ -22,36 +23,7 @@
             <ItemsControl ItemsSource="{Binding Activities}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:PlannedActivityItemViewModel">
-                        <Border Padding="10" Margin="0,0,0,8" BorderThickness="1" CornerRadius="8">
-                            <StackPanel Spacing="5">
-                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding DateSummary}" />
-                                <TextBlock Text="{Binding DetailsSummary}" Opacity="0.75" />
-
-                                <StackPanel
-                                    IsVisible="{Binding ArePrimaryActionsVisible}"
-                                    Orientation="Horizontal"
-                                    Spacing="8">
-
-                                    <Button
-                                        Content="Выполнить"
-                                        Command="{Binding CompleteCommand}" />
-
-                                    <Button Content="Изменить" Command="{Binding EditCommand}" />
-                                    <Button Content="Удалить" Command="{Binding DeleteCommand}" />
-                                </StackPanel>
-
-                                <StackPanel
-                                    IsVisible="{Binding IsDeleteConfirmationVisible}"
-                                    Orientation="Horizontal"
-                                    Spacing="8">
-
-                                    <TextBlock Text="Удалить план?" VerticalAlignment="Center" />
-                                    <Button Content="Отмена" Command="{Binding CancelDeleteCommand}" />
-                                    <Button Content="Удалить" Command="{Binding ConfirmDeleteCommand}" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                        <views:PlannedActivityItemView />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

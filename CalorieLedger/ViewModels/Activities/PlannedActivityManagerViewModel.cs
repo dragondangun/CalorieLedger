@@ -12,6 +12,8 @@ public sealed partial class PlannedActivityManagerViewModel:ViewModelBase {
     private readonly DateOnly currentDate;
     private readonly Action<Guid> complete;
     private readonly Action onClosed;
+    private readonly Action? onChanged;
+    private readonly Action openRecurringActivities;
 
     [ObservableProperty]
     private PlannedActivityEditorViewModel? editor;
@@ -27,13 +29,17 @@ public sealed partial class PlannedActivityManagerViewModel:ViewModelBase {
         ActivityPresetCatalogService presetCatalogService,
         DateOnly currentDate,
         Action<Guid> complete,
-        Action onClosed
+        Action openRecurringActivities,
+        Action onClosed,
+        Action? onChanged = null
     ) {
         this.service = service;
         this.presetCatalogService = presetCatalogService;
         this.currentDate = currentDate;
         this.complete = complete;
         this.onClosed = onClosed;
+        this.onChanged = onChanged;
+        this.openRecurringActivities = openRecurringActivities;
 
         Refresh();
     }
@@ -66,8 +72,16 @@ public sealed partial class PlannedActivityManagerViewModel:ViewModelBase {
     private void Close() {
         onClosed();
     }
+    [RelayCommand]
+    private void OpenRecurringActivities() {
+        openRecurringActivities();
+    }
 
     private void Edit(Guid id) {
+        OpenEditor(id);
+    }
+
+    public void OpenEditor(Guid id) {
         var draft = service.Load(id);
 
         if(draft is not null) {
@@ -78,6 +92,7 @@ public sealed partial class PlannedActivityManagerViewModel:ViewModelBase {
     private void Delete(Guid id) {
         if(service.Delete(id)) {
             Refresh();
+            onChanged?.Invoke();
         }
     }
 
@@ -95,6 +110,7 @@ public sealed partial class PlannedActivityManagerViewModel:ViewModelBase {
     private void OnEditorSaved() {
         Editor = null;
         Refresh();
+        onChanged?.Invoke();
     }
 
     private void CloseEditor() {

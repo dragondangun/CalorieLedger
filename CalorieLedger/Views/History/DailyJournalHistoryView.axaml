@@ -6,6 +6,7 @@
     xmlns:historyVm="using:CalorieLedger.ViewModels.History"
     xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
     xmlns:controls="using:CalorieLedger.Controls"
+    xmlns:activityViews="using:CalorieLedger.Views.Activities"
     x:DataType="historyVm:DailyJournalHistoryViewModel">
 
     <ScrollViewer>
@@ -503,6 +504,52 @@
                 CornerRadius="10">
 
                 <StackPanel Spacing="8">
+                    <Border
+                        Padding="14"
+                        BorderThickness="1"
+                        CornerRadius="10">
+
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                Text="Запланированная активность"
+                                FontSize="18"
+                                FontWeight="SemiBold" />
+
+                            <TextBlock
+                                IsVisible="{Binding HasNoPlannedActivities}"
+                                Text="На этот день активность не запланирована."
+                                Opacity="0.75" />
+
+                            <ItemsControl
+                                IsVisible="{Binding HasPlannedActivities}"
+                                ItemsSource="{Binding PlannedActivities}">
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="activityVm:PlannedActivityItemViewModel">
+                                        <activityViews:PlannedActivityItemView />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel
+                        IsVisible="{Binding HasRecurringPlannedActivities}"
+                        Spacing="8">
+
+                        <TextBlock
+                            Text="По расписанию"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <ItemsControl ItemsSource="{Binding RecurringPlannedActivities}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="activityVm:RecurringPlannedActivityOccurrenceItemViewModel">
+                                    <activityViews:RecurringPlannedActivityOccurrenceItemView />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
                     <TextBlock
                         Text="Дополнительная активность"
                         FontSize="18"

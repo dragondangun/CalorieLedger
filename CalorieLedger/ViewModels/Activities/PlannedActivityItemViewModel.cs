@@ -16,6 +16,7 @@ public sealed partial class PlannedActivityItemViewModel:ViewModelBase {
     public string DateSummary { get; }
     public string DetailsSummary { get; }
     public bool CanBeCompleted { get; }
+    public bool IsDateVisible { get; }
 
     [ObservableProperty]
     private bool isDeleteConfirmationVisible;
@@ -27,7 +28,8 @@ public sealed partial class PlannedActivityItemViewModel:ViewModelBase {
         DateOnly currentDate,
         Action<Guid> edit,
         Action<Guid> complete,
-        Action<Guid> delete
+        Action<Guid> delete,
+        bool showDate = true
     ) {
         Id = activity.Id;
         Name = activity.Name;
@@ -36,6 +38,7 @@ public sealed partial class PlannedActivityItemViewModel:ViewModelBase {
             : $"{activity.Date:dd.MM.yyyy}";
         DetailsSummary = FormatDetails(activity);
         CanBeCompleted = activity.Date <= currentDate;
+        IsDateVisible = showDate;
 
         this.edit = edit;
         this.complete = complete;

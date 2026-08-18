@@ -14,6 +14,17 @@ public sealed class PlannedActivityService {
         return store.GetAll();
     }
 
+    public IReadOnlyList<PlannedActivity> Get(DateOnly date) {
+        return store.Get(date, date);
+    }
+
+    public IReadOnlyList<PlannedActivity> Get(
+        DateOnly startDate,
+        DateOnly endDate
+    ) {
+        return store.Get(startDate, endDate);
+    }
+
     public PlannedActivityDraft CreateNew(DateOnly date) {
         return new(Guid.NewGuid(), date, string.Empty);
     }

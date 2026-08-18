@@ -1,0 +1,90 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Activities.RecurringPlannedActivityManagerView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="using:CalorieLedger.Views.Activities"
+    xmlns:vm="using:CalorieLedger.ViewModels.Activities"
+    x:DataType="vm:RecurringPlannedActivityManagerViewModel">
+
+    <Grid>
+        <StackPanel IsVisible="{Binding IsListVisible}" Spacing="10">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock
+                    Text="Расписание активности"
+                    FontSize="20"
+                    FontWeight="SemiBold" />
+
+                <Button
+                    Content="Добавить"
+                    Command="{Binding AddCommand}" />
+
+                <Button
+                    Content="Закрыть"
+                    Command="{Binding CloseCommand}" />
+            </StackPanel>
+
+            <TextBlock
+                IsVisible="{Binding HasNoSchedules}"
+                Text="Повторяющихся активностей пока нет."
+                Opacity="0.75" />
+
+            <ItemsControl ItemsSource="{Binding Schedules}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:RecurringPlannedActivityScheduleItemViewModel">
+                        <Border
+                            Padding="10"
+                            Margin="0,0,0,8"
+                            BorderThickness="1"
+                            CornerRadius="8">
+
+                            <StackPanel Spacing="5">
+                                <TextBlock
+                                    Text="{Binding Name}"
+                                    FontWeight="SemiBold" />
+
+                                <TextBlock Text="{Binding ScheduleSummary}" />
+
+                                <TextBlock
+                                    Text="{Binding DetailsSummary}"
+                                    Opacity="0.75" />
+
+                                <StackPanel
+                                    IsVisible="{Binding ArePrimaryActionsVisible}"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+
+                                    <Button
+                                        Content="Изменить"
+                                        Command="{Binding EditCommand}" />
+
+                                    <Button
+                                        Content="Удалить"
+                                        Command="{Binding DeleteCommand}" />
+                                </StackPanel>
+
+                                <StackPanel
+                                    IsVisible="{Binding IsDeleteConfirmationVisible}"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+
+                                    <Button
+                                        Content="Отмена"
+                                        Command="{Binding CancelDeleteCommand}" />
+
+                                    <Button
+                                        Content="Удалить расписание"
+                                        Command="{Binding ConfirmDeleteCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <Grid IsVisible="{Binding IsEditorOpen}">
+            <views:RecurringPlannedActivityEditorView
+                DataContext="{Binding Editor}" />
+        </Grid>
+    </Grid>
+</UserControl>

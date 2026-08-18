@@ -1,24 +1,18 @@
-using CalorieLedger.Domain.Activities;
-
 namespace CalorieLedger.Application.Activities;
 
 public sealed class PlannedActivityCompletionService {
     private readonly IPlannedActivityStore plannedActivityStore;
-    private readonly ActivityPresetCatalogService presetCatalogService;
-    private readonly ActivityEnergySuggestionService energySuggestionService;
+    private readonly PlannedActivityCompletionDraftFactory draftFactory;
 
     public PlannedActivityCompletionService(
         IPlannedActivityStore plannedActivityStore,
-        ActivityPresetCatalogService presetCatalogService,
-        ActivityEnergySuggestionService energySuggestionService
+        PlannedActivityCompletionDraftFactory draftFactory
     ) {
         ArgumentNullException.ThrowIfNull(plannedActivityStore);
-        ArgumentNullException.ThrowIfNull(presetCatalogService);
-        ArgumentNullException.ThrowIfNull(energySuggestionService);
+        ArgumentNullException.ThrowIfNull(draftFactory);
 
         this.plannedActivityStore = plannedActivityStore;
-        this.presetCatalogService = presetCatalogService;
-        this.energySuggestionService = energySuggestionService;
+        this.draftFactory = draftFactory;
     }
 
     public ActivityDraft? CreateCompletionDraft(Guid planId, DateOnly completionDate) {
@@ -28,36 +22,15 @@ public sealed class PlannedActivityCompletionService {
             return null;
         }
 
-        var calories = plan.ManualBurnedCaloriesKcal;
-        ActivityEnergyCalculation? calculation = null;
-
-        if(plan.PresetCode is not null
-            && plan.MetValue is not null
-            && plan.Duration is not null) {
-            var preset = presetCatalogService.Find(plan.PresetCode)
-                ?? new ActivityPreset(plan.PresetCode, plan.Name, plan.MetValue.Value);
-
-            var suggestion = energySuggestionService.Estimate(
-                completionDate,
-                preset,
-                (decimal)plan.Duration.Value.TotalMinutes
-            );
-
-            if(suggestion is not null) {
-                calories = suggestion.BurnedCaloriesKcal;
-                calculation = suggestion.Calculation;
-            }
-        }
-
-        return new ActivityDraft(
-            Id: Guid.NewGuid(),
-            Date: completionDate,
-            Name: plan.Name,
-            BurnedCaloriesKcal: calories,
-            StartedAt: plan.PlannedAt,
-            Duration: plan.Duration,
-            Note: plan.Note,
-            EnergyCalculation: calculation
+        return draftFactory.Create(
+            completionDate,
+            plan.Name,
+            plan.PlannedAt,
+            plan.Duration,
+            plan.PresetCode,
+            plan.MetValue,
+            plan.ManualBurnedCaloriesKcal,
+            plan.Note
         );
     }
 }

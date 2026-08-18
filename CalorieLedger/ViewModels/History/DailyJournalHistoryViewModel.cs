@@ -1,3 +1,4 @@
+using CalorieLedger.Application.Activities;
 using CalorieLedger.Application.History;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.ViewModels.Activities;
@@ -29,6 +30,14 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     private readonly Action onClosed;
     private readonly WeeklyJournalSummaryProvider weeklySummaryProvider;
     private const int RecentWeekCount = 8;
+    private readonly PlannedActivityService? plannedActivityService;
+    private readonly Action<Guid>? editPlannedActivity;
+    private readonly Action<Guid>? completePlannedActivity;
+    private readonly Action<Guid>? deletePlannedActivity;
+    private readonly RecurringPlannedActivityService? recurringPlannedActivityService;
+    private readonly Action<Guid>? editRecurringPlannedActivity;
+    private readonly Action<Guid, DateOnly>? completeRecurringPlannedActivity;
+    private readonly Action<Guid, DateOnly>? skipRecurringPlannedActivity;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DateSummary))]
@@ -70,6 +79,9 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     public ObservableCollection<ActivityItemViewModel> Activities { get; } = [];
     public ObservableCollection<DailyJournalWeekDayViewModel> WeekDays { get; } = [];
     public ObservableCollection<JournalTrendWeekViewModel> RecentWeeks { get; } = [];
+    public ObservableCollection<RecurringPlannedActivityOccurrenceItemViewModel> RecurringPlannedActivities { get; } = [];
+
+    public bool HasRecurringPlannedActivities => RecurringPlannedActivities.Count > 0;
 
     public bool HasMeals => MealGroups.Count > 0;
     public bool HasNoMeals => MealGroups.Count == 0;
@@ -102,6 +114,10 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
     public string CompletionActionText => IsComplete ? "Открыть день снова" : "Завершить день";
 
     public string WeekComparisonSummary { get; private set; } = string.Empty;
+    public ObservableCollection<PlannedActivityItemViewModel> PlannedActivities { get; } = [];
+
+    public bool HasPlannedActivities => PlannedActivities.Count > 0;
+    public bool HasNoPlannedActivities => PlannedActivities.Count == 0;
 
     public DailyJournalHistoryViewModel(
         DailyJournalDaySnapshotProvider snapshotProvider,
@@ -116,7 +132,15 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         Action<Guid> editActivity,
         Action<Guid> deleteActivity,
         Action onClosed,
-        Action<Guid>? repeatActivity = null
+        Action<Guid>? repeatActivity = null,
+        PlannedActivityService? plannedActivityService = null,
+        Action<Guid>? editPlannedActivity = null,
+        Action<Guid>? completePlannedActivity = null,
+        Action<Guid>? deletePlannedActivity = null,
+        RecurringPlannedActivityService? recurringPlannedActivityService = null,
+        Action<Guid>? editRecurringPlannedActivity = null,
+        Action<Guid, DateOnly>? completeRecurringPlannedActivity = null,
+        Action<Guid, DateOnly>? skipRecurringPlannedActivity = null
     ) {
         ArgumentNullException.ThrowIfNull(snapshotProvider);
         ArgumentNullException.ThrowIfNull(addFood);
@@ -143,6 +167,13 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         this.onClosed = onClosed;
         this.weeklySummaryProvider = weeklySummaryProvider;
         this.repeatActivity = repeatActivity;
+        this.plannedActivityService = plannedActivityService;
+        this.editPlannedActivity = editPlannedActivity;
+        this.completePlannedActivity = completePlannedActivity;
+        this.deletePlannedActivity = deletePlannedActivity;
+        this.editRecurringPlannedActivity = editRecurringPlannedActivity;
+        this.completeRecurringPlannedActivity = completeRecurringPlannedActivity;
+        this.skipRecurringPlannedActivity = skipRecurringPlannedActivity;
 
         selectedDate = currentDate;
         Refresh();
@@ -265,6 +296,8 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
             );
         }
 
+        RefreshRecurringPlannedActivities(snapshot.Date);
+        RefreshPlannedActivities(snapshot.Date);
         OnPropertyChanged(nameof(HasMeals));
         OnPropertyChanged(nameof(HasNoMeals));
         OnPropertyChanged(nameof(HasActivities));
@@ -287,12 +320,15 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
             var date = weekStart.AddDays(offset);
             snapshots.TryGetValue(date, out var snapshot);
 
-            WeekDays.Add(new DailyJournalWeekDayViewModel(
-                date: date,
-                currentDate: currentDate,
-                isSelected: date == SelectedDate,
-                snapshot: snapshot,
-                selectDate: SelectDate));
+            WeekDays.Add(
+                new DailyJournalWeekDayViewModel(
+                    date: date,
+                    currentDate: currentDate,
+                    isSelected: date == SelectedDate,
+                    snapshot: snapshot,
+                    selectDate: SelectDate
+                )
+            );
         }
 
         var summaries = weeklySummaryProvider.GetRecentWeeks(
@@ -402,5 +438,61 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
             < 0m => $"К предыдущей неделе: {difference:0} ккал/день",
             _ => "Скорректированное среднее совпадает с предыдущей неделей."
         };
+    }
+
+    private void RefreshPlannedActivities(DateOnly date) {
+        PlannedActivities.Clear();
+
+        if(plannedActivityService is null
+            || editPlannedActivity is null
+            || completePlannedActivity is null
+            || deletePlannedActivity is null
+        ) {
+            OnPropertyChanged(nameof(HasPlannedActivities));
+            OnPropertyChanged(nameof(HasNoPlannedActivities));
+            return;
+        }
+
+        foreach(var activity in plannedActivityService.Get(date)) {
+            PlannedActivities.Add(
+                new PlannedActivityItemViewModel(
+                    activity,
+                    currentDate,
+                    editPlannedActivity,
+                    completePlannedActivity,
+                    deletePlannedActivity,
+                    showDate: false
+                )
+            );
+        }
+
+        OnPropertyChanged(nameof(HasPlannedActivities));
+        OnPropertyChanged(nameof(HasNoPlannedActivities));
+    }
+
+    private void RefreshRecurringPlannedActivities(DateOnly date) {
+        RecurringPlannedActivities.Clear();
+
+        if(recurringPlannedActivityService is null
+            || editRecurringPlannedActivity is null
+            || completeRecurringPlannedActivity is null
+            || skipRecurringPlannedActivity is null) {
+            OnPropertyChanged(nameof(HasRecurringPlannedActivities));
+            return;
+        }
+
+        foreach(var occurrence in recurringPlannedActivityService.GetOccurrences(date)) {
+            RecurringPlannedActivities.Add(
+                new RecurringPlannedActivityOccurrenceItemViewModel(
+                    occurrence,
+                    currentDate,
+                    editRecurringPlannedActivity,
+                    completeRecurringPlannedActivity,
+                    skipRecurringPlannedActivity
+                )
+            );
+        }
+
+        OnPropertyChanged(nameof(HasRecurringPlannedActivities));
     }
 }

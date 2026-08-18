@@ -121,10 +121,14 @@ public sealed class PlannedActivityCompletionServiceTests {
             new BodyMeasurementHistoryService(bodyStore)
         );
 
-        return new PlannedActivityCompletionService(
-            planStore,
+        var draftFactory = new PlannedActivityCompletionDraftFactory(
             catalog,
             energy
+        );
+
+        return new PlannedActivityCompletionService(
+            planStore,
+            draftFactory
         );
     }
 }

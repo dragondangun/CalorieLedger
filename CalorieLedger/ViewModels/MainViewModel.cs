@@ -58,6 +58,8 @@ public partial class MainViewModel:ViewModelBase {
     private readonly RecentActivityService recentActivityService;
     private readonly PlannedActivityService plannedActivityService;
     private readonly PlannedActivityCompletionService plannedActivityCompletionService;
+    private readonly RecurringPlannedActivityService recurringPlannedActivityService;
+    private readonly RecurringPlannedActivityCompletionService recurringPlannedActivityCompletionService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -90,6 +92,10 @@ public partial class MainViewModel:ViewModelBase {
     private ActivityEditorViewModel? activityEditor;
     [ObservableProperty]
     private PlannedActivityManagerViewModel? plannedActivityManager;
+    [ObservableProperty]
+    private RecurringPlannedActivityManagerViewModel? recurringPlannedActivityManager;
+
+    public bool IsRecurringPlannedActivityManagerOpen => RecurringPlannedActivityManager is not null;
 
     public bool IsPlannedActivityManagerOpen => PlannedActivityManager is not null;
 
@@ -122,6 +128,11 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsActivityEditorOpen => ActivityEditor is not null;
 
+    public ObservableCollection<PlannedActivityItemViewModel> TodayPlannedActivities { get; } = [];
+    public ObservableCollection<RecurringPlannedActivityOccurrenceItemViewModel> TodayRecurringPlannedActivities { get; } = [];
+    public bool HasTodayRecurringPlannedActivities => TodayRecurringPlannedActivities.Count > 0;
+    public bool HasTodayPlannedActivities => TodayPlannedActivities.Count > 0;
+
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
         IFoodDiaryStore foodDiaryStore,
@@ -139,7 +150,9 @@ public partial class MainViewModel:ViewModelBase {
         JsonFridgeStore.CreateDefault(),
         JsonCookingBatchStore.CreateDefault(),
         JsonActivityStore.CreateDefault(),
-        JsonActivityPresetStore.CreateDefault()
+        JsonActivityPresetStore.CreateDefault(),
+        JsonPlannedActivityStore.CreateDefault(),
+        JsonRecurringPlannedActivityStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -303,7 +316,8 @@ public partial class MainViewModel:ViewModelBase {
         ICookingBatchStore? cookingBatchStore = null,
         IActivityStore? activityStore = null,
         IActivityPresetStore? activityPresetStore = null,
-        IPlannedActivityStore? plannedActivityStore = null
+        IPlannedActivityStore? plannedActivityStore = null,
+        IRecurringPlannedActivityStore? recurringPlannedActivityStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -366,12 +380,26 @@ public partial class MainViewModel:ViewModelBase {
 
         var resolvedPlannedActivityStore = plannedActivityStore ?? new InMemoryPlannedActivityStore();
 
-        plannedActivityService = new PlannedActivityService(resolvedPlannedActivityStore);
-        plannedActivityCompletionService = new PlannedActivityCompletionService(
-            resolvedPlannedActivityStore,
+        var completionDraftFactory = new PlannedActivityCompletionDraftFactory(
             activityPresetCatalogService,
             activityEnergySuggestionService
         );
+
+        plannedActivityCompletionService = new PlannedActivityCompletionService(
+            resolvedPlannedActivityStore,
+            completionDraftFactory
+        );
+
+        var resolvedRecurringStore = recurringPlannedActivityStore ?? new InMemoryRecurringPlannedActivityStore();
+
+        recurringPlannedActivityService = new RecurringPlannedActivityService(resolvedRecurringStore);
+
+        recurringPlannedActivityCompletionService = new RecurringPlannedActivityCompletionService(
+            recurringPlannedActivityService,
+            completionDraftFactory
+        );
+
+        plannedActivityService = new PlannedActivityService(resolvedPlannedActivityStore);
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
@@ -421,7 +449,8 @@ public partial class MainViewModel:ViewModelBase {
         adaptiveEnergyAssessment = AdaptiveEnergyAssessmentViewModel.CreateUnavailable("Адаптивная оценка ещё не рассчитана.");
 
         today = CreateTodayDashboardViewModel();
-
+        RefreshTodayPlannedActivities();
+        RefreshTodayRecurringPlannedActivities();
         RefreshAfterBodyMeasurementChange();
     }
 
@@ -439,7 +468,15 @@ public partial class MainViewModel:ViewModelBase {
         && CookingSessionManager is null
         && FridgeManager is null
         && ActivityEditor is null
-        && PlannedActivityManager is null;
+        && PlannedActivityManager is null
+        && RecurringPlannedActivityManager is null;
+
+    partial void OnRecurringPlannedActivityManagerChanged(
+        RecurringPlannedActivityManagerViewModel? value
+    ) {
+        OnPropertyChanged(nameof(IsRecurringPlannedActivityManagerOpen));
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+    }
 
     [RelayCommand]
     private void AddBodyMeasurement() {
@@ -516,7 +553,11 @@ public partial class MainViewModel:ViewModelBase {
             editActivity: EditActivity,
             deleteActivity: DeleteActivity,
             onClosed: CloseDailyJournalHistory,
-            repeatActivity: RepeatActivity
+            repeatActivity: RepeatActivity,
+            recurringPlannedActivityService: recurringPlannedActivityService,
+            editRecurringPlannedActivity: OpenRecurringPlannedActivityEditor,
+            completeRecurringPlannedActivity: CompleteRecurringPlannedActivity,
+            skipRecurringPlannedActivity: SkipRecurringPlannedActivity
         );
     }
 
@@ -527,7 +568,9 @@ public partial class MainViewModel:ViewModelBase {
             activityPresetCatalogService,
             currentDateProvider.GetCurrentDate(),
             CompletePlannedActivity,
-            ClosePlannedActivities
+            OpenRecurringPlannedActivities,
+            ClosePlannedActivities,
+            RefreshAfterPlannedActivityChange
         );
     }
 
@@ -537,9 +580,9 @@ public partial class MainViewModel:ViewModelBase {
 
     private void CompletePlannedActivity(Guid id) {
         var draft = plannedActivityCompletionService.CreateCompletionDraft(
-        id,
-        currentDateProvider.GetCurrentDate()
-    );
+            id,
+            currentDateProvider.GetCurrentDate()
+        );
 
         if(draft is null) {
             PlannedActivityManager?.Refresh();
@@ -550,7 +593,10 @@ public partial class MainViewModel:ViewModelBase {
             draft,
             true,
             () => {
-                plannedActivityService.Delete(id);
+                if(plannedActivityService.Delete(id)) {
+                    RefreshAfterPlannedActivityChange();
+                }
+
                 PlannedActivityManager?.Refresh();
             }
         );
@@ -1118,5 +1164,124 @@ public partial class MainViewModel:ViewModelBase {
         }
 
         OpenActivityEditor(draft, isNew: true);
+    }
+
+    private void RefreshTodayPlannedActivities() {
+        TodayPlannedActivities.Clear();
+
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        foreach(var activity in plannedActivityService.Get(currentDate)) {
+            TodayPlannedActivities.Add(
+                new PlannedActivityItemViewModel(
+                    activity,
+                    currentDate,
+                    OpenPlannedActivityEditor,
+                    CompletePlannedActivity,
+                    DeletePlannedActivity,
+                    showDate: false
+                )
+            );
+        }
+
+        OnPropertyChanged(nameof(HasTodayPlannedActivities));
+    }
+
+    private void OpenPlannedActivityEditor(Guid id) {
+        OpenPlannedActivities();
+        PlannedActivityManager?.OpenEditor(id);
+    }
+
+    private void DeletePlannedActivity(Guid id) {
+        if(plannedActivityService.Delete(id)) {
+            RefreshAfterPlannedActivityChange();
+        }
+    }
+
+    private void RefreshAfterPlannedActivityChange() {
+        RefreshTodayPlannedActivities();
+        DailyJournalHistory?.Refresh();
+    }
+
+    private void OpenRecurringPlannedActivities() {
+        RecurringPlannedActivityManager =
+            new RecurringPlannedActivityManagerViewModel(
+                recurringPlannedActivityService,
+                activityPresetCatalogService,
+                currentDateProvider.GetCurrentDate(),
+                RefreshAfterRecurringPlannedActivityChange,
+                CloseRecurringPlannedActivities
+            );
+    }
+
+    private void OpenRecurringPlannedActivityEditor(Guid scheduleId) {
+        OpenRecurringPlannedActivities();
+        RecurringPlannedActivityManager?.OpenEditor(scheduleId);
+    }
+
+    private void CloseRecurringPlannedActivities() {
+        RecurringPlannedActivityManager = null;
+    }
+
+    private void CompleteRecurringPlannedActivity(
+        Guid scheduleId,
+        DateOnly occurrenceDate
+    ) {
+        var draft = recurringPlannedActivityCompletionService.CreateCompletionDraft(
+        scheduleId,
+        occurrenceDate
+    );
+
+        if(draft is null) {
+            RefreshAfterRecurringPlannedActivityChange();
+            return;
+        }
+
+        OpenActivityEditor(
+            draft,
+            true,
+            () => {
+                recurringPlannedActivityService.CompleteOccurrence(
+                    scheduleId,
+                    occurrenceDate,
+                    draft.Id
+                );
+
+                RefreshAfterRecurringPlannedActivityChange();
+            }
+        );
+    }
+
+    private void SkipRecurringPlannedActivity(
+        Guid scheduleId,
+        DateOnly occurrenceDate
+    ) {
+        recurringPlannedActivityService.SkipOccurrence(scheduleId, occurrenceDate);
+        RefreshAfterRecurringPlannedActivityChange();
+    }
+
+    private void RefreshTodayRecurringPlannedActivities() {
+        TodayRecurringPlannedActivities.Clear();
+
+        var currentDate = currentDateProvider.GetCurrentDate();
+
+        foreach(var occurrence in recurringPlannedActivityService.GetOccurrences(currentDate)) {
+            TodayRecurringPlannedActivities.Add(
+                new RecurringPlannedActivityOccurrenceItemViewModel(
+                    occurrence,
+                    currentDate,
+                    OpenRecurringPlannedActivityEditor,
+                    CompleteRecurringPlannedActivity,
+                    SkipRecurringPlannedActivity
+                )
+            );
+        }
+
+        OnPropertyChanged(nameof(HasTodayRecurringPlannedActivities));
+    }
+
+    private void RefreshAfterRecurringPlannedActivityChange() {
+        RefreshTodayRecurringPlannedActivities();
+        DailyJournalHistory?.Refresh();
     }
 }

@@ -229,9 +229,9 @@
                 </Border>
 
                 <Border
-              Padding="16"
-              CornerRadius="16"
-              BorderThickness="1">
+                    Padding="16"
+                    CornerRadius="16"
+                    BorderThickness="1">
                     <StackPanel Spacing="8">
                         <TextBlock
                             Text="Активность сверх образа жизни"
@@ -250,6 +250,41 @@
                             <Button
                                 Content="Планы"
                                 Command="{Binding OpenPlannedActivitiesCommand}" />
+                        </StackPanel>
+                        <StackPanel
+                            IsVisible="{Binding HasTodayPlannedActivities}"
+                            Spacing="6">
+
+                            <TextBlock
+                                Text="Запланировано на сегодня"
+                                FontWeight="SemiBold"
+                                Opacity="0.85" />
+
+                            <ItemsControl ItemsSource="{Binding TodayPlannedActivities}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="activityVm:PlannedActivityItemViewModel">
+                                        <activityViews:PlannedActivityItemView />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel
+                            IsVisible="{Binding HasTodayRecurringPlannedActivities}"
+                            Spacing="6">
+
+                            <TextBlock
+                                Text="По расписанию"
+                                FontWeight="SemiBold"
+                                Opacity="0.85" />
+
+                            <ItemsControl ItemsSource="{Binding TodayRecurringPlannedActivities}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="activityVm:RecurringPlannedActivityOccurrenceItemViewModel">
+                                        <activityViews:RecurringPlannedActivityOccurrenceItemView />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
 
                         <ItemsControl ItemsSource="{Binding Today.Activities}">
@@ -522,6 +557,13 @@
 
             <activityViews:PlannedActivityManagerView
                 DataContext="{Binding PlannedActivityManager}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsRecurringPlannedActivityManagerOpen}"
+            Panel.ZIndex="2">
+
+            <activityViews:RecurringPlannedActivityManagerView
+                DataContext="{Binding RecurringPlannedActivityManager}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsActivityEditorOpen}"
