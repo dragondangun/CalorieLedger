@@ -345,6 +345,44 @@ public sealed class DailyJournalHistoryViewModelTests {
         Assert.True(viewModel.RecentWeeks[^1].IsSelectedWeek);
     }
 
+    [Fact]
+    public void TrendWeek_Select_PreservesSelectedDayOfWeek() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var viewModel = CreateViewModel(
+            currentDate,
+            new InMemoryFoodDiaryStore()
+        );
+
+        var targetWeek = viewModel.RecentWeeks[^3];
+        Assert.Equal(new DateOnly(2026, 8, 3), targetWeek.WeekStartDate);
+
+        targetWeek.SelectCommand.Execute(null);
+
+        Assert.Equal(new DateOnly(2026, 8, 5), viewModel.SelectedDate);
+        Assert.Equal(new DateOnly(2026, 8, 3), viewModel.RecentWeeks[^1].WeekStartDate);
+        Assert.True(viewModel.RecentWeeks[^1].IsSelectedWeek);
+    }
+
+    [Fact]
+    public void SelectWeekCommand_RefreshesChartSelection() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var viewModel = CreateViewModel(
+            currentDate,
+            new InMemoryFoodDiaryStore()
+        );
+
+        viewModel.SelectWeekCommand.Execute(new DateOnly(2026, 8, 10));
+
+        Assert.Equal(new DateOnly(2026, 8, 12), viewModel.SelectedDate);
+
+        var selectedPoint = Assert.Single(
+            viewModel.TrendChartPoints,
+            point => point.IsSelectedWeek
+        );
+
+        Assert.Equal(new DateOnly(2026, 8, 10), selectedPoint.WeekStartDate);
+    }
+
     private static DailyJournalHistoryViewModel CreateViewModel(
         DateOnly currentDate,
         IFoodDiaryStore foodDiaryStore,

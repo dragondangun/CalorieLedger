@@ -208,6 +208,14 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         onClosed();
     }
 
+    [RelayCommand]
+    private void SelectWeek(DateOnly weekStartDate) {
+        var dayOffset = ((int)SelectedDate.DayOfWeek + 6) % 7;
+        var targetDate = weekStartDate.AddDays(dayOffset);
+
+        SelectedDate = targetDate > currentDate ? currentDate : targetDate;
+    }
+
     public void Refresh() {
         RefreshCurrentDay();
         RefreshWeek();
@@ -293,7 +301,8 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
             RecentWeeks.Add(
                 new JournalTrendWeekViewModel(
                     summary,
-                    summary.WeekStartDate == weekStart
+                    summary.WeekStartDate == weekStart,
+                    SelectWeek
                 )
             );
         }
@@ -301,12 +310,14 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         TrendChartPoints = [
             .. summaries.Select(
                 summary => new WeeklyTrendChartPoint(
+                    WeekStartDate: summary.WeekStartDate,
                     Label: $"{summary.WeekStartDate:dd.MM}"
                         + (summary.AvailableEndDate < summary.WeekEndDate ? "*" : ""),
                     FoodCaloriesKcal: summary.AverageFoodCaloriesKcal,
                     AdjustedCaloriesKcal: summary.AverageActivityAdjustedCaloriesKcal,
                     WeightKg: summary.LastWeightKg,
-                    IsPartialWeek: summary.AvailableEndDate < summary.WeekEndDate
+                    IsPartialWeek: summary.AvailableEndDate < summary.WeekEndDate,
+                    IsSelectedWeek: summary.WeekStartDate == weekStart
                 )
             )
         ];

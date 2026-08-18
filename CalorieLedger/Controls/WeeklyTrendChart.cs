@@ -1,11 +1,13 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using CalorieLedger.ViewModels.History;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Windows.Input;
 
 namespace CalorieLedger.Controls;
 
@@ -18,6 +20,9 @@ public sealed class WeeklyTrendChart:Control {
 
     public static readonly StyledProperty<IReadOnlyList<WeeklyTrendChartPoint>?> PointsProperty =
         AvaloniaProperty.Register<WeeklyTrendChart, IReadOnlyList<WeeklyTrendChartPoint>?>(nameof(Points));
+
+    public static readonly StyledProperty<ICommand?> SelectWeekCommandProperty =
+        AvaloniaProperty.Register<WeeklyTrendChart, ICommand?>(nameof(SelectWeekCommand));
 
     public static readonly StyledProperty<IBrush> FoodBrushProperty =
         AvaloniaProperty.Register<WeeklyTrendChart, IBrush>(nameof(FoodBrush), Brushes.DodgerBlue);
@@ -56,6 +61,11 @@ public sealed class WeeklyTrendChart:Control {
         set => SetValue(GridBrushProperty, value);
     }
 
+    public ICommand? SelectWeekCommand {
+        get => GetValue(SelectWeekCommandProperty);
+        set => SetValue(SelectWeekCommandProperty, value);
+    }
+
     static WeeklyTrendChart() {
         AffectsRender<WeeklyTrendChart>(
             PointsProperty,
@@ -74,12 +84,7 @@ public sealed class WeeklyTrendChart:Control {
             return;
         }
 
-        var plot = new Rect(
-            LeftMargin,
-            TopMargin,
-            Bounds.Width - LeftMargin - RightMargin,
-            Bounds.Height - TopMargin - BottomMargin
-        );
+        var plot = CreatePlot();
 
         var calorieValues = points
             .SelectMany(point => new[] { point.FoodCaloriesKcal, point.AdjustedCaloriesKcal })
@@ -102,6 +107,7 @@ public sealed class WeeklyTrendChart:Control {
             calorieRange,
             weightValues.Length > 0 ? weightRange : null
         );
+        DrawSelection(context, points, plot);
 
         DrawSeries(
             context,
@@ -275,5 +281,76 @@ public sealed class WeeklyTrendChart:Control {
             fontSize,
             brush
         );
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e) {
+        base.OnPointerPressed(e);
+
+        var points = Points;
+        var command = SelectWeekCommand;
+
+        if(points is null || points.Count == 0 || command is null) {
+            return;
+        }
+
+        var plot = CreatePlot();
+
+        if(plot.Width <= 0d || plot.Height <= 0d) {
+            return;
+        }
+
+        var position = e.GetPosition(this);
+
+        if(position.X < plot.Left
+            || position.X > plot.Right
+            || position.Y < plot.Top
+            || position.Y > plot.Bottom) {
+            return;
+        }
+
+        var ratio = (position.X - plot.Left) / plot.Width;
+        var index = points.Count == 1 ? 0 : Math.Clamp(
+            (int)Math.Round(ratio * (points.Count - 1)),
+            0,
+            points.Count - 1
+        );
+
+        var weekStartDate = points[index].WeekStartDate;
+
+        if(command.CanExecute(weekStartDate)) {
+            command.Execute(weekStartDate);
+            e.Handled = true;
+        }
+    }
+
+    private Rect CreatePlot() {
+        return new Rect(
+            LeftMargin,
+            TopMargin,
+            Bounds.Width - LeftMargin - RightMargin,
+            Bounds.Height - TopMargin - BottomMargin
+        );
+    }
+
+    private void DrawSelection(
+        DrawingContext context,
+        IReadOnlyList<WeeklyTrendChartPoint> points,
+        Rect plot
+    ) {
+        for(var index = 0; index < points.Count; index++) {
+            if(!points[index].IsSelectedWeek) {
+                continue;
+            }
+
+            var x = GetX(plot, index, points.Count);
+
+            context.DrawLine(
+                new Pen(GridBrush, 2d),
+                new Point(x, plot.Top),
+                new Point(x, plot.Bottom)
+            );
+
+            break;
+        }
     }
 }
