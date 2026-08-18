@@ -341,6 +341,33 @@ public sealed class AdaptivePlanDataQualityEvaluatorTests {
         );
     }
 
+    [Fact]
+    public void Evaluate_CompleteEntries_AveragesExtraActivitySeparately() {
+        var startDate = new DateOnly(2026, 7, 1);
+        var asOfDate = startDate.AddDays(13);
+
+        var measurements = Enumerable.Range(0, 8).Select(day => CreateBodyMeasurement(
+            startDate.AddDays(day * 13 / 7),
+            80m - day * 0.1m)
+        );
+
+        var intakeEntries = Enumerable.Range(0, 10).Select(day => new DailyEnergyIntakeEntry(
+            Date: startDate.AddDays(day),
+            CaloriesKcal: 2200m,
+            IsComplete: true,
+            ExtraActivityBurnedCaloriesKcal: day % 2 == 0 ? 300m : 100m)
+        );
+
+        var result = AdaptivePlanDataQualityEvaluator.Evaluate(
+            measurements,
+            intakeEntries,
+            asOfDate
+        );
+
+        Assert.Equal(2200m, result.AverageDailyCaloriesKcal);
+        Assert.Equal(200m, result.AverageDailyExtraActivityCaloriesKcal);
+    }
+
     private static BodyMeasurementEntry CreateBodyMeasurement(DateOnly date, decimal weightKg) {
         return new BodyMeasurementEntry(
             Id: Guid.NewGuid(),

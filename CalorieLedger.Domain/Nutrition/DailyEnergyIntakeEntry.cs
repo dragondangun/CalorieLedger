@@ -1,6 +1,7 @@
-﻿namespace CalorieLedger.Domain.Nutrition;
+namespace CalorieLedger.Domain.Nutrition;
 
 public sealed record DailyEnergyIntakeEntry(
     DateOnly Date,
     decimal CaloriesKcal,
-    bool IsComplete);
+    bool IsComplete,
+    decimal ExtraActivityBurnedCaloriesKcal = 0m);

@@ -10,6 +10,16 @@ public sealed record WeeklyNutritionSummarySnapshot(IReadOnlyList<DailyNutrition
         day => day.ConsumedTotals.CaloriesKcal
     );
 
+    public decimal? AverageExtraActivityBurnedCaloriesKcal => CalculateAverage(
+        day => day.IsEnergyComplete,
+        day => day.ExtraActivityBurnedCaloriesKcal
+    );
+
+    public decimal? AverageActivityAdjustedCaloriesKcal => CalculateAverage(
+        day => day.IsEnergyComplete,
+        day => (day.ConsumedTotals.CaloriesKcal ?? 0m) - day.ExtraActivityBurnedCaloriesKcal
+    );
+
     public decimal? AverageProteinG => CalculateAverage(
         day => day.AreMacrosComplete,
         day => day.ConsumedTotals.ProteinG

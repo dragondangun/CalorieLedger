@@ -7,5 +7,6 @@ public sealed record DailyNutritionSummarySnapshot(
     DateOnly Date,
     NutritionTotals ConsumedTotals,
     bool IsEnergyComplete,
-    bool AreMacrosComplete
+    bool AreMacrosComplete,
+    decimal ExtraActivityBurnedCaloriesKcal = 0m
 );

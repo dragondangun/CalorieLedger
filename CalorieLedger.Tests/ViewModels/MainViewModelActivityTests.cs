@@ -19,6 +19,8 @@ public sealed class MainViewModelActivityTests {
 
         viewModel.Today.AddActivityCommand.Execute(null);
 
+        var baseTargetCalories = viewModel.Today.TargetCaloriesKcal;
+
         var editor = Assert.IsType<ActivityEditorViewModel>(viewModel.ActivityEditor);
 
         editor.Name = "HEMA";
@@ -60,6 +62,11 @@ public sealed class MainViewModelActivityTests {
         Assert.Equal(
             saved.Id,
             item.Id
+        );
+
+        Assert.Equal(
+            baseTargetCalories + 350m,
+            viewModel.Today.TargetCaloriesKcal
         );
     }
 

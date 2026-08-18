@@ -50,6 +50,13 @@ public sealed class TodayDashboardSnapshotProvider:ITodayDashboardSnapshotProvid
             currentDate
         );
 
+        var activityEntries = activityStore.Get(weekStartDate, currentDate);
+
+        var activityByDate = activityEntries.GroupBy(entry => entry.Date).ToDictionary(
+            group => group.Key,
+            group => group.Sum(entry => entry.BurnedCaloriesKcal)
+        );
+
         var todayDiary = diaryDays[^1];
 
         var weeklySummary = new WeeklyNutritionSummarySnapshot(
@@ -59,25 +66,23 @@ public sealed class TodayDashboardSnapshotProvider:ITodayDashboardSnapshotProvid
                         Date: day.Date,
                         ConsumedTotals: day.ConsumedTotals,
                         IsEnergyComplete: day.IsEnergyComplete,
-                        AreMacrosComplete: day.AreMacrosComplete
+                        AreMacrosComplete: day.AreMacrosComplete,
+                        ExtraActivityBurnedCaloriesKcal: activityByDate.GetValueOrDefault(day.Date)
                     )
                 ),
             ]
         );
 
         IReadOnlyList<TodayActivitySnapshotItem> activities = [
-            .. activityStore
-                .Get(currentDate, currentDate)
-                .Select(
-                    activity => new TodayActivitySnapshotItem(
-                        Id: activity.Id,
-                        Name: activity.Name,
-                        BurnedCaloriesKcal: activity.BurnedCaloriesKcal,
-                        StartedAt: activity.StartedAt,
-                        Duration: activity.Duration,
-                        Note: activity.Note
-                    )
-                ),
+            .. activityEntries
+                .Where(entry => entry.Date == currentDate)
+                .Select(entry => new TodayActivitySnapshotItem(
+                    Id: entry.Id,
+                    Name: entry.Name,
+                    BurnedCaloriesKcal: entry.BurnedCaloriesKcal,
+                    StartedAt: entry.StartedAt,
+                    Duration: entry.Duration,
+                    Note: entry.Note))
         ];
 
         return new TodayDashboardSnapshot(

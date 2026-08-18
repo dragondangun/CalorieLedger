@@ -113,7 +113,8 @@ public partial class MainViewModel:ViewModelBase {
 
     private delegate IAdaptiveEnergyAssessmentPresentationProvider AdaptiveEnergyAssessmentPresentationProviderFactory(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
-        IFoodDiaryStore foodDiaryStore
+        IFoodDiaryStore foodDiaryStore,
+        IActivityStore activityStore
     );
 
     public MainViewModel() : this(
@@ -275,8 +276,7 @@ public partial class MainViewModel:ViewModelBase {
         new InMemoryProductCatalogStore(),
         CreateInMemoryAdaptiveProvider,
         currentDateProvider,
-        activityStore:
-            activityStore
+        activityStore: activityStore
     ) { }
 
     private MainViewModel(
@@ -347,7 +347,11 @@ public partial class MainViewModel:ViewModelBase {
             currentDateProvider: currentDateProvider
         );
 
-        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(currentProfileProvider, foodDiaryStore);
+        adaptiveEnergyAssessmentPresentationProvider = adaptiveEnergyAssessmentPresentationProviderFactory(
+            currentProfileProvider,
+            foodDiaryStore,
+            this.activityStore
+        );
 
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
@@ -794,22 +798,26 @@ public partial class MainViewModel:ViewModelBase {
 
     private static IAdaptiveEnergyAssessmentPresentationProvider CreatePersistentAdaptiveProvider(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
-        IFoodDiaryStore foodDiaryStore
+        IFoodDiaryStore foodDiaryStore,
+        IActivityStore activityStore
     ) {
         return CreateAdaptiveProvider(
             JsonAdaptiveEnergyEvaluationStore.CreateDefault(),
             foodDiaryStore,
+            activityStore,
             profileProvider
         );
     }
 
     private static IAdaptiveEnergyAssessmentPresentationProvider CreateInMemoryAdaptiveProvider(
         BodyMeasurementAwareNutritionProfileProvider profileProvider,
-        IFoodDiaryStore foodDiaryStore
+        IFoodDiaryStore foodDiaryStore,
+        IActivityStore activityStore
     ) {
         return CreateAdaptiveProvider(
             new InMemoryAdaptiveEnergyEvaluationStore(),
             foodDiaryStore,
+            activityStore,
             profileProvider
         );
     }
@@ -817,11 +825,12 @@ public partial class MainViewModel:ViewModelBase {
     private static IAdaptiveEnergyAssessmentPresentationProvider CreateAdaptiveProvider(
         IAdaptiveEnergyEvaluationStore evaluationStore,
         IFoodDiaryStore foodDiaryStore,
+        IActivityStore activityStore,
         BodyMeasurementAwareNutritionProfileProvider profileProvider
     ) {
         return new AdaptiveEnergyAssessmentPresentationProvider(
             new AdaptiveEnergyAssessmentService(evaluationStore),
-            new DailyEnergyIntakeHistoryProvider(foodDiaryStore),
+            new DailyEnergyIntakeHistoryProvider(foodDiaryStore, activityStore),
             profileProvider
         );
     }
@@ -831,7 +840,7 @@ public partial class MainViewModel:ViewModelBase {
     ) {
         ArgumentNullException.ThrowIfNull(adaptiveEnergyAssessmentPresentationProvider);
 
-        return (_, _) => adaptiveEnergyAssessmentPresentationProvider;
+        return (_, _, _) => adaptiveEnergyAssessmentPresentationProvider;
     }
 
     private static InMemoryUserNutritionProfileStore CreateInMemoryProfileStore() {

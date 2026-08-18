@@ -1,4 +1,4 @@
-﻿using CalorieLedger.Domain.Profile;
+using CalorieLedger.Domain.Profile;
 
 namespace CalorieLedger.Domain.Adaptive;
 
@@ -10,7 +10,9 @@ public sealed record AdaptivePlanDataQualityResult(
     int CompleteIntakeDayCount,
     decimal? AverageDailyCaloriesKcal,
     BodyWeightTrendResult WeightTrend,
-    AdaptivePlanDataIssue Issues) {
+    AdaptivePlanDataIssue Issues,
+    decimal? AverageDailyExtraActivityCaloriesKcal = null
+) {
     public bool IsSufficient =>
         Issues == AdaptivePlanDataIssue.None;
 

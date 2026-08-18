@@ -1,5 +1,7 @@
+using CalorieLedger.Application.Activities;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Nutrition;
+using CalorieLedger.Domain.Activities;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Nutrition;
@@ -181,6 +183,36 @@ public sealed class DailyEnergyIntakeHistoryProviderTests {
 
         Assert.Equal(0m, entry.CaloriesKcal);
 
+        Assert.True(entry.IsComplete);
+    }
+
+    [Fact]
+    public void GetEntries_ExtraActivity_IsStoredSeparatelyFromFoodCalories() {
+        var date = new DateOnly(2026, 8, 18);
+        var foodStore = new InMemoryFoodDiaryStore();
+        var activityStore = new InMemoryActivityStore();
+
+        foodStore.SetDateComplete(date, true);
+
+        activityStore.Save(new ActivityEntry(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: "HEMA",
+            BurnedCaloriesKcal: 300m)
+        );
+
+        activityStore.Save(new ActivityEntry(
+            Id: Guid.NewGuid(),
+            Date: date,
+            Name: "Ходьба",
+            BurnedCaloriesKcal: 100m)
+        );
+
+        var provider = new DailyEnergyIntakeHistoryProvider(foodStore, activityStore);
+        var entry = Assert.Single(provider.GetEntries(date, date));
+
+        Assert.Equal(0m, entry.CaloriesKcal);
+        Assert.Equal(400m, entry.ExtraActivityBurnedCaloriesKcal);
         Assert.True(entry.IsComplete);
     }
 

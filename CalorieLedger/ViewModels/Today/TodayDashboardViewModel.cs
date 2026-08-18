@@ -13,7 +13,9 @@ using CalorieLedger.ViewModels.Meals;
 namespace CalorieLedger.ViewModels.Today;
 
 public sealed partial class TodayDashboardViewModel:ObservableObject {
-    public decimal TargetCaloriesKcal => target.CaloriesKcal;
+    public decimal BaseTargetCaloriesKcal => target.CaloriesKcal;
+
+    public decimal TargetCaloriesKcal => BaseTargetCaloriesKcal + ActivityBurnedCaloriesKcal;
 
     public decimal? TargetProteinG => target.ProteinG;
 
@@ -71,7 +73,7 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
     public decimal ActivityBurnedCaloriesKcal => Activities.Sum(x => x.BurnedCaloriesKcal);
 
     public string ActivitySummary => ActivityBurnedCaloriesKcal > 0m
-        ? $"Потрачено дополнительно: {ActivityBurnedCaloriesKcal:0} ккал"
+        ? $"Дополнительная активность: +{ActivityBurnedCaloriesKcal:0} ккал к дневному бюджету"
         : "Дополнительная активность не указана";
 
     private readonly Action addFood;
@@ -206,9 +208,19 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
         return time is null ? "" : time.Value.ToString("HH:mm");
     }
 
-    public string WeeklyCaloriesAverageSummary => weeklySummary.AverageCaloriesKcal is decimal averageCaloriesKcal
-        ? $"{averageCaloriesKcal:0} / {TargetCaloriesKcal:0} ккал в среднем"
-        : "Средняя калорийность пока недоступна";
+    public string WeeklyCaloriesAverageSummary {
+        get {
+            if(weeklySummary.AverageCaloriesKcal is not decimal averageCalories) {
+                return "Средняя калорийность пока недоступна";
+            }
+
+            if(weeklySummary.AverageExtraActivityBurnedCaloriesKcal is not > 0m) {
+                return $"{averageCalories:0} / {BaseTargetCaloriesKcal:0} ккал в среднем";
+            }
+
+            return $"{averageCalories:0} ккал съедено · {weeklySummary.AverageExtraActivityBurnedCaloriesKcal.Value:0} ккал доп. активности";
+        }
+    }
 
     public string WeeklyMacrosAverageSummary =>
         weeklySummary.AverageProteinG is decimal averageProteinG
@@ -219,16 +231,16 @@ public sealed partial class TodayDashboardViewModel:ObservableObject {
 
     public string WeeklyBalanceSummary {
         get {
-            if(weeklySummary.AverageCaloriesKcal is not decimal averageCaloriesKcal) {
+            if(weeklySummary.AverageActivityAdjustedCaloriesKcal is not decimal averageCalories) {
                 return "Завершите хотя бы один день для расчёта среднего.";
             }
 
-            var balance = averageCaloriesKcal - TargetCaloriesKcal;
+            var balance = averageCalories - BaseTargetCaloriesKcal;
 
             return balance switch {
-                > 100m => $"Средний профицит: +{balance:0} ккал/день",
-                < -100m => $"Средний дефицит: {balance:0} ккал/день",
-                _ => "В среднем около цели"
+                > 100m => $"Средний профицит с учётом активности: +{balance:0} ккал/день",
+                < -100m => $"Средний дефицит с учётом активности: {balance:0} ккал/день",
+                _ => "В среднем около цели с учётом активности"
             };
         }
     }
