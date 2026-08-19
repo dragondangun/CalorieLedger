@@ -8,6 +8,7 @@
     xmlns:profileViews="using:CalorieLedger.Views.Profile"
     xmlns:adaptiveViews="using:CalorieLedger.Views.Adaptive"
     xmlns:mealViews="using:CalorieLedger.Views.Meals"
+    xmlns:mealPlanViews="using:CalorieLedger.Views.MealPlanning"
     xmlns:productViews="using:CalorieLedger.Views.Products"
     xmlns:mealVm="using:CalorieLedger.ViewModels.Meals"
     xmlns:cookingViews="using:CalorieLedger.Views.Cooking"
@@ -53,6 +54,12 @@
                 <Button
                     Content="Холодильник"
                     Command="{Binding OpenFridgeCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="План питания"
+                    Command="{Binding OpenMealPlanCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Padding="12,10" />
@@ -550,6 +557,13 @@
 
             <fridgeViews:FridgeView
                 DataContext="{Binding FridgeManager}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsMealPlanVisible}"
+            Panel.ZIndex="1">
+
+            <mealPlanViews:MealPlanManagerView
+                DataContext="{Binding MealPlanManager}" />
         </Grid>
         <Grid
             IsVisible="{Binding IsPlannedActivityManagerVisible}"

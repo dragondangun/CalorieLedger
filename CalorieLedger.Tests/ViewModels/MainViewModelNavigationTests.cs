@@ -52,6 +52,24 @@ public sealed class MainViewModelNavigationTests {
     }
 
     [Fact]
+    public void MealPlan_IsAStandaloneMainSurfaceAndReturnsToTodayOnClose() {
+        var viewModel = CreateViewModel(new DateOnly(2026, 8, 19));
+
+        viewModel.OpenMealPlanCommand.Execute(null);
+
+        Assert.True(viewModel.IsMealPlanOpen);
+        Assert.True(viewModel.IsMealPlanVisible);
+        Assert.False(viewModel.IsTodayDashboardVisible);
+        AssertSingleVisibleSurface(viewModel);
+
+        viewModel.MealPlanManager!.CloseCommand.Execute(null);
+
+        Assert.False(viewModel.IsMealPlanOpen);
+        Assert.True(viewModel.IsTodayDashboardVisible);
+        AssertSingleVisibleSurface(viewModel);
+    }
+
+    [Fact]
     public void OpeningAnotherMainSurface_HidesCurrentSurfaceAndReturnsToItOnClose() {
         var viewModel = CreateViewModel(new DateOnly(2026, 8, 19));
 
@@ -103,6 +121,7 @@ public sealed class MainViewModelNavigationTests {
             viewModel.IsDailyJournalHistoryVisible,
             viewModel.IsCookingSessionManagerVisible,
             viewModel.IsFridgeVisible,
+            viewModel.IsMealPlanVisible,
             viewModel.IsActivityEditorVisible,
             viewModel.IsPlannedActivityManagerVisible,
             viewModel.IsRecurringPlannedActivityManagerVisible,

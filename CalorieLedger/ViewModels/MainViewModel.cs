@@ -18,6 +18,7 @@ using CalorieLedger.ViewModels.Activities;
 using CalorieLedger.ViewModels.Adaptive;
 using CalorieLedger.ViewModels.Cooking;
 using CalorieLedger.ViewModels.Fridge;
+using CalorieLedger.ViewModels.MealPlanning;
 using CalorieLedger.ViewModels.Meals;
 using CalorieLedger.ViewModels.Products;
 using CalorieLedger.ViewModels.Profile;
@@ -92,6 +93,8 @@ public partial class MainViewModel:ViewModelBase {
     [ObservableProperty]
     private FridgeManagerViewModel? fridgeManager;
     [ObservableProperty]
+    private MealPlanManagerViewModel? mealPlanManager;
+    [ObservableProperty]
     private ActivityEditorViewModel? activityEditor;
     [ObservableProperty]
     private PlannedActivityManagerViewModel? plannedActivityManager;
@@ -108,6 +111,7 @@ public partial class MainViewModel:ViewModelBase {
         DailyJournalHistory,
         CookingSessions,
         Fridge,
+        MealPlan,
         ActivityEditor,
         PlannedActivities,
         RecurringPlannedActivities,
@@ -172,6 +176,11 @@ public partial class MainViewModel:ViewModelBase {
     public bool IsFridgeVisible =>
         activeSurface == MainSurface.Fridge
         && FridgeManager is not null;
+
+    public bool IsMealPlanOpen => MealPlanManager is not null;
+    public bool IsMealPlanVisible =>
+        activeSurface == MainSurface.MealPlan
+        && MealPlanManager is not null;
 
     public bool IsActivityEditorOpen => ActivityEditor is not null;
     public bool IsActivityEditorVisible =>
@@ -596,6 +605,7 @@ public partial class MainViewModel:ViewModelBase {
             MainSurface.DailyJournalHistory => DailyJournalHistory is not null,
             MainSurface.CookingSessions => CookingSessionManager is not null,
             MainSurface.Fridge => FridgeManager is not null,
+            MainSurface.MealPlan => MealPlanManager is not null,
             MainSurface.ActivityEditor => ActivityEditor is not null,
             MainSurface.PlannedActivities => PlannedActivityManager is not null,
             MainSurface.RecurringPlannedActivities => RecurringPlannedActivityManager is not null,
@@ -613,6 +623,7 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(IsDailyJournalHistoryVisible));
         OnPropertyChanged(nameof(IsCookingSessionManagerVisible));
         OnPropertyChanged(nameof(IsFridgeVisible));
+        OnPropertyChanged(nameof(IsMealPlanVisible));
         OnPropertyChanged(nameof(IsActivityEditorVisible));
         OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
         OnPropertyChanged(nameof(IsRecurringPlannedActivityManagerVisible));
@@ -684,6 +695,24 @@ public partial class MainViewModel:ViewModelBase {
             onClosed: CloseFridge,
             mealPlanService: mealPlanService
         );
+    }
+
+    [RelayCommand]
+    private void OpenMealPlan() {
+        MealPlanManager = new MealPlanManagerViewModel(
+            mealPlanService,
+            currentDateProvider.GetCurrentDate(),
+            CloseMealPlan
+        );
+    }
+
+    private void CloseMealPlan() {
+        MealPlanManager = null;
+    }
+
+    partial void OnMealPlanManagerChanged(MealPlanManagerViewModel? value) {
+        OnPropertyChanged(nameof(IsMealPlanOpen));
+        UpdateSurface(MainSurface.MealPlan, value is not null);
     }
 
     [RelayCommand]

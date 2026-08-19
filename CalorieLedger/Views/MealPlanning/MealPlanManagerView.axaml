@@ -1,0 +1,231 @@
+<UserControl
+    x:Class="CalorieLedger.Views.MealPlanning.MealPlanManagerView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:CalorieLedger.ViewModels.MealPlanning"
+    x:DataType="vm:MealPlanManagerViewModel">
+
+    <ScrollViewer>
+        <StackPanel
+            Margin="24"
+            Spacing="14"
+            MaxWidth="820"
+            HorizontalAlignment="Center">
+
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    Grid.Column="0"
+                    Text="План питания"
+                    FontSize="26"
+                    FontWeight="Bold"
+                    VerticalAlignment="Center" />
+
+                <Button
+                    Grid.Column="1"
+                    Content="Закрыть"
+                    Command="{Binding CloseCommand}" />
+            </Grid>
+
+            <Grid
+                ColumnDefinitions="Auto,Auto,*,Auto"
+                ColumnSpacing="8">
+
+                <Button
+                    Grid.Column="0"
+                    Content="← Предыдущий"
+                    Command="{Binding PreviousDayCommand}"
+                    IsEnabled="{Binding CanGoToPreviousDay}" />
+
+                <Button
+                    Grid.Column="1"
+                    Content="Сегодня"
+                    Command="{Binding GoToTodayCommand}" />
+
+                <TextBlock
+                    Grid.Column="2"
+                    Text="{Binding DateSummary}"
+                    FontSize="18"
+                    FontWeight="SemiBold"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center" />
+
+                <Button
+                    Grid.Column="3"
+                    Content="Следующий →"
+                    Command="{Binding NextDayCommand}" />
+            </Grid>
+
+            <StackPanel Spacing="8">
+                <TextBlock
+                    Text="Запланированные дни"
+                    FontSize="17"
+                    FontWeight="SemiBold" />
+
+                <TextBlock
+                    IsVisible="{Binding HasNoPlannedDays}"
+                    Text="Сохранённых планов на сегодня и будущие даты пока нет."
+                    TextWrapping="Wrap"
+                    Opacity="0.75" />
+
+                <ScrollViewer
+                    IsVisible="{Binding HasPlannedDays}"
+                    HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Disabled">
+
+                    <ItemsControl ItemsSource="{Binding PlannedDays}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" Spacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MealPlanDayLinkViewModel">
+                                <Button
+                                    Content="{Binding DateSummary}"
+                                    Command="{Binding SelectCommand}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        Text="{Binding NutritionSummary}"
+                        TextWrapping="Wrap"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        IsVisible="{Binding HasNoPlan}"
+                        Text="План можно импортировать из ответа LLM через раздел «Холодильник → Экспорт для LLM»."
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
+
+                    <ItemsControl
+                        IsVisible="{Binding HasPlan}"
+                        ItemsSource="{Binding Meals}">
+
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MealPlanMealViewModel">
+                                <Border
+                                    Margin="0,0,0,8"
+                                    Padding="12"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
+
+                                    <StackPanel Spacing="7">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Grid.Column="0" Spacing="2">
+                                                <TextBlock
+                                                    Text="{Binding Name}"
+                                                    FontSize="17"
+                                                    FontWeight="SemiBold" />
+
+                                                <TextBlock
+                                                    Text="{Binding RoleSummary}"
+                                                    Opacity="0.75" />
+                                            </StackPanel>
+
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Text="{Binding TimeSummary}"
+                                                VerticalAlignment="Center"
+                                                Opacity="0.8" />
+                                        </Grid>
+
+                                        <TextBlock
+                                            IsVisible="{Binding HasNote}"
+                                            Text="{Binding Note}"
+                                            TextWrapping="Wrap"
+                                            FontStyle="Italic"
+                                            Opacity="0.8" />
+
+                                        <ItemsControl ItemsSource="{Binding Items}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:MealPlanItemViewModel">
+                                                    <Border
+                                                        Margin="0,0,0,5"
+                                                        Padding="9"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6">
+
+                                                        <StackPanel Spacing="3">
+                                                            <Grid ColumnDefinitions="*,Auto">
+                                                                <TextBlock
+                                                                    Grid.Column="0"
+                                                                    Text="{Binding Name}"
+                                                                    FontWeight="SemiBold"
+                                                                    TextWrapping="Wrap" />
+
+                                                                <TextBlock
+                                                                    Grid.Column="1"
+                                                                    Text="{Binding QuantitySummary}"
+                                                                    Margin="10,0,0,0" />
+                                                            </Grid>
+
+                                                            <TextBlock
+                                                                Text="{Binding NutritionSummary}"
+                                                                TextWrapping="Wrap"
+                                                                Opacity="0.8" />
+
+                                                            <TextBlock
+                                                                IsVisible="{Binding HasFridgeSource}"
+                                                                Text="{Binding SourceSummary}"
+                                                                FontStyle="Italic"
+                                                                Opacity="0.7" />
+
+                                                            <TextBlock
+                                                                IsVisible="{Binding HasNote}"
+                                                                Text="{Binding Note}"
+                                                                TextWrapping="Wrap"
+                                                                Opacity="0.75" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button
+                        IsVisible="{Binding HasPlan}"
+                        Content="Удалить план этого дня"
+                        Command="{Binding RequestDeleteSelectedDayCommand}"
+                        HorizontalAlignment="Left" />
+
+                    <Border
+                        IsVisible="{Binding IsDeleteConfirmationVisible}"
+                        Padding="10"
+                        BorderThickness="1"
+                        CornerRadius="8">
+
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                Text="Удалить сохранённый план питания на выбранный день?"
+                                TextWrapping="Wrap" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button
+                                    Content="Удалить"
+                                    Command="{Binding ConfirmDeleteSelectedDayCommand}" />
+
+                                <Button
+                                    Content="Отмена"
+                                    Command="{Binding CancelDeleteSelectedDayCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
