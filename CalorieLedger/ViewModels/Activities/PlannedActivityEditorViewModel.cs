@@ -42,6 +42,25 @@ public sealed partial class PlannedActivityEditorViewModel:ViewModelBase {
     public bool IsManualEnergyVisible => SelectedPreset is null;
     public string Title { get; }
 
+    public DateTimeOffset? DatePickerDate {
+        get => new DateTimeOffset(
+            Date.Year,
+            Date.Month,
+            Date.Day,
+            0,
+            0,
+            0,
+            TimeSpan.Zero
+        );
+        set {
+            if(value is null) {
+                return;
+            }
+
+            Date = DateOnly.FromDateTime(value.Value.DateTime);
+        }
+    }
+
     public PlannedActivityEditorViewModel(
         PlannedActivityService service,
         ActivityPresetCatalogService presetCatalogService,
@@ -87,6 +106,10 @@ public sealed partial class PlannedActivityEditorViewModel:ViewModelBase {
         }
 
         ActivityPresets = presets;
+    }
+
+    partial void OnDateChanged(DateOnly value) {
+        OnPropertyChanged(nameof(DatePickerDate));
     }
 
     [RelayCommand]

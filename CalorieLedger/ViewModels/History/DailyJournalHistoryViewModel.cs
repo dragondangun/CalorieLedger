@@ -171,6 +171,7 @@ public partial class DailyJournalHistoryViewModel:ViewModelBase {
         this.editPlannedActivity = editPlannedActivity;
         this.completePlannedActivity = completePlannedActivity;
         this.deletePlannedActivity = deletePlannedActivity;
+        this.recurringPlannedActivityService = recurringPlannedActivityService;
         this.editRecurringPlannedActivity = editRecurringPlannedActivity;
         this.completeRecurringPlannedActivity = completeRecurringPlannedActivity;
         this.skipRecurringPlannedActivity = skipRecurringPlannedActivity;

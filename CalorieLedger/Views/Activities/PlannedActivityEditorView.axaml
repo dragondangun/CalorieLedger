@@ -11,7 +11,7 @@
             <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" />
 
             <TextBlock Text="Дата" />
-            <DatePicker SelectedDate="{Binding Date, Mode=TwoWay}" />
+            <DatePicker SelectedDate="{Binding DatePickerDate, Mode=TwoWay}" />
 
             <TextBlock Text="Название" />
             <TextBox Text="{Binding Name, Mode=TwoWay}" />

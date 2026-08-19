@@ -11,7 +11,7 @@
             <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" />
 
             <TextBlock Text="Дата начала" />
-            <DatePicker SelectedDate="{Binding StartDate, Mode=TwoWay}" />
+            <DatePicker SelectedDate="{Binding StartDatePickerDate, Mode=TwoWay}" />
 
             <TextBlock Text="День недели" />
 

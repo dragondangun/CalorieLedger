@@ -171,6 +171,144 @@ public sealed class MainViewModelActivityTests {
         Assert.Equal(180m, history.ExtraActivityBurnedCaloriesKcal);
     }
 
+    [Fact]
+    public void PlannedActivityEditor_DatePickerAdapter_UpdatesDateOnlyDraftValue() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var viewModel = CreateViewModel(currentDate, new InMemoryActivityStore());
+
+        viewModel.OpenPlannedActivitiesCommand.Execute(null);
+
+        var manager = Assert.IsType<PlannedActivityManagerViewModel>(
+            viewModel.PlannedActivityManager
+        );
+
+        manager.AddCommand.Execute(null);
+
+        var editor = Assert.IsType<PlannedActivityEditorViewModel>(manager.Editor);
+
+        Assert.NotNull(editor.DatePickerDate);
+        Assert.Equal(currentDate.Year, editor.DatePickerDate.Value.Year);
+        Assert.Equal(currentDate.Month, editor.DatePickerDate.Value.Month);
+        Assert.Equal(currentDate.Day, editor.DatePickerDate.Value.Day);
+
+        editor.DatePickerDate = new DateTimeOffset(
+            2026,
+            8,
+            25,
+            0,
+            0,
+            0,
+            TimeSpan.FromHours(3)
+        );
+
+        Assert.Equal(new DateOnly(2026, 8, 25), editor.Date);
+    }
+
+    [Fact]
+    public void RecurringPlannedActivityEditor_DatePickerAdapter_UpdatesStartDate() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var viewModel = CreateViewModel(currentDate, new InMemoryActivityStore());
+
+        viewModel.OpenPlannedActivitiesCommand.Execute(null);
+
+        var plannedManager = Assert.IsType<PlannedActivityManagerViewModel>(
+            viewModel.PlannedActivityManager
+        );
+
+        plannedManager.OpenRecurringActivitiesCommand.Execute(null);
+
+        var recurringManager = Assert.IsType<RecurringPlannedActivityManagerViewModel>(
+            viewModel.RecurringPlannedActivityManager
+        );
+
+        recurringManager.AddCommand.Execute(null);
+
+        var editor = Assert.IsType<RecurringPlannedActivityEditorViewModel>(
+            recurringManager.Editor
+        );
+
+        Assert.NotNull(editor.StartDatePickerDate);
+        Assert.Equal(currentDate.Year, editor.StartDatePickerDate.Value.Year);
+        Assert.Equal(currentDate.Month, editor.StartDatePickerDate.Value.Month);
+        Assert.Equal(currentDate.Day, editor.StartDatePickerDate.Value.Day);
+
+        editor.StartDatePickerDate = new DateTimeOffset(
+            2026,
+            9,
+            2,
+            0,
+            0,
+            0,
+            TimeSpan.FromHours(3)
+        );
+
+        Assert.Equal(new DateOnly(2026, 9, 2), editor.StartDate);
+    }
+
+    [Fact]
+    public void CompletePlannedActivity_HidesPlanManagerUntilCompletionEditorCloses() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var viewModel = CreateViewModel(currentDate, new InMemoryActivityStore());
+
+        viewModel.OpenPlannedActivitiesCommand.Execute(null);
+
+        var manager = Assert.IsType<PlannedActivityManagerViewModel>(
+            viewModel.PlannedActivityManager
+        );
+
+        manager.AddCommand.Execute(null);
+
+        var planEditor = Assert.IsType<PlannedActivityEditorViewModel>(manager.Editor);
+        planEditor.Name = "Ходьба";
+        planEditor.SaveCommand.Execute(null);
+
+        var item = Assert.Single(manager.Activities);
+        Assert.True(viewModel.IsPlannedActivityManagerVisible);
+
+        item.CompleteCommand.Execute(null);
+
+        var completionEditor = Assert.IsType<ActivityEditorViewModel>(
+            viewModel.ActivityEditor
+        );
+
+        Assert.True(viewModel.IsPlannedActivityManagerOpen);
+        Assert.False(viewModel.IsPlannedActivityManagerVisible);
+
+        completionEditor.CancelCommand.Execute(null);
+
+        Assert.Null(viewModel.ActivityEditor);
+        Assert.True(viewModel.IsPlannedActivityManagerVisible);
+    }
+
+    [Fact]
+    public void OpenRecurringSchedule_HidesPlanManagerAndRestoresItOnClose() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var viewModel = CreateViewModel(currentDate, new InMemoryActivityStore());
+
+        viewModel.OpenPlannedActivitiesCommand.Execute(null);
+
+        var plannedManager = Assert.IsType<PlannedActivityManagerViewModel>(
+            viewModel.PlannedActivityManager
+        );
+
+        Assert.True(viewModel.IsPlannedActivityManagerVisible);
+
+        plannedManager.OpenRecurringActivitiesCommand.Execute(null);
+
+        var recurringManager = Assert.IsType<RecurringPlannedActivityManagerViewModel>(
+            viewModel.RecurringPlannedActivityManager
+        );
+
+        Assert.True(viewModel.IsPlannedActivityManagerOpen);
+        Assert.False(viewModel.IsPlannedActivityManagerVisible);
+        Assert.True(viewModel.IsRecurringPlannedActivityManagerOpen);
+
+        recurringManager.CloseCommand.Execute(null);
+
+        Assert.Null(viewModel.RecurringPlannedActivityManager);
+        Assert.True(viewModel.IsPlannedActivityManagerVisible);
+    }
+
     private static MainViewModel CreateViewModel(
         DateOnly currentDate,
         IActivityStore activityStore

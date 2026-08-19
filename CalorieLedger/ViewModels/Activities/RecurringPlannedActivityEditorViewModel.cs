@@ -52,6 +52,25 @@ public sealed partial class RecurringPlannedActivityEditorViewModel:ViewModelBas
     public bool IsManualEnergyVisible => SelectedPreset is null;
     public string Title { get; }
 
+    public DateTimeOffset? StartDatePickerDate {
+        get => new DateTimeOffset(
+            StartDate.Year,
+            StartDate.Month,
+            StartDate.Day,
+            0,
+            0,
+            0,
+            TimeSpan.Zero
+        );
+        set {
+            if(value is null) {
+                return;
+            }
+
+            StartDate = DateOnly.FromDateTime(value.Value.DateTime);
+        }
+    }
+
     public RecurringPlannedActivityEditorViewModel(
         RecurringPlannedActivityService service,
         ActivityPresetCatalogService presetCatalogService,
@@ -96,6 +115,10 @@ public sealed partial class RecurringPlannedActivityEditorViewModel:ViewModelBas
         }
 
         ActivityPresets = presets;
+    }
+
+    partial void OnStartDateChanged(DateOnly value) {
+        OnPropertyChanged(nameof(StartDatePickerDate));
     }
 
     [RelayCommand]

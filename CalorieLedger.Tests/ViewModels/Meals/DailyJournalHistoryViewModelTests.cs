@@ -384,6 +384,47 @@ public sealed class DailyJournalHistoryViewModelTests {
     }
 
     [Fact]
+    public void SelectDay_LoadsRecurringPlannedActivityOccurrence() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var selectedDate = new DateOnly(2026, 8, 18);
+        var recurringStore = new InMemoryRecurringPlannedActivityStore();
+        var recurringService = new RecurringPlannedActivityService(recurringStore);
+
+        var saveResult = recurringService.Save(
+            new RecurringPlannedActivityDraft(
+                Id: Guid.NewGuid(),
+                StartDate: selectedDate,
+                DayOfWeek: selectedDate.DayOfWeek,
+                IntervalWeeks: 1,
+                Name: "HEMA"
+            )
+        );
+
+        Assert.True(saveResult.IsSuccess);
+
+        var viewModel = CreateViewModel(
+            currentDate,
+            new InMemoryFoodDiaryStore(),
+            recurringPlannedActivityService: recurringService,
+            editRecurringPlannedActivity: _ => { },
+            completeRecurringPlannedActivity: (_, _) => { },
+            skipRecurringPlannedActivity: (_, _) => { }
+        );
+
+        Assert.Empty(viewModel.RecurringPlannedActivities);
+
+        viewModel.WeekDays
+            .Single(day => day.Date == selectedDate)
+            .SelectCommand
+            .Execute(null);
+
+        var occurrence = Assert.Single(viewModel.RecurringPlannedActivities);
+
+        Assert.Equal(selectedDate, occurrence.Date);
+        Assert.Equal("HEMA", occurrence.Name);
+    }
+
+    [Fact]
     public void ActivityRepeatCommand_PassesSourceActivityId() {
         var currentDate = new DateOnly(2026, 8, 18);
         var activityId = Guid.NewGuid();
@@ -420,7 +461,11 @@ public sealed class DailyJournalHistoryViewModelTests {
         IFoodDiaryStore foodDiaryStore,
         IActivityStore? activityStore = null,
         IBodyMeasurementStore? bodyMeasurementStore = null,
-        Action<Guid>? repeatActivity = null
+        Action<Guid>? repeatActivity = null,
+        RecurringPlannedActivityService? recurringPlannedActivityService = null,
+        Action<Guid>? editRecurringPlannedActivity = null,
+        Action<Guid, DateOnly>? completeRecurringPlannedActivity = null,
+        Action<Guid, DateOnly>? skipRecurringPlannedActivity = null
     ) {
         var journalProvider = new DailyJournalDaySnapshotProvider(
             new FoodDiaryDaySnapshotProvider(foodDiaryStore),
@@ -445,7 +490,11 @@ public sealed class DailyJournalHistoryViewModelTests {
             editActivity: _ => { },
             deleteActivity: _ => { },
             onClosed: () => { },
-            repeatActivity: repeatActivity
+            repeatActivity: repeatActivity,
+            recurringPlannedActivityService: recurringPlannedActivityService,
+            editRecurringPlannedActivity: editRecurringPlannedActivity,
+            completeRecurringPlannedActivity: completeRecurringPlannedActivity,
+            skipRecurringPlannedActivity: skipRecurringPlannedActivity
         );
     }
 

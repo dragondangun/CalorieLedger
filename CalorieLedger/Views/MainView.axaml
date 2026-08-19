@@ -552,7 +552,7 @@
                 DataContext="{Binding FridgeManager}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsPlannedActivityManagerOpen}"
+            IsVisible="{Binding IsPlannedActivityManagerVisible}"
             Panel.ZIndex="1">
 
             <activityViews:PlannedActivityManagerView

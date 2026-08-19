@@ -99,6 +99,11 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsPlannedActivityManagerOpen => PlannedActivityManager is not null;
 
+    public bool IsPlannedActivityManagerVisible =>
+        PlannedActivityManager is not null
+        && RecurringPlannedActivityManager is null
+        && ActivityEditor is null;
+
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
     private const int CollapsedBodyMeasurementCount = 5;
@@ -475,6 +480,7 @@ public partial class MainViewModel:ViewModelBase {
         RecurringPlannedActivityManagerViewModel? value
     ) {
         OnPropertyChanged(nameof(IsRecurringPlannedActivityManagerOpen));
+        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
@@ -604,6 +610,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnPlannedActivityManagerChanged(PlannedActivityManagerViewModel? value) {
         OnPropertyChanged(nameof(IsPlannedActivityManagerOpen));
+        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
@@ -1149,6 +1156,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnActivityEditorChanged(ActivityEditorViewModel? value) {
         OnPropertyChanged(nameof(IsActivityEditorOpen));
+        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
