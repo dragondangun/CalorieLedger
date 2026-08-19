@@ -11,6 +11,7 @@ using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
 using CalorieLedger.Application.Today;
 using CalorieLedger.ViewModels.History;
+using CalorieLedger.Domain.Meals;
 using CalorieLedger.Domain.Profile;
 using CalorieLedger.Infrastructure;
 using CalorieLedger.Persistence;
@@ -64,6 +65,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly RecurringPlannedActivityService recurringPlannedActivityService;
     private readonly RecurringPlannedActivityCompletionService recurringPlannedActivityCompletionService;
     private readonly MealPlanService mealPlanService;
+    private readonly MealPlanFoodDraftFactory mealPlanFoodDraftFactory;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -301,6 +303,22 @@ public partial class MainViewModel:ViewModelBase {
         IBodyMeasurementStore bodyMeasurementStore,
         IUserNutritionProfileStore profileStore,
         IFoodDiaryStore foodDiaryStore,
+        IMealPlanStore mealPlanStore,
+        ICurrentDateProvider currentDateProvider
+    ) : this(
+        bodyMeasurementStore,
+        profileStore,
+        foodDiaryStore,
+        new InMemoryProductCatalogStore(),
+        CreateInMemoryAdaptiveProvider,
+        currentDateProvider,
+        mealPlanStore: mealPlanStore
+    ) { }
+
+    public MainViewModel(
+        IBodyMeasurementStore bodyMeasurementStore,
+        IUserNutritionProfileStore profileStore,
+        IFoodDiaryStore foodDiaryStore,
         IProductCatalogStore productCatalogStore,
         ICurrentDateProvider currentDateProvider
     ) : this(
@@ -464,6 +482,7 @@ public partial class MainViewModel:ViewModelBase {
         mealPlanService = new MealPlanService(
             mealPlanStore ?? new InMemoryMealPlanStore()
         );
+        mealPlanFoodDraftFactory = new MealPlanFoodDraftFactory(fridgeInventoryService);
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
@@ -702,8 +721,23 @@ public partial class MainViewModel:ViewModelBase {
         MealPlanManager = new MealPlanManagerViewModel(
             mealPlanService,
             currentDateProvider.GetCurrentDate(),
-            CloseMealPlan
+            CloseMealPlan,
+            OpenMealPlanFoodLog
         );
+    }
+
+    private void OpenMealPlanFoodLog(
+        DateOnly date,
+        MealGroupRole mealRole,
+        MealPlanItem item
+    ) {
+        var draft = mealPlanFoodDraftFactory.Create(
+            item,
+            date,
+            mealRole
+        );
+
+        OpenFoodLogEditor(draft);
     }
 
     private void CloseMealPlan() {

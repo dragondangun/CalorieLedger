@@ -18,6 +18,7 @@ public sealed partial class MealPlanManagerViewModel:ViewModelBase {
     private readonly MealPlanService mealPlanService;
     private readonly DateOnly currentDate;
     private readonly Action onClosed;
+    private readonly Action<DateOnly, MealGroupRole, MealPlanItem>? logFood;
 
     [ObservableProperty]
     private DateOnly selectedDate;
@@ -51,7 +52,8 @@ public sealed partial class MealPlanManagerViewModel:ViewModelBase {
     public MealPlanManagerViewModel(
         MealPlanService mealPlanService,
         DateOnly currentDate,
-        Action onClosed
+        Action onClosed,
+        Action<DateOnly, MealGroupRole, MealPlanItem>? logFood = null
     ) {
         ArgumentNullException.ThrowIfNull(mealPlanService);
         ArgumentNullException.ThrowIfNull(onClosed);
@@ -59,6 +61,7 @@ public sealed partial class MealPlanManagerViewModel:ViewModelBase {
         this.mealPlanService = mealPlanService;
         this.currentDate = currentDate;
         this.onClosed = onClosed;
+        this.logFood = logFood;
         selectedDate = currentDate;
 
         Refresh();
@@ -136,7 +139,14 @@ public sealed partial class MealPlanManagerViewModel:ViewModelBase {
 
         if(day is not null) {
             foreach(var meal in day.Meals) {
-                Meals.Add(new MealPlanMealViewModel(meal));
+                Meals.Add(
+                    new MealPlanMealViewModel(
+                        meal,
+                        SelectedDate,
+                        SelectedDate == currentDate && logFood is not null,
+                        LogFood
+                    )
+                );
             }
 
             NutritionSummary = FormatDayNutrition(day);
@@ -169,6 +179,18 @@ public sealed partial class MealPlanManagerViewModel:ViewModelBase {
 
     private void SelectDate(DateOnly date) {
         SelectedDate = date;
+    }
+
+    private void LogFood(
+        DateOnly date,
+        MealGroupRole mealRole,
+        MealPlanItem item
+    ) {
+        logFood?.Invoke(
+            date,
+            mealRole,
+            item
+        );
     }
 
     private static string FormatDate(DateOnly date) {
@@ -260,8 +282,14 @@ public sealed class MealPlanMealViewModel {
 
     public ObservableCollection<MealPlanItemViewModel> Items { get; } = [];
 
-    public MealPlanMealViewModel(MealPlanMeal meal) {
+    public MealPlanMealViewModel(
+        MealPlanMeal meal,
+        DateOnly date,
+        bool canLogFood,
+        Action<DateOnly, MealGroupRole, MealPlanItem> logFood
+    ) {
         ArgumentNullException.ThrowIfNull(meal);
+        ArgumentNullException.ThrowIfNull(logFood);
 
         Name = meal.Name;
         RoleSummary = FormatRole(meal.Role);
@@ -271,7 +299,15 @@ public sealed class MealPlanMealViewModel {
         Note = meal.Note;
 
         foreach(var item in meal.Items) {
-            Items.Add(new MealPlanItemViewModel(item));
+            Items.Add(
+                new MealPlanItemViewModel(
+                    item,
+                    date,
+                    meal.Role,
+                    canLogFood,
+                    logFood
+                )
+            );
         }
     }
 
@@ -288,6 +324,11 @@ public sealed class MealPlanMealViewModel {
 }
 
 public sealed class MealPlanItemViewModel {
+    private readonly MealPlanItem item;
+    private readonly DateOnly date;
+    private readonly MealGroupRole mealRole;
+    private readonly Action<DateOnly, MealGroupRole, MealPlanItem> logFood;
+
     public string Name { get; }
 
     public string QuantitySummary { get; }
@@ -302,8 +343,24 @@ public sealed class MealPlanItemViewModel {
 
     public bool HasNote => !string.IsNullOrWhiteSpace(Note);
 
-    public MealPlanItemViewModel(MealPlanItem item) {
+    public bool CanLogFood { get; }
+
+    public IRelayCommand LogFoodCommand { get; }
+
+    public MealPlanItemViewModel(
+        MealPlanItem item,
+        DateOnly date,
+        MealGroupRole mealRole,
+        bool canLogFood,
+        Action<DateOnly, MealGroupRole, MealPlanItem> logFood
+    ) {
         ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(logFood);
+
+        this.item = item;
+        this.date = date;
+        this.mealRole = mealRole;
+        this.logFood = logFood;
 
         Name = item.Name;
         QuantitySummary = FormatQuantity(item.Quantity);
@@ -311,6 +368,23 @@ public sealed class MealPlanItemViewModel {
         HasFridgeSource = item.FridgeItemId is not null;
         SourceSummary = HasFridgeSource ? "из холодильника" : string.Empty;
         Note = item.Note;
+        CanLogFood = canLogFood;
+        LogFoodCommand = new RelayCommand(
+            LogFood,
+            () => CanLogFood
+        );
+    }
+
+    private void LogFood() {
+        if(!CanLogFood) {
+            return;
+        }
+
+        logFood(
+            date,
+            mealRole,
+            item
+        );
     }
 
     private static string FormatQuantity(FoodQuantity quantity) {

@@ -156,17 +156,25 @@
                                                         CornerRadius="6">
 
                                                         <StackPanel Spacing="3">
-                                                            <Grid ColumnDefinitions="*,Auto">
+                                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                                                                 <TextBlock
                                                                     Grid.Column="0"
                                                                     Text="{Binding Name}"
                                                                     FontWeight="SemiBold"
-                                                                    TextWrapping="Wrap" />
+                                                                    TextWrapping="Wrap"
+                                                                    VerticalAlignment="Center" />
 
                                                                 <TextBlock
                                                                     Grid.Column="1"
                                                                     Text="{Binding QuantitySummary}"
-                                                                    Margin="10,0,0,0" />
+                                                                    VerticalAlignment="Center" />
+
+                                                                <Button
+                                                                    Grid.Column="2"
+                                                                    Content="Съесть"
+                                                                    Command="{Binding LogFoodCommand}"
+                                                                    IsEnabled="{Binding CanLogFood}"
+                                                                    ToolTip.Tip="Фактически съеденное можно добавить только на сегодняшний день." />
                                                             </Grid>
 
                                                             <TextBlock

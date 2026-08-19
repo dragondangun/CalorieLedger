@@ -129,6 +129,63 @@ public sealed class MealPlanManagerViewModelTests {
     }
 
     [Fact]
+    public void TodayPlanItem_LogFoodInvokesCallbackWithSelectedMealContext() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var day = CreateDay(currentDate, "Завтрак");
+        DateOnly? loggedDate = null;
+        MealGroupRole? loggedRole = null;
+        MealPlanItem? loggedItem = null;
+
+        var viewModel = new MealPlanManagerViewModel(
+            CreateService(day),
+            currentDate,
+            () => { },
+            (date, role, item) => {
+                loggedDate = date;
+                loggedRole = role;
+                loggedItem = item;
+            }
+        );
+
+        var meal = Assert.Single(viewModel.Meals);
+        var itemViewModel = Assert.Single(meal.Items);
+
+        Assert.True(itemViewModel.CanLogFood);
+        Assert.True(itemViewModel.LogFoodCommand.CanExecute(null));
+
+        itemViewModel.LogFoodCommand.Execute(null);
+
+        Assert.Equal(currentDate, loggedDate);
+        Assert.Equal(day.Meals[0].Role, loggedRole);
+        Assert.Same(day.Meals[0].Items[0], loggedItem);
+    }
+
+    [Fact]
+    public void FuturePlanItem_CannotBeLoggedAsAlreadyEaten() {
+        var currentDate = new DateOnly(2026, 8, 19);
+        var futureDate = currentDate.AddDays(1);
+        var callbackCount = 0;
+
+        var viewModel = new MealPlanManagerViewModel(
+            CreateService(CreateDay(futureDate, "Завтра")),
+            currentDate,
+            () => { },
+            (_, _, _) => callbackCount++
+        );
+
+        viewModel.NextDayCommand.Execute(null);
+
+        var itemViewModel = Assert.Single(Assert.Single(viewModel.Meals).Items);
+
+        Assert.False(itemViewModel.CanLogFood);
+        Assert.False(itemViewModel.LogFoodCommand.CanExecute(null));
+
+        itemViewModel.LogFoodCommand.Execute(null);
+
+        Assert.Equal(0, callbackCount);
+    }
+
+    [Fact]
     public void Close_InvokesCallback() {
         var closed = false;
         var viewModel = new MealPlanManagerViewModel(
