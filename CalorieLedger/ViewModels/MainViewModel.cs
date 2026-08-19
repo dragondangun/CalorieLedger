@@ -25,6 +25,7 @@ using CalorieLedger.ViewModels.Today;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -97,14 +98,35 @@ public partial class MainViewModel:ViewModelBase {
     [ObservableProperty]
     private RecurringPlannedActivityManagerViewModel? recurringPlannedActivityManager;
 
+    private enum MainSurface {
+        TodayDashboard,
+        GoalEditor,
+        BodyMeasurementEditor,
+        ProfileEditor,
+        FoodLogEditor,
+        ProductCatalog,
+        DailyJournalHistory,
+        CookingSessions,
+        Fridge,
+        ActivityEditor,
+        PlannedActivities,
+        RecurringPlannedActivities,
+    }
+
+    private readonly Stack<MainSurface> navigationStack = new();
+    private MainSurface activeSurface = MainSurface.TodayDashboard;
+
     public bool IsRecurringPlannedActivityManagerOpen => RecurringPlannedActivityManager is not null;
 
     public bool IsPlannedActivityManagerOpen => PlannedActivityManager is not null;
 
     public bool IsPlannedActivityManagerVisible =>
-        PlannedActivityManager is not null
-        && RecurringPlannedActivityManager is null
-        && ActivityEditor is null;
+        activeSurface == MainSurface.PlannedActivities
+        && PlannedActivityManager is not null;
+
+    public bool IsRecurringPlannedActivityManagerVisible =>
+        activeSurface == MainSurface.RecurringPlannedActivities
+        && RecurringPlannedActivityManager is not null;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -122,22 +144,39 @@ public partial class MainViewModel:ViewModelBase {
         : $"Показать все измерения ({BodyMeasurements.Count})";
 
     public bool IsProfileEditorOpen => ProfileEditor is not null;
+    public bool IsProfileEditorVisible =>
+        activeSurface == MainSurface.ProfileEditor
+        && ProfileEditor is not null;
 
     public bool IsFoodLogEditorOpen => FoodLogEditor is not null;
+    public bool IsFoodLogEditorVisible =>
+        activeSurface == MainSurface.FoodLogEditor
+        && FoodLogEditor is not null;
 
     public bool IsProductCatalogOpen => ProductCatalogManager is not null;
+    public bool IsProductCatalogVisible =>
+        activeSurface == MainSurface.ProductCatalog
+        && ProductCatalogManager is not null;
 
     public bool IsDailyJournalHistoryOpen => DailyJournalHistory is not null;
+    public bool IsDailyJournalHistoryVisible =>
+        activeSurface == MainSurface.DailyJournalHistory
+        && DailyJournalHistory is not null;
 
     public bool IsCookingSessionManagerOpen => CookingSessionManager is not null;
+    public bool IsCookingSessionManagerVisible =>
+        activeSurface == MainSurface.CookingSessions
+        && CookingSessionManager is not null;
 
     public bool IsFridgeOpen => FridgeManager is not null;
-
     public bool IsFridgeVisible =>
-        FridgeManager is not null
-        && FoodLogEditor is null;
+        activeSurface == MainSurface.Fridge
+        && FridgeManager is not null;
 
     public bool IsActivityEditorOpen => ActivityEditor is not null;
+    public bool IsActivityEditorVisible =>
+        activeSurface == MainSurface.ActivityEditor
+        && ActivityEditor is not null;
 
     public ObservableCollection<PlannedActivityItemViewModel> TodayPlannedActivities { get; } = [];
     public ObservableCollection<RecurringPlannedActivityOccurrenceItemViewModel> TodayRecurringPlannedActivities { get; } = [];
@@ -471,28 +510,119 @@ public partial class MainViewModel:ViewModelBase {
     }
 
     public bool IsGoalEditorOpen => GoalEditor is not null;
+    public bool IsGoalEditorVisible =>
+        activeSurface == MainSurface.GoalEditor
+        && GoalEditor is not null;
 
     public bool IsBodyMeasurementEditorOpen => BodyMeasurementEditor is not null;
+    public bool IsBodyMeasurementEditorVisible =>
+        activeSurface == MainSurface.BodyMeasurementEditor
+        && BodyMeasurementEditor is not null;
 
-    public bool IsTodayDashboardVisible =>
-        GoalEditor is null
-        && BodyMeasurementEditor is null
-        && ProfileEditor is null
-        && FoodLogEditor is null
-        && ProductCatalogManager is null
-        && DailyJournalHistory is null
-        && CookingSessionManager is null
-        && FridgeManager is null
-        && ActivityEditor is null
-        && PlannedActivityManager is null
-        && RecurringPlannedActivityManager is null;
+    public bool IsTodayDashboardVisible => activeSurface == MainSurface.TodayDashboard;
+
+    private void NavigateTo(MainSurface surface) {
+        if(activeSurface == surface) {
+            NotifyNavigationVisibilityChanged();
+            return;
+        }
+
+        RemoveFromNavigationStack(surface);
+
+        if(IsSurfaceAvailable(activeSurface)) {
+            navigationStack.Push(activeSurface);
+        }
+
+        activeSurface = surface;
+        NotifyNavigationVisibilityChanged();
+    }
+
+    private void CloseSurface(MainSurface surface) {
+        RemoveFromNavigationStack(surface);
+
+        if(activeSurface != surface) {
+            NotifyNavigationVisibilityChanged();
+            return;
+        }
+
+        activeSurface = PopAvailableSurface();
+        NotifyNavigationVisibilityChanged();
+    }
+
+    private void UpdateSurface(MainSurface surface, bool isOpen) {
+        if(isOpen) {
+            NavigateTo(surface);
+        }
+        else {
+            CloseSurface(surface);
+        }
+    }
+
+    private MainSurface PopAvailableSurface() {
+        while(navigationStack.TryPop(out var surface)) {
+            if(IsSurfaceAvailable(surface)) {
+                return surface;
+            }
+        }
+
+        return MainSurface.TodayDashboard;
+    }
+
+    private void RemoveFromNavigationStack(MainSurface surface) {
+        if(navigationStack.Count == 0) {
+            return;
+        }
+
+        var remaining = navigationStack
+            .Where(item => item != surface)
+            .Reverse()
+            .ToArray();
+
+        navigationStack.Clear();
+
+        foreach(var item in remaining) {
+            navigationStack.Push(item);
+        }
+    }
+
+    private bool IsSurfaceAvailable(MainSurface surface) {
+        return surface switch {
+            MainSurface.TodayDashboard => true,
+            MainSurface.GoalEditor => GoalEditor is not null,
+            MainSurface.BodyMeasurementEditor => BodyMeasurementEditor is not null,
+            MainSurface.ProfileEditor => ProfileEditor is not null,
+            MainSurface.FoodLogEditor => FoodLogEditor is not null,
+            MainSurface.ProductCatalog => ProductCatalogManager is not null,
+            MainSurface.DailyJournalHistory => DailyJournalHistory is not null,
+            MainSurface.CookingSessions => CookingSessionManager is not null,
+            MainSurface.Fridge => FridgeManager is not null,
+            MainSurface.ActivityEditor => ActivityEditor is not null,
+            MainSurface.PlannedActivities => PlannedActivityManager is not null,
+            MainSurface.RecurringPlannedActivities => RecurringPlannedActivityManager is not null,
+            _ => false,
+        };
+    }
+
+    private void NotifyNavigationVisibilityChanged() {
+        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        OnPropertyChanged(nameof(IsGoalEditorVisible));
+        OnPropertyChanged(nameof(IsBodyMeasurementEditorVisible));
+        OnPropertyChanged(nameof(IsProfileEditorVisible));
+        OnPropertyChanged(nameof(IsFoodLogEditorVisible));
+        OnPropertyChanged(nameof(IsProductCatalogVisible));
+        OnPropertyChanged(nameof(IsDailyJournalHistoryVisible));
+        OnPropertyChanged(nameof(IsCookingSessionManagerVisible));
+        OnPropertyChanged(nameof(IsFridgeVisible));
+        OnPropertyChanged(nameof(IsActivityEditorVisible));
+        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
+        OnPropertyChanged(nameof(IsRecurringPlannedActivityManagerVisible));
+    }
 
     partial void OnRecurringPlannedActivityManagerChanged(
         RecurringPlannedActivityManagerViewModel? value
     ) {
         OnPropertyChanged(nameof(IsRecurringPlannedActivityManagerOpen));
-        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.RecurringPlannedActivities, value is not null);
     }
 
     [RelayCommand]
@@ -622,8 +752,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnPlannedActivityManagerChanged(PlannedActivityManagerViewModel? value) {
         OnPropertyChanged(nameof(IsPlannedActivityManagerOpen));
-        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.PlannedActivities, value is not null);
     }
 
     private void CloseDailyJournalHistory() {
@@ -632,7 +761,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnDailyJournalHistoryChanged(DailyJournalHistoryViewModel? value) {
         OnPropertyChanged(nameof(IsDailyJournalHistoryOpen));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.DailyJournalHistory, value is not null);
     }
 
     private void OpenFridgeFoodLog(Guid fridgeItemId) {
@@ -655,8 +784,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnFridgeManagerChanged(FridgeManagerViewModel? value) {
         OnPropertyChanged(nameof(IsFridgeOpen));
-        OnPropertyChanged(nameof(IsFridgeVisible));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.Fridge, value is not null);
     }
 
     private void CloseCookingSessions() {
@@ -665,7 +793,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnCookingSessionManagerChanged(CookingSessionManagerViewModel? value) {
         OnPropertyChanged(nameof(IsCookingSessionManagerOpen));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.CookingSessions, value is not null);
     }
 
 
@@ -679,8 +807,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnProductCatalogManagerChanged(ProductCatalogManagerViewModel? value) {
         OnPropertyChanged(nameof(IsProductCatalogOpen));
-
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.ProductCatalog, value is not null);
     }
 
     partial void OnIsBodyMeasurementHistoryExpandedChanged(bool value) {
@@ -808,8 +935,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnFoodLogEditorChanged(FoodLogEditorViewModel? value) {
         OnPropertyChanged(nameof(IsFoodLogEditorOpen));
-        OnPropertyChanged(nameof(IsFridgeVisible));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.FoodLogEditor, value is not null);
     }
 
     private void OpenApproximateFoodLogEditor() {
@@ -931,12 +1057,12 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnGoalEditorChanged(NutritionGoalEditorViewModel? value) {
         OnPropertyChanged(nameof(IsGoalEditorOpen));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.GoalEditor, value is not null);
     }
 
     partial void OnBodyMeasurementEditorChanged(BodyMeasurementEditorViewModel? value) {
         OnPropertyChanged(nameof(IsBodyMeasurementEditorOpen));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.BodyMeasurementEditor, value is not null);
     }
 
     private void RefreshAdaptiveEnergyAssessment() {
@@ -1020,7 +1146,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnProfileEditorChanged(UserNutritionProfileEditorViewModel? value) {
         OnPropertyChanged(nameof(IsProfileEditorOpen));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.ProfileEditor, value is not null);
     }
 
     private void RefreshProfileSummary() {
@@ -1169,8 +1295,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnActivityEditorChanged(ActivityEditorViewModel? value) {
         OnPropertyChanged(nameof(IsActivityEditorOpen));
-        OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
-        OnPropertyChanged(nameof(IsTodayDashboardVisible));
+        UpdateSurface(MainSurface.ActivityEditor, value is not null);
     }
 
     private void RepeatActivity(Guid id) {

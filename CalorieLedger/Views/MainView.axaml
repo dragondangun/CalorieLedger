@@ -510,13 +510,13 @@
             </StackPanel>
         </ScrollViewer>
         <Grid
-            IsVisible="{Binding IsGoalEditorOpen}"
+            IsVisible="{Binding IsGoalEditorVisible}"
             Panel.ZIndex="1">
             <profileViews:NutritionGoalEditorView
                 DataContext="{Binding GoalEditor}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsBodyMeasurementEditorOpen}"
+            IsVisible="{Binding IsBodyMeasurementEditorVisible}"
             Panel.ZIndex="1">
 
             <profileViews:BodyMeasurementEditorView
@@ -524,21 +524,21 @@
         </Grid>
 
         <Grid
-            IsVisible="{Binding IsProfileEditorOpen}"
+            IsVisible="{Binding IsProfileEditorVisible}"
             Panel.ZIndex="1">
 
             <profileViews:UserNutritionProfileEditorView
             DataContext="{Binding ProfileEditor}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsDailyJournalHistoryOpen}"
+            IsVisible="{Binding IsDailyJournalHistoryVisible}"
             Panel.ZIndex="1">
 
             <historyViews:DailyJournalHistoryView
                 DataContext="{Binding DailyJournalHistory}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsCookingSessionManagerOpen}"
+            IsVisible="{Binding IsCookingSessionManagerVisible}"
             Panel.ZIndex="1">
 
             <cookingViews:CookingSessionView
@@ -559,27 +559,27 @@
                 DataContext="{Binding PlannedActivityManager}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsRecurringPlannedActivityManagerOpen}"
+            IsVisible="{Binding IsRecurringPlannedActivityManagerVisible}"
             Panel.ZIndex="2">
 
             <activityViews:RecurringPlannedActivityManagerView
                 DataContext="{Binding RecurringPlannedActivityManager}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsActivityEditorOpen}"
+            IsVisible="{Binding IsActivityEditorVisible}"
             Panel.ZIndex="1">
 
             <activityViews:ActivityEditorView
                 DataContext="{Binding ActivityEditor}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsFoodLogEditorOpen}"
+            IsVisible="{Binding IsFoodLogEditorVisible}"
             Panel.ZIndex="1">
 
             <mealViews:FoodLogEditorView DataContext="{Binding FoodLogEditor}" />
         </Grid>
         <Grid
-            IsVisible="{Binding IsProductCatalogOpen}"
+            IsVisible="{Binding IsProductCatalogVisible}"
             Panel.ZIndex="1">
 
             <productViews:ProductCatalogView
