@@ -1,4 +1,5 @@
 using CalorieLedger.Application.Fridge;
+using CalorieLedger.Application.MealPlanning;
 using CalorieLedger.Application.Products;
 using CalorieLedger.Domain.Common;
 using CalorieLedger.Domain.Fridge;
@@ -76,6 +77,74 @@ public sealed class FridgeManagerViewModelTests {
         Assert.StartsWith("Не удалось разобрать план.", viewModel.MealPlanningResponseStatus);
     }
 
+
+    [Fact]
+    public void SaveMealPlanningResponse_ValidParsedPlan_PersistsAndShowsSavedPreview() {
+        var store = new InMemoryMealPlanStore();
+        var service = new MealPlanService(store);
+        var viewModel = CreateViewModel(
+            new InMemoryFridgeStore(),
+            new DateOnly(2026, 8, 19),
+            service
+        );
+        var jsonStart = viewModel.MealPlanningResponseInstructions.IndexOf('{');
+
+        viewModel.MealPlanningResponseText = viewModel.MealPlanningResponseInstructions[jsonStart..];
+        viewModel.ParseMealPlanningResponseCommand.Execute(null);
+
+        Assert.True(viewModel.CanSaveMealPlanningResponse);
+
+        viewModel.SaveMealPlanningResponseCommand.Execute(null);
+
+        Assert.Equal(2, service.GetAll().Count);
+        Assert.True(viewModel.HasSavedMealPlan);
+        Assert.Contains("19.08.2026", viewModel.SavedMealPlanningPreviewText);
+        Assert.Contains("20.08.2026", viewModel.SavedMealPlanningPreviewText);
+        Assert.Contains("сохранён", viewModel.MealPlanningResponseStatus);
+    }
+
+    [Fact]
+    public void Constructor_WithSavedFuturePlan_ShowsSavedPreview() {
+        var store = new InMemoryMealPlanStore();
+        var service = new MealPlanService(store);
+        var parser = new MealPlanResponseParser();
+        var instructions = parser.CreateResponseInstructions(new DateOnly(2026, 8, 19));
+        var parsed = parser.Parse(instructions[instructions.IndexOf('{')..]);
+
+        service.Save(parsed.Plan!);
+
+        var viewModel = CreateViewModel(
+            new InMemoryFridgeStore(),
+            new DateOnly(2026, 8, 19),
+            service
+        );
+
+        Assert.True(viewModel.HasSavedMealPlan);
+        Assert.Contains("19.08.2026", viewModel.SavedMealPlanningPreviewText);
+        Assert.Contains("20.08.2026", viewModel.SavedMealPlanningPreviewText);
+    }
+
+    [Fact]
+    public void MealPlanningResponseTextChanged_InvalidatesPreviouslyParsedPlan() {
+        var viewModel = CreateViewModel(
+            new InMemoryFridgeStore(),
+            new DateOnly(2026, 8, 19)
+        );
+        var jsonStart = viewModel.MealPlanningResponseInstructions.IndexOf('{');
+
+        viewModel.MealPlanningResponseText = viewModel.MealPlanningResponseInstructions[jsonStart..];
+        viewModel.ParseMealPlanningResponseCommand.Execute(null);
+
+        Assert.True(viewModel.CanSaveMealPlanningResponse);
+        Assert.True(viewModel.IsMealPlanningPreviewVisible);
+
+        viewModel.MealPlanningResponseText += " ";
+
+        Assert.False(viewModel.CanSaveMealPlanningResponse);
+        Assert.False(viewModel.IsMealPlanningPreviewVisible);
+        Assert.Empty(viewModel.MealPlanningPreviewText);
+    }
+
     [Fact]
     public void RefreshItems_WhenExportIsVisible_RegeneratesExport() {
         var currentDate = new DateOnly(2026, 8, 19);
@@ -100,14 +169,16 @@ public sealed class FridgeManagerViewModelTests {
 
     private static FridgeManagerViewModel CreateViewModel(
         InMemoryFridgeStore fridgeStore,
-        DateOnly currentDate
+        DateOnly currentDate,
+        MealPlanService? mealPlanService = null
     ) {
         return new FridgeManagerViewModel(
             fridgeInventoryService: new FridgeInventoryService(fridgeStore),
             productCatalogService: new ProductCatalogService(new InMemoryProductCatalogStore()),
             currentDate: currentDate,
             logFood: _ => { },
-            onClosed: () => { }
+            onClosed: () => { },
+            mealPlanService: mealPlanService
         );
     }
 

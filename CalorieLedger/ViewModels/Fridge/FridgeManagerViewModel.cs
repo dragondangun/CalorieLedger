@@ -24,7 +24,9 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     private readonly ProductCatalogService productCatalogService;
     private readonly FridgeMealPlanningExportService fridgeMealPlanningExportService;
     private readonly MealPlanResponseParser mealPlanResponseParser;
+    private readonly MealPlanService mealPlanService;
     private readonly DateOnly currentDate;
+    private MealPlan? parsedMealPlan;
     private readonly Action<Guid> logFood;
     private readonly Action onClosed;
 
@@ -73,6 +75,14 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     [ObservableProperty]
     private bool isMealPlanningPreviewVisible;
 
+    [ObservableProperty]
+    private string savedMealPlanningPreviewText = string.Empty;
+
+    [ObservableProperty]
+    private bool hasSavedMealPlan;
+
+    public bool CanSaveMealPlanningResponse => parsedMealPlan is not null;
+
     public ObservableCollection<FridgeItemViewModel> Items { get; } = [];
 
     public bool HasItems => Items.Count > 0;
@@ -84,7 +94,8 @@ public partial class FridgeManagerViewModel:ViewModelBase {
         ProductCatalogService productCatalogService,
         DateOnly currentDate,
         Action<Guid> logFood,
-        Action onClosed
+        Action onClosed,
+        MealPlanService? mealPlanService = null
     ) {
         ArgumentNullException.ThrowIfNull(fridgeInventoryService);
         ArgumentNullException.ThrowIfNull(productCatalogService);
@@ -95,6 +106,8 @@ public partial class FridgeManagerViewModel:ViewModelBase {
         this.productCatalogService = productCatalogService;
         fridgeMealPlanningExportService = new FridgeMealPlanningExportService(fridgeInventoryService);
         mealPlanResponseParser = new MealPlanResponseParser();
+        this.mealPlanService = mealPlanService
+            ?? new MealPlanService(new InMemoryMealPlanStore());
 
         this.currentDate = currentDate;
         MealPlanningResponseInstructions = mealPlanResponseParser.CreateResponseInstructions(currentDate);
@@ -105,6 +118,7 @@ public partial class FridgeManagerViewModel:ViewModelBase {
 
         RefreshCatalogResults();
         RefreshItems();
+        RefreshSavedMealPlanPreview();
     }
 
     partial void OnSearchQueryChanged(string value) {
@@ -113,6 +127,10 @@ public partial class FridgeManagerViewModel:ViewModelBase {
 
     partial void OnCatalogSearchQueryChanged(string value) {
         RefreshCatalogResults();
+    }
+
+    partial void OnMealPlanningResponseTextChanged(string value) {
+        ClearParsedMealPlan();
     }
 
     partial void OnSelectedCatalogProductChanged(ProductCatalogItem? value) {
@@ -175,20 +193,38 @@ public partial class FridgeManagerViewModel:ViewModelBase {
         var result = mealPlanResponseParser.Parse(MealPlanningResponseText);
 
         if(!result.IsSuccess) {
+            ClearParsedMealPlan();
             MealPlanningResponseStatus = FormatMealPlanErrors(result.Errors);
-            MealPlanningPreviewText = string.Empty;
-            IsMealPlanningPreviewVisible = false;
 
             return;
         }
 
-        var plan = result.Plan!;
-        var mealCount = plan.Days.Sum(day => day.Meals.Count);
-        var itemCount = plan.Days.Sum(day => day.Meals.Sum(meal => meal.Items.Count));
+        parsedMealPlan = result.Plan!;
+        var mealCount = parsedMealPlan.Days.Sum(day => day.Meals.Count);
+        var itemCount = parsedMealPlan.Days.Sum(day => day.Meals.Sum(meal => meal.Items.Count));
 
-        MealPlanningResponseStatus = $"План распознан: {plan.Days.Count} дн., {mealCount} приёмов пищи, {itemCount} позиций.";
-        MealPlanningPreviewText = FormatMealPlanPreview(plan);
+        MealPlanningResponseStatus = $"План распознан: {parsedMealPlan.Days.Count} дн., {mealCount} приёмов пищи, {itemCount} позиций.";
+        MealPlanningPreviewText = FormatMealPlanPreview(parsedMealPlan);
         IsMealPlanningPreviewVisible = true;
+        OnPropertyChanged(nameof(CanSaveMealPlanningResponse));
+        SaveMealPlanningResponseCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSaveMealPlanningResponse))]
+    private void SaveMealPlanningResponse() {
+        if(parsedMealPlan is null) {
+            return;
+        }
+
+        mealPlanService.Save(parsedMealPlan);
+        RefreshSavedMealPlanPreview();
+
+        var startDate = parsedMealPlan.Days.Min(day => day.Date);
+        var endDate = parsedMealPlan.Days.Max(day => day.Date);
+
+        MealPlanningResponseStatus = startDate == endDate
+            ? $"План на {startDate:dd.MM.yyyy} сохранён."
+            : $"План на {startDate:dd.MM.yyyy}–{endDate:dd.MM.yyyy} сохранён.";
     }
 
     [RelayCommand]
@@ -217,6 +253,27 @@ public partial class FridgeManagerViewModel:ViewModelBase {
         if(IsMealPlanningExportVisible) {
             RefreshMealPlanningExport();
         }
+    }
+
+    private void ClearParsedMealPlan() {
+        parsedMealPlan = null;
+        MealPlanningPreviewText = string.Empty;
+        IsMealPlanningPreviewVisible = false;
+        MealPlanningResponseStatus = string.Empty;
+        OnPropertyChanged(nameof(CanSaveMealPlanningResponse));
+        SaveMealPlanningResponseCommand.NotifyCanExecuteChanged();
+    }
+
+    private void RefreshSavedMealPlanPreview() {
+        var savedDays = mealPlanService
+            .GetAll()
+            .Where(day => day.Date >= currentDate)
+            .ToArray();
+
+        HasSavedMealPlan = savedDays.Length > 0;
+        SavedMealPlanningPreviewText = HasSavedMealPlan
+            ? FormatMealPlanPreview(new MealPlan(savedDays))
+            : string.Empty;
     }
 
     private void DeleteItem(Guid id) {

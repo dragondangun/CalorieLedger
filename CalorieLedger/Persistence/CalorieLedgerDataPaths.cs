@@ -70,4 +70,9 @@ internal static class CalorieLedgerDataPaths {
         ApplicationDirectory,
         "recurring-planned-activities.json"
     );
+
+    public static string MealPlansFilePath => Path.Combine(
+        ApplicationDirectory,
+        "meal-plans.json"
+    );
 }

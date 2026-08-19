@@ -3,6 +3,7 @@ using CalorieLedger.Application.Adaptive;
 using CalorieLedger.Application.Cooking;
 using CalorieLedger.Application.Fridge;
 using CalorieLedger.Application.History;
+using CalorieLedger.Application.MealPlanning;
 using CalorieLedger.Application.Meals;
 using CalorieLedger.Application.Nutrition;
 using CalorieLedger.Application.Products;
@@ -60,6 +61,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly PlannedActivityCompletionService plannedActivityCompletionService;
     private readonly RecurringPlannedActivityService recurringPlannedActivityService;
     private readonly RecurringPlannedActivityCompletionService recurringPlannedActivityCompletionService;
+    private readonly MealPlanService mealPlanService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -161,7 +163,8 @@ public partial class MainViewModel:ViewModelBase {
         JsonActivityStore.CreateDefault(),
         JsonActivityPresetStore.CreateDefault(),
         JsonPlannedActivityStore.CreateDefault(),
-        JsonRecurringPlannedActivityStore.CreateDefault()
+        JsonRecurringPlannedActivityStore.CreateDefault(),
+        JsonMealPlanStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -326,7 +329,8 @@ public partial class MainViewModel:ViewModelBase {
         IActivityStore? activityStore = null,
         IActivityPresetStore? activityPresetStore = null,
         IPlannedActivityStore? plannedActivityStore = null,
-        IRecurringPlannedActivityStore? recurringPlannedActivityStore = null
+        IRecurringPlannedActivityStore? recurringPlannedActivityStore = null,
+        IMealPlanStore? mealPlanStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -409,6 +413,9 @@ public partial class MainViewModel:ViewModelBase {
         );
 
         plannedActivityService = new PlannedActivityService(resolvedPlannedActivityStore);
+        mealPlanService = new MealPlanService(
+            mealPlanStore ?? new InMemoryMealPlanStore()
+        );
 
         bodyMeasurementEditorService = new BodyMeasurementEditorService(bodyMeasurementHistoryService);
 
@@ -544,7 +551,8 @@ public partial class MainViewModel:ViewModelBase {
             productCatalogService: productCatalogService,
             currentDate: currentDateProvider.GetCurrentDate(),
             logFood: OpenFridgeFoodLog,
-            onClosed: CloseFridge
+            onClosed: CloseFridge,
+            mealPlanService: mealPlanService
         );
     }
 
