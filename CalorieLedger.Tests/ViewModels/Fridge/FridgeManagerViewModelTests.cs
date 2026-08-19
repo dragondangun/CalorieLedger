@@ -35,6 +35,48 @@ public sealed class FridgeManagerViewModelTests {
     }
 
     [Fact]
+    public void ParseMealPlanningResponse_ValidResponse_ShowsMultiDayPreview() {
+        var viewModel = CreateViewModel(
+            new InMemoryFridgeStore(),
+            new DateOnly(2026, 8, 19)
+        );
+        var jsonStart = viewModel.MealPlanningResponseInstructions.IndexOf('{');
+
+        Assert.True(jsonStart >= 0);
+
+        viewModel.MealPlanningResponseText = viewModel.MealPlanningResponseInstructions[jsonStart..];
+        viewModel.ParseMealPlanningResponseCommand.Execute(null);
+
+        Assert.True(viewModel.IsMealPlanningPreviewVisible);
+        Assert.Contains("План распознан: 2 дн.", viewModel.MealPlanningResponseStatus);
+        Assert.Contains("19.08.2026", viewModel.MealPlanningPreviewText);
+        Assert.Contains("20.08.2026", viewModel.MealPlanningPreviewText);
+        Assert.Contains("Завтрак", viewModel.MealPlanningPreviewText);
+        Assert.Contains("Поздний завтрак", viewModel.MealPlanningPreviewText);
+    }
+
+    [Fact]
+    public void ParseMealPlanningResponse_InvalidResponse_HidesPreviousPreview() {
+        var viewModel = CreateViewModel(
+            new InMemoryFridgeStore(),
+            new DateOnly(2026, 8, 19)
+        );
+        var jsonStart = viewModel.MealPlanningResponseInstructions.IndexOf('{');
+
+        viewModel.MealPlanningResponseText = viewModel.MealPlanningResponseInstructions[jsonStart..];
+        viewModel.ParseMealPlanningResponseCommand.Execute(null);
+
+        Assert.True(viewModel.IsMealPlanningPreviewVisible);
+
+        viewModel.MealPlanningResponseText = "не JSON";
+        viewModel.ParseMealPlanningResponseCommand.Execute(null);
+
+        Assert.False(viewModel.IsMealPlanningPreviewVisible);
+        Assert.Empty(viewModel.MealPlanningPreviewText);
+        Assert.StartsWith("Не удалось разобрать план.", viewModel.MealPlanningResponseStatus);
+    }
+
+    [Fact]
     public void RefreshItems_WhenExportIsVisible_RegeneratesExport() {
         var currentDate = new DateOnly(2026, 8, 19);
         var fridgeStore = new InMemoryFridgeStore();

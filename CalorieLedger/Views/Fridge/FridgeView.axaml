@@ -137,6 +137,72 @@
                         Content="Обновить экспорт"
                         Command="{Binding ExportForMealPlanningCommand}"
                         HorizontalAlignment="Left" />
+
+
+                    <TextBlock
+                        Text="Формат ответа LLM"
+                        Margin="0,8,0,0"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        Text="Передайте LLM эти требования вместе с JSON холодильника. Ответ можно вставить ниже и проверить до сохранения плана."
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
+
+                    <TextBox
+                        Text="{Binding MealPlanningResponseInstructions, Mode=OneWay}"
+                        IsReadOnly="True"
+                        AcceptsReturn="True"
+                        MinHeight="260"
+                        TextWrapping="NoWrap"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+                    <TextBlock
+                        Text="Ответ LLM"
+                        Margin="0,8,0,0"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+                    <TextBox
+                        Text="{Binding MealPlanningResponseText, Mode=TwoWay}"
+                        AcceptsReturn="True"
+                        MinHeight="180"
+                        TextWrapping="NoWrap"
+                        PlaceholderText="Вставьте JSON calorieledger.meal_plan.v1"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+                    <Button
+                        Content="Проверить ответ"
+                        Command="{Binding ParseMealPlanningResponseCommand}"
+                        HorizontalAlignment="Left" />
+
+                    <TextBlock
+                        Text="{Binding MealPlanningResponseStatus}"
+                        TextWrapping="Wrap" />
+
+                    <Border
+                        IsVisible="{Binding IsMealPlanningPreviewVisible}"
+                        Padding="10"
+                        BorderThickness="1"
+                        CornerRadius="8">
+
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                Text="Предпросмотр плана"
+                                FontWeight="SemiBold" />
+
+                            <TextBox
+                                Text="{Binding MealPlanningPreviewText, Mode=OneWay}"
+                                IsReadOnly="True"
+                                AcceptsReturn="True"
+                                MinHeight="160"
+                                TextWrapping="Wrap"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
