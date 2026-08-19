@@ -131,6 +131,10 @@ public partial class MainViewModel:ViewModelBase {
 
     public bool IsFridgeOpen => FridgeManager is not null;
 
+    public bool IsFridgeVisible =>
+        FridgeManager is not null
+        && FoodLogEditor is null;
+
     public bool IsActivityEditorOpen => ActivityEditor is not null;
 
     public ObservableCollection<PlannedActivityItemViewModel> TodayPlannedActivities { get; } = [];
@@ -643,7 +647,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnFridgeManagerChanged(FridgeManagerViewModel? value) {
         OnPropertyChanged(nameof(IsFridgeOpen));
-
+        OnPropertyChanged(nameof(IsFridgeVisible));
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 
@@ -796,6 +800,7 @@ public partial class MainViewModel:ViewModelBase {
 
     partial void OnFoodLogEditorChanged(FoodLogEditorViewModel? value) {
         OnPropertyChanged(nameof(IsFoodLogEditorOpen));
+        OnPropertyChanged(nameof(IsFridgeVisible));
         OnPropertyChanged(nameof(IsTodayDashboardVisible));
     }
 

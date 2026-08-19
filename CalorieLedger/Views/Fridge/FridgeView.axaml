@@ -94,6 +94,52 @@
                 TextWrapping="Wrap"
                 Opacity="0.75" />
 
+            <Button
+                Content="Экспорт для LLM"
+                Command="{Binding ExportForMealPlanningCommand}"
+                HorizontalAlignment="Left" />
+
+            <Border
+                IsVisible="{Binding IsMealPlanningExportVisible}"
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            Grid.Column="0"
+                            Text="Холодильник для планирования питания"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+
+                        <Button
+                            Grid.Column="1"
+                            Content="Скрыть"
+                            Command="{Binding HideMealPlanningExportCommand}" />
+                    </Grid>
+
+                    <TextBlock
+                        Text="Формат JSON calorieledger.fridge.v1. Текст можно выделить целиком и скопировать в LLM."
+                        TextWrapping="Wrap"
+                        Opacity="0.75" />
+
+                    <TextBox
+                        Text="{Binding MealPlanningExportText, Mode=OneWay}"
+                        IsReadOnly="True"
+                        AcceptsReturn="True"
+                        MinHeight="220"
+                        TextWrapping="NoWrap"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+                    <Button
+                        Content="Обновить экспорт"
+                        Command="{Binding ExportForMealPlanningCommand}"
+                        HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
             <TextBox
                 Text="{Binding SearchQuery, Mode=TwoWay}"
                 PlaceholderText="Поиск по холодильнику" />

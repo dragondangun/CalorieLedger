@@ -17,6 +17,7 @@ namespace CalorieLedger.ViewModels.Fridge;
 public partial class FridgeManagerViewModel:ViewModelBase {
     private readonly FridgeInventoryService fridgeInventoryService;
     private readonly ProductCatalogService productCatalogService;
+    private readonly FridgeMealPlanningExportService fridgeMealPlanningExportService;
     private readonly DateOnly currentDate;
     private readonly Action<Guid> logFood;
     private readonly Action onClosed;
@@ -45,6 +46,12 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     [ObservableProperty]
     private string actionSummary = string.Empty;
 
+    [ObservableProperty]
+    private string mealPlanningExportText = string.Empty;
+
+    [ObservableProperty]
+    private bool isMealPlanningExportVisible;
+
     public ObservableCollection<FridgeItemViewModel> Items { get; } = [];
 
     public bool HasItems => Items.Count > 0;
@@ -65,6 +72,7 @@ public partial class FridgeManagerViewModel:ViewModelBase {
 
         this.fridgeInventoryService = fridgeInventoryService;
         this.productCatalogService = productCatalogService;
+        fridgeMealPlanningExportService = new FridgeMealPlanningExportService(fridgeInventoryService);
 
         this.currentDate = currentDate;
 
@@ -129,6 +137,17 @@ public partial class FridgeManagerViewModel:ViewModelBase {
     }
 
     [RelayCommand]
+    private void ExportForMealPlanning() {
+        RefreshMealPlanningExport();
+        IsMealPlanningExportVisible = true;
+    }
+
+    [RelayCommand]
+    private void HideMealPlanningExport() {
+        IsMealPlanningExportVisible = false;
+    }
+
+    [RelayCommand]
     private void Close() {
         onClosed();
     }
@@ -150,12 +169,20 @@ public partial class FridgeManagerViewModel:ViewModelBase {
         OnPropertyChanged(nameof(HasItems));
 
         OnPropertyChanged(nameof(HasNoItems));
+
+        if(IsMealPlanningExportVisible) {
+            RefreshMealPlanningExport();
+        }
     }
 
     private void DeleteItem(Guid id) {
         fridgeInventoryService.Delete(id);
 
         RefreshItems();
+    }
+
+    private void RefreshMealPlanningExport() {
+        MealPlanningExportText = fridgeMealPlanningExportService.Export(currentDate);
     }
 
     private void RefreshCatalogResults() {
