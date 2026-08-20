@@ -22,6 +22,8 @@ public sealed partial class CookingSessionListItemViewModel:ViewModelBase {
 
     public string NutritionSummary { get; }
 
+    public string NutritionSourceSummary { get; }
+
     public bool IsCompleted { get; }
 
     public bool CanModify => !IsCompleted;
@@ -59,6 +61,10 @@ public sealed partial class CookingSessionListItemViewModel:ViewModelBase {
         NutritionSummary = nutrition is null
                 ? "Расчёт КБЖУ недоступен"
                 : $"На 100 г: {FormatValue(nutrition.NutritionPer100Grams.CaloriesKcal)} ккал · Б: {FormatValue(nutrition.NutritionPer100Grams.ProteinG)} г · Ж: {FormatValue(nutrition.NutritionPer100Grams.FatG)} г · У: {FormatValue(nutrition.NutritionPer100Grams.CarbsG)} г";
+
+        NutritionSourceSummary = session.NutritionPer100GramsOverride is null
+            ? "КБЖУ рассчитано по ингредиентам"
+            : "КБЖУ: сохранённая оценка LLM";
 
         this.cook = cook;
         this.edit = edit;

@@ -55,6 +55,11 @@ public sealed class JsonCookingSessionStoreTests:IDisposable {
         );
 
         Assert.Equal(
+            session.NutritionPer100GramsOverride,
+            saved.NutritionPer100GramsOverride
+        );
+
+        Assert.Equal(
             session.Ingredients.Count,
             saved.Ingredients.Count
         );
@@ -155,7 +160,14 @@ public sealed class JsonCookingSessionStoreTests:IDisposable {
                     )
                 ),
             ],
-            OutputWeightG: 400m
+            OutputWeightG: 400m,
+            NutritionPer100GramsOverride: new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 150m,
+                ProteinG: 25m,
+                FatG: 4m,
+                CarbsG: 3m
+            )
         );
     }
 

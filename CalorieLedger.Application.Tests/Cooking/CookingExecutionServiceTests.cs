@@ -205,6 +205,45 @@ public sealed class CookingExecutionServiceTests {
         );
     }
 
+    [Fact]
+    public void Execute_NutritionOverride_UsesOverrideForFridgeOutput() {
+        var date = new DateOnly(2026, 8, 18);
+        var fridgeStore = new InMemoryFridgeStore();
+        var cookingStore = new InMemoryCookingSessionStore();
+        var batchStore = new InMemoryCookingBatchStore();
+        var fridgeItem = CreateFridgeItem(500m);
+        fridgeStore.Save(fridgeItem);
+
+        var session = CreateSession(fridgeItem.Id, ingredientQuantityG: 200m) with {
+            NutritionPer100GramsOverride = new NutritionFacts(
+                Basis: NutritionBasis.Per100Grams,
+                CaloriesKcal: 220m,
+                ProteinG: 30m,
+                FatG: 9m,
+                CarbsG: 6m
+            ),
+        };
+        cookingStore.Save(session);
+
+        var service = new CookingExecutionService(
+            cookingStore,
+            batchStore,
+            fridgeStore
+        );
+
+        var result = service.Execute(session.Id, date);
+
+        Assert.True(result.IsSuccess);
+        var output = Assert.Single(
+            fridgeStore.GetAll(),
+            item => item.Source == FridgeItemSource.CookingSession
+        );
+        Assert.Equal(220m, output.Nutrition.CaloriesKcal);
+        Assert.Equal(30m, output.Nutrition.ProteinG);
+        var batch = Assert.IsType<CookingBatch>(result.Batch);
+        Assert.Equal(880m, batch.Nutrition.TotalNutrition.CaloriesKcal);
+    }
+
     private static FridgeItem CreateFridgeItem(decimal quantityG) {
         return new FridgeItem(
             Id: Guid.NewGuid(),

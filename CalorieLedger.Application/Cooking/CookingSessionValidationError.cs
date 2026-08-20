@@ -9,5 +9,6 @@ public enum CookingSessionValidationError {
     MissingIngredientName,
     InvalidIngredientQuantity,
     IncompatibleIngredientNutritionBasis,
-    InvalidIngredientNutrition
+    InvalidIngredientNutrition,
+    InvalidNutritionOverride
 }

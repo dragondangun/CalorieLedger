@@ -23,12 +23,14 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
     private static readonly CultureInfo RussianCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     private readonly CookingSessionService cookingSessionService;
+    private readonly CookingNutritionLlmService cookingNutritionLlmService;
     private readonly ProductCatalogService productCatalogService;
     private readonly Guid sessionId;
     private readonly List<CookingIngredient> ingredients;
     private readonly Action onSaved;
     private readonly Action onCancelled;
     private readonly FridgeInventoryService fridgeInventoryService;
+    private NutritionFacts? nutritionPer100GramsOverride;
 
     [ObservableProperty]
     private string name = string.Empty;
@@ -74,6 +76,27 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
     [ObservableProperty]
     private string fridgeActionSummary = "Выберите остаток и укажите используемое количество.";
 
+    [ObservableProperty]
+    private bool isLlmNutritionPanelVisible;
+
+    [ObservableProperty]
+    private string llmRequestText = string.Empty;
+
+    [ObservableProperty]
+    private string llmResponseInstructions = string.Empty;
+
+    [ObservableProperty]
+    private string llmResponseText = string.Empty;
+
+    [ObservableProperty]
+    private string llmActionSummary = string.Empty;
+
+    public bool HasNutritionOverride => nutritionPer100GramsOverride is not null;
+
+    public string NutritionOverrideSummary => nutritionPer100GramsOverride is null
+        ? string.Empty
+        : $"Используется оценка КБЖУ: {FormatNutrition(nutritionPer100GramsOverride)} на 100 г.";
+
     public string Title { get; }
 
     public ObservableCollection<CookingIngredientItemViewModel> Ingredients { get; } = [];
@@ -86,6 +109,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
     public CookingSessionEditorViewModel(
         CookingSessionService cookingSessionService,
+        CookingNutritionLlmService cookingNutritionLlmService,
         ProductCatalogService productCatalogService,
         FridgeInventoryService fridgeInventoryService,
         CookingSessionDraft draft,
@@ -94,6 +118,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
         Action onCancelled
     ) {
         ArgumentNullException.ThrowIfNull(cookingSessionService);
+        ArgumentNullException.ThrowIfNull(cookingNutritionLlmService);
         ArgumentNullException.ThrowIfNull(productCatalogService);
         ArgumentNullException.ThrowIfNull(draft);
         ArgumentNullException.ThrowIfNull(onSaved);
@@ -101,6 +126,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
         ArgumentNullException.ThrowIfNull(fridgeInventoryService);
 
         this.cookingSessionService = cookingSessionService;
+        this.cookingNutritionLlmService = cookingNutritionLlmService;
         this.productCatalogService = productCatalogService;
         this.fridgeInventoryService = fridgeInventoryService;
 
@@ -112,12 +138,13 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
         ingredients = [
             .. draft.Ingredients,
         ];
+        nutritionPer100GramsOverride = draft.NutritionPer100GramsOverride;
 
         Title = isNew ? "Новое приготовление" : "Редактирование приготовления";
 
-        Name = draft.Name;
+        name = draft.Name;
         outputWeightG = draft.OutputWeightG;
-        Note = draft.Note;
+        note = draft.Note;
 
         RefreshCatalogResults();
         RefreshIngredientItems();
@@ -142,7 +169,16 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
         };
     }
 
+    partial void OnNameChanged(string value) {
+        InvalidateLlmNutrition();
+    }
+
+    partial void OnNoteChanged(string? value) {
+        InvalidateLlmNutrition();
+    }
+
     partial void OnOutputWeightGChanged(decimal value) {
+        InvalidateLlmNutrition();
         UpdatePreview();
     }
 
@@ -183,6 +219,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
         OnPropertyChanged(nameof(HasIngredients));
 
+        InvalidateLlmNutrition();
         UpdatePreview();
     }
 
@@ -258,8 +295,70 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
         OnPropertyChanged(nameof(HasIngredients));
 
+        InvalidateLlmNutrition();
         UpdatePreview();
     }
+
+    [RelayCommand]
+    private void PrepareLlmNutrition() {
+        var draft = CreateDraft();
+
+        if(string.IsNullOrWhiteSpace(draft.Name)) {
+            LlmActionSummary = "Сначала укажите название блюда.";
+            IsLlmNutritionPanelVisible = true;
+            return;
+        }
+
+        if(draft.Ingredients.Count == 0
+            || draft.Ingredients.Any(ingredient => ingredient.Quantity.Value <= 0m)
+            || draft.OutputWeightG <= 0m
+        ) {
+            LlmActionSummary = "Для запроса нужны ингредиенты с корректным количеством и вес готового блюда больше 0 г.";
+            IsLlmNutritionPanelVisible = true;
+            return;
+        }
+
+        LlmRequestText = cookingNutritionLlmService.ExportRequest(draft);
+        LlmResponseInstructions = cookingNutritionLlmService.CreateResponseInstructions(draft);
+        LlmResponseText = string.Empty;
+        LlmActionSummary = "Запрос подготовлен. Передайте JSON и инструкцию LLM, затем вставьте ответ ниже.";
+        IsLlmNutritionPanelVisible = true;
+    }
+
+    [RelayCommand]
+    private void ApplyLlmNutrition() {
+        var result = cookingNutritionLlmService.ParseResponse(
+            LlmResponseText,
+            CreateDraft()
+        );
+
+        if(!result.IsSuccess) {
+            LlmActionSummary = FormatLlmErrors(result.Errors);
+            return;
+        }
+
+        nutritionPer100GramsOverride = result.NutritionPer100Grams;
+        LlmActionSummary = result.Note is null
+            ? "Оценка КБЖУ применена. Сохраните приготовление, чтобы она сохранилась."
+            : $"Оценка КБЖУ применена. {result.Note}";
+        OnPropertyChanged(nameof(HasNutritionOverride));
+        OnPropertyChanged(nameof(NutritionOverrideSummary));
+        UpdatePreview();
+    }
+
+    [RelayCommand]
+    private void ClearNutritionOverride() {
+        if(nutritionPer100GramsOverride is null) {
+            return;
+        }
+
+        nutritionPer100GramsOverride = null;
+        LlmActionSummary = "Оценка КБЖУ удалена. Используется расчёт по КБЖУ ингредиентов.";
+        OnPropertyChanged(nameof(HasNutritionOverride));
+        OnPropertyChanged(nameof(NutritionOverrideSummary));
+        UpdatePreview();
+    }
+
     private CookingSessionDraft CreateDraft() {
         return new CookingSessionDraft(
             Id: sessionId,
@@ -268,7 +367,8 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
                 .. ingredients,
             ],
             OutputWeightG: OutputWeightG,
-            Note: Note
+            Note: Note,
+            NutritionPer100GramsOverride: nutritionPer100GramsOverride
         );
     }
 
@@ -323,6 +423,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
             ),
         };
 
+        InvalidateLlmNutrition();
         UpdatePreview();
     }
 
@@ -337,6 +438,7 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
 
         OnPropertyChanged(nameof(HasIngredients));
 
+        InvalidateLlmNutrition();
         UpdatePreview();
     }
 
@@ -373,12 +475,48 @@ public partial class CookingSessionEditorViewModel:ViewModelBase {
             CookingSessionValidationError.InvalidIngredientQuantity => "Количество каждого ингредиента должно быть больше 0.",
             CookingSessionValidationError.IncompatibleIngredientNutritionBasis => "Единица измерения одного из ингредиентов не соответствует его КБЖУ.",
             CookingSessionValidationError.InvalidIngredientNutrition => "КБЖУ ингредиента не могут содержать отрицательные значения.",
+            CookingSessionValidationError.InvalidNutritionOverride => "Оценка КБЖУ готового блюда некорректна.",
             _ => throw new ArgumentOutOfRangeException(
                 nameof(error),
                 error,
                 null
             )
         };
+    }
+
+    private void InvalidateLlmNutrition() {
+        var hadOverride = nutritionPer100GramsOverride is not null;
+        var hadExchange = !string.IsNullOrEmpty(LlmRequestText)
+            || !string.IsNullOrEmpty(LlmResponseText);
+
+        nutritionPer100GramsOverride = null;
+        LlmRequestText = string.Empty;
+        LlmResponseInstructions = string.Empty;
+        LlmResponseText = string.Empty;
+
+        if(hadOverride || hadExchange) {
+            LlmActionSummary = "Состав или выход блюда изменён. Подготовьте новый запрос для LLM.";
+        }
+
+        if(hadOverride) {
+            OnPropertyChanged(nameof(HasNutritionOverride));
+            OnPropertyChanged(nameof(NutritionOverrideSummary));
+        }
+    }
+
+    private static string FormatLlmErrors(IReadOnlyList<CookingNutritionLlmParseError> errors) {
+        return string.Join(
+            " ",
+            errors.Select(error => error.Code switch {
+                CookingNutritionLlmParseErrorCode.InvalidJson => "Ответ не является корректным JSON.",
+                CookingNutritionLlmParseErrorCode.UnsupportedProtocol => "Ответ использует неподдерживаемый протокол.",
+                CookingNutritionLlmParseErrorCode.SessionMismatch => "Ответ относится к другому приготовлению.",
+                CookingNutritionLlmParseErrorCode.RequestMismatch => "Ответ относится к устаревшей версии состава или веса блюда.",
+                CookingNutritionLlmParseErrorCode.MissingNutrition => "В ответе отсутствует nutritionPer100Grams.",
+                CookingNutritionLlmParseErrorCode.InvalidNutrition => "Все значения КБЖУ должны быть числами не меньше 0.",
+                _ => "Ответ LLM не удалось применить."
+            })
+        );
     }
 
     private static string FormatNutrition(NutritionTotals nutrition) {

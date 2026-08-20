@@ -14,6 +14,7 @@ namespace CalorieLedger.ViewModels.Cooking;
 
 public partial class CookingSessionManagerViewModel:ViewModelBase {
     private readonly CookingSessionService cookingSessionService;
+    private readonly CookingNutritionLlmService cookingNutritionLlmService;
     private readonly CookingExecutionService cookingExecutionService;
     private readonly ProductCatalogService productCatalogService;
     private readonly FridgeInventoryService fridgeInventoryService;
@@ -41,6 +42,7 @@ public partial class CookingSessionManagerViewModel:ViewModelBase {
 
     public CookingSessionManagerViewModel(
         CookingSessionService cookingSessionService,
+        CookingNutritionLlmService cookingNutritionLlmService,
         CookingExecutionService cookingExecutionService,
         ProductCatalogService productCatalogService,
         FridgeInventoryService fridgeInventoryService,
@@ -48,12 +50,15 @@ public partial class CookingSessionManagerViewModel:ViewModelBase {
         Action onClosed
     ) {
         ArgumentNullException.ThrowIfNull(cookingSessionService);
+        ArgumentNullException.ThrowIfNull(cookingNutritionLlmService);
         ArgumentNullException.ThrowIfNull(cookingExecutionService);
         ArgumentNullException.ThrowIfNull(productCatalogService);
         ArgumentNullException.ThrowIfNull(fridgeInventoryService);
         ArgumentNullException.ThrowIfNull(onClosed);
 
         this.cookingSessionService = cookingSessionService;
+
+        this.cookingNutritionLlmService = cookingNutritionLlmService;
 
         this.cookingExecutionService = cookingExecutionService;
 
@@ -130,6 +135,7 @@ public partial class CookingSessionManagerViewModel:ViewModelBase {
     private void OpenEditor(CookingSessionDraft draft, bool isNew) {
         Editor = new CookingSessionEditorViewModel(
             cookingSessionService: cookingSessionService,
+            cookingNutritionLlmService: cookingNutritionLlmService,
             productCatalogService: productCatalogService,
             fridgeInventoryService: fridgeInventoryService,
             draft: draft,

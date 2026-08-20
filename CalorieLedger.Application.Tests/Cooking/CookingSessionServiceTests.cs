@@ -83,6 +83,37 @@ public sealed class CookingSessionServiceTests {
     }
 
     [Fact]
+    public void Save_InvalidNutritionOverride_ReturnsValidationError() {
+        var service = new CookingSessionService(new InMemoryCookingSessionStore());
+        var draft = new CookingSessionDraft(
+            Id: Guid.NewGuid(),
+            Name: "Блюдо",
+            Ingredients: [
+                CreateIngredient(
+                    grams: 100m,
+                    caloriesPer100Grams: 100m
+                ),
+            ],
+            OutputWeightG: 100m,
+            NutritionPer100GramsOverride: new NutritionFacts(
+                Basis: NutritionBasis.Per100Milliliters,
+                CaloriesKcal: 100m,
+                ProteinG: 5m,
+                FatG: 5m,
+                CarbsG: 5m
+            )
+        );
+
+        var result = service.Save(draft);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(
+            CookingSessionValidationError.InvalidNutritionOverride,
+            result.Errors
+        );
+    }
+
+    [Fact]
     public void CreateCatalogIngredient_UsesProductNutritionAndCompatibleUnit() {
         var service = new CookingSessionService(new InMemoryCookingSessionStore());
 

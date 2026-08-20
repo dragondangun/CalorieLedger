@@ -226,6 +226,14 @@ public sealed class CookingSessionService {
             errors.Add(CookingSessionValidationError.InvalidOutputWeight);
         }
 
+        if(draft.NutritionPer100GramsOverride is not null
+            && (draft.NutritionPer100GramsOverride.Basis != NutritionBasis.Per100Grams
+                || HasIncompleteNutrition(draft.NutritionPer100GramsOverride)
+                || HasInvalidNutrition(draft.NutritionPer100GramsOverride))
+        ) {
+            errors.Add(CookingSessionValidationError.InvalidNutritionOverride);
+        }
+
         foreach(var ingredient in draft.Ingredients) {
             if(ingredient.Id == Guid.Empty) {
                 AddUnique(
@@ -286,6 +294,13 @@ public sealed class CookingSessionService {
             NutritionBasis.PerItem => FoodUnit.Piece,
             _ => null
         };
+    }
+
+    private static bool HasIncompleteNutrition(NutritionFacts nutrition) {
+        return nutrition.CaloriesKcal is null
+            || nutrition.ProteinG is null
+            || nutrition.FatG is null
+            || nutrition.CarbsG is null;
     }
 
     private static bool HasInvalidNutrition(NutritionFacts nutrition) {

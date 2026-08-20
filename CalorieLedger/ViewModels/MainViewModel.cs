@@ -50,6 +50,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly FoodLogEditorService foodLogEditorService;
     private readonly FoodDiaryDaySnapshotProvider foodDiaryDaySnapshotProvider;
     private readonly CookingSessionService cookingSessionService;
+    private readonly CookingNutritionLlmService cookingNutritionLlmService;
     private readonly FridgeInventoryService fridgeInventoryService;
     private readonly CookingExecutionService cookingExecutionService;
     private readonly IActivityStore activityStore;
@@ -433,6 +434,7 @@ public partial class MainViewModel:ViewModelBase {
         var resolvedCookingSessionStore = cookingSessionStore ?? new InMemoryCookingSessionStore();
         var resolvedCookingBatchStore = cookingBatchStore ?? new InMemoryCookingBatchStore();
         cookingSessionService = new CookingSessionService(resolvedCookingSessionStore);
+        cookingNutritionLlmService = new CookingNutritionLlmService();
         cookingExecutionService = new CookingExecutionService(
             cookingSessionStore: resolvedCookingSessionStore,
             cookingBatchStore: resolvedCookingBatchStore,
@@ -696,6 +698,7 @@ public partial class MainViewModel:ViewModelBase {
     private void OpenCookingSessions() {
         CookingSessionManager = new CookingSessionManagerViewModel(
             cookingSessionService: cookingSessionService,
+            cookingNutritionLlmService: cookingNutritionLlmService,
             cookingExecutionService: cookingExecutionService,
             productCatalogService: productCatalogService,
             fridgeInventoryService: fridgeInventoryService,

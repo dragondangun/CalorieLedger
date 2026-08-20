@@ -75,6 +75,11 @@
                                         TextWrapping="Wrap" />
 
                                     <TextBlock
+                                        Text="{Binding NutritionSourceSummary}"
+                                        FontStyle="Italic"
+                                        Opacity="0.7" />
+
+                                    <TextBlock
                                         Text="{Binding StatusSummary}"
                                         FontStyle="Italic"
                                         Opacity="0.75"
