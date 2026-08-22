@@ -113,7 +113,7 @@ public sealed class FridgeMealPlanningExportServiceTests {
 
         Assert.Equal(
             ["Скорее", "Позже", "Без срока"],
-            names
+            names.Select(x => x!)
         );
     }
 

@@ -16,6 +16,7 @@
     xmlns:activityViews="using:CalorieLedger.Views.Activities"
     xmlns:activityVm="using:CalorieLedger.ViewModels.Activities"
     xmlns:historyViews="using:CalorieLedger.Views.History"
+    xmlns:syncViews="using:CalorieLedger.Views.Sync"
     x:DataType="vm:MainViewModel">
 
     <Grid>
@@ -66,6 +67,12 @@
                 <Button
                     Content="История дня"
                     Command="{Binding OpenDailyJournalHistoryCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="12,10" />
+                <Button
+                    Content="Синхронизация"
+                    Command="{Binding OpenSynchronizationCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Padding="12,10" />
@@ -598,6 +605,13 @@
 
             <productViews:ProductCatalogView
                 DataContext="{Binding ProductCatalogManager}" />
+        </Grid>
+        <Grid
+            IsVisible="{Binding IsSyncManagerVisible}"
+            Panel.ZIndex="1">
+
+            <syncViews:SyncManagerView
+                DataContext="{Binding SyncManager}" />
         </Grid>
     </Grid>
 </UserControl>

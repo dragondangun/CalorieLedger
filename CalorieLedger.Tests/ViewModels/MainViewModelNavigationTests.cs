@@ -70,6 +70,24 @@ public sealed class MainViewModelNavigationTests {
     }
 
     [Fact]
+    public void Synchronization_IsAStandaloneMainSurfaceAndReturnsToTodayOnClose() {
+        var viewModel = CreateViewModel(new DateOnly(2026, 8, 20));
+
+        viewModel.OpenSynchronizationCommand.Execute(null);
+
+        Assert.True(viewModel.IsSyncManagerOpen);
+        Assert.True(viewModel.IsSyncManagerVisible);
+        Assert.False(viewModel.IsTodayDashboardVisible);
+        AssertSingleVisibleSurface(viewModel);
+
+        viewModel.SyncManager!.CloseCommand.Execute(null);
+
+        Assert.False(viewModel.IsSyncManagerOpen);
+        Assert.True(viewModel.IsTodayDashboardVisible);
+        AssertSingleVisibleSurface(viewModel);
+    }
+
+    [Fact]
     public void OpeningAnotherMainSurface_HidesCurrentSurfaceAndReturnsToItOnClose() {
         var viewModel = CreateViewModel(new DateOnly(2026, 8, 19));
 
@@ -125,6 +143,7 @@ public sealed class MainViewModelNavigationTests {
             viewModel.IsActivityEditorVisible,
             viewModel.IsPlannedActivityManagerVisible,
             viewModel.IsRecurringPlannedActivityManagerVisible,
+            viewModel.IsSyncManagerVisible,
         }.Count(isVisible => isVisible);
 
         Assert.Equal(1, visibleSurfaceCount);

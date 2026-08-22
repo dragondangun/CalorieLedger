@@ -75,4 +75,9 @@ internal static class CalorieLedgerDataPaths {
         ApplicationDirectory,
         "meal-plans.json"
     );
+
+    public static string SyncDeviceIdentityFilePath => Path.Combine(
+        ApplicationDirectory,
+        "sync-device.json"
+    );
 }

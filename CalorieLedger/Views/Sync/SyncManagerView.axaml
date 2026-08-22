@@ -1,0 +1,123 @@
+<UserControl
+    x:Class="CalorieLedger.Views.Sync.SyncManagerView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:syncVm="using:CalorieLedger.ViewModels.Sync"
+    x:DataType="syncVm:SyncManagerViewModel">
+
+    <ScrollViewer>
+        <StackPanel
+            Margin="24"
+            Spacing="14"
+            MaxWidth="900"
+            HorizontalAlignment="Center">
+
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    Grid.Column="0"
+                    Text="Синхронизация"
+                    FontSize="26"
+                    FontWeight="Bold" />
+
+                <Button
+                    Grid.Column="1"
+                    Content="Закрыть"
+                    Command="{Binding CloseCommand}" />
+            </Grid>
+
+            <Border
+                Padding="14"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        Text="Это первый транспортно-независимый этап синхронизации. Сейчас снимок можно перенести вручную; QR-связывание и автоматический обмен в локальной сети будут использовать тот же протокол."
+                        TextWrapping="Wrap" />
+
+                    <TextBlock
+                        Text="Идентификатор этого устройства"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        Text="{Binding DeviceIdSummary}"
+                        FontFamily="Consolas"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                Text="Снимок этого устройства"
+                FontSize="18"
+                FontWeight="SemiBold" />
+
+            <TextBox
+                Text="{Binding ExportText}"
+                IsReadOnly="True"
+                AcceptsReturn="True"
+                TextWrapping="Wrap"
+                MinHeight="180"
+                MaxHeight="320" />
+
+            <Button
+                Content="Обновить снимок"
+                Command="{Binding RefreshExportCommand}"
+                HorizontalAlignment="Left" />
+
+            <TextBlock
+                Text="Снимок второго устройства"
+                FontSize="18"
+                FontWeight="SemiBold"
+                Margin="0,8,0,0" />
+
+            <TextBox
+                Text="{Binding ImportText, Mode=TwoWay}"
+                PlaceholderText="Вставьте JSON второго устройства"
+                AcceptsReturn="True"
+                TextWrapping="Wrap"
+                MinHeight="180"
+                MaxHeight="320" />
+
+            <TextBlock
+                Text="При применении совпадающие ID обновляются данными вставленного снимка. Локальные записи, отсутствующие в снимке, пока не удаляются автоматически."
+                TextWrapping="Wrap"
+                Opacity="0.75" />
+
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="8">
+
+                <Button
+                    Content="Проверить"
+                    Command="{Binding ValidateImportCommand}" />
+
+                <Button
+                    Content="Применить"
+                    Command="{Binding ApplyImportCommand}"
+                    IsEnabled="{Binding CanApply}" />
+            </StackPanel>
+
+            <Border
+                IsVisible="{Binding HasPreview}"
+                Padding="12"
+                BorderThickness="1"
+                CornerRadius="10">
+
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        Text="Что изменится"
+                        FontWeight="SemiBold" />
+
+                    <TextBlock
+                        Text="{Binding PreviewSummary}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                Text="{Binding ActionSummary}"
+                TextWrapping="Wrap"
+                Opacity="0.8" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

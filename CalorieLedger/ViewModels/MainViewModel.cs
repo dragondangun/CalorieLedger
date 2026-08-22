@@ -9,6 +9,7 @@ using CalorieLedger.Application.Nutrition;
 using CalorieLedger.Application.Products;
 using CalorieLedger.Application.Profiles;
 using CalorieLedger.Application.Time;
+using CalorieLedger.Application.Sync;
 using CalorieLedger.Application.Today;
 using CalorieLedger.ViewModels.History;
 using CalorieLedger.Domain.Meals;
@@ -24,6 +25,7 @@ using CalorieLedger.ViewModels.Meals;
 using CalorieLedger.ViewModels.Products;
 using CalorieLedger.ViewModels.Profile;
 using CalorieLedger.ViewModels.Today;
+using CalorieLedger.ViewModels.Sync;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
@@ -67,6 +69,7 @@ public partial class MainViewModel:ViewModelBase {
     private readonly RecurringPlannedActivityCompletionService recurringPlannedActivityCompletionService;
     private readonly MealPlanService mealPlanService;
     private readonly MealPlanFoodDraftFactory mealPlanFoodDraftFactory;
+    private readonly SyncSnapshotService syncSnapshotService;
 
     [ObservableProperty]
     private TodayDashboardViewModel today;
@@ -103,6 +106,8 @@ public partial class MainViewModel:ViewModelBase {
     private PlannedActivityManagerViewModel? plannedActivityManager;
     [ObservableProperty]
     private RecurringPlannedActivityManagerViewModel? recurringPlannedActivityManager;
+    [ObservableProperty]
+    private SyncManagerViewModel? syncManager;
 
     private enum MainSurface {
         TodayDashboard,
@@ -118,6 +123,7 @@ public partial class MainViewModel:ViewModelBase {
         ActivityEditor,
         PlannedActivities,
         RecurringPlannedActivities,
+        Synchronization,
     }
 
     private readonly Stack<MainSurface> navigationStack = new();
@@ -134,6 +140,12 @@ public partial class MainViewModel:ViewModelBase {
     public bool IsRecurringPlannedActivityManagerVisible =>
         activeSurface == MainSurface.RecurringPlannedActivities
         && RecurringPlannedActivityManager is not null;
+
+    public bool IsSyncManagerOpen => SyncManager is not null;
+
+    public bool IsSyncManagerVisible =>
+        activeSurface == MainSurface.Synchronization
+        && SyncManager is not null;
 
     public ObservableCollection<BodyMeasurementListItemViewModel> BodyMeasurements { get; } = [];
 
@@ -215,7 +227,8 @@ public partial class MainViewModel:ViewModelBase {
         JsonActivityPresetStore.CreateDefault(),
         JsonPlannedActivityStore.CreateDefault(),
         JsonRecurringPlannedActivityStore.CreateDefault(),
-        JsonMealPlanStore.CreateDefault()
+        JsonMealPlanStore.CreateDefault(),
+        JsonSyncDeviceIdentityStore.CreateDefault()
     ) { }
 
     public MainViewModel(
@@ -397,7 +410,8 @@ public partial class MainViewModel:ViewModelBase {
         IActivityPresetStore? activityPresetStore = null,
         IPlannedActivityStore? plannedActivityStore = null,
         IRecurringPlannedActivityStore? recurringPlannedActivityStore = null,
-        IMealPlanStore? mealPlanStore = null
+        IMealPlanStore? mealPlanStore = null,
+        ISyncDeviceIdentityStore? syncDeviceIdentityStore = null
     ) {
         ArgumentNullException.ThrowIfNull(bodyMeasurementStore);
         ArgumentNullException.ThrowIfNull(profileStore);
@@ -439,6 +453,13 @@ public partial class MainViewModel:ViewModelBase {
             cookingSessionStore: resolvedCookingSessionStore,
             cookingBatchStore: resolvedCookingBatchStore,
             fridgeStore: resolvedFridgeStore
+        );
+
+        syncSnapshotService = new SyncSnapshotService(
+            fridgeStore: resolvedFridgeStore,
+            cookingSessionStore: resolvedCookingSessionStore,
+            cookingBatchStore: resolvedCookingBatchStore,
+            deviceIdentityStore: syncDeviceIdentityStore ?? new InMemorySyncDeviceIdentityStore()
         );
 
         profileEditorService = new UserNutritionProfileEditorService(
@@ -630,6 +651,7 @@ public partial class MainViewModel:ViewModelBase {
             MainSurface.ActivityEditor => ActivityEditor is not null,
             MainSurface.PlannedActivities => PlannedActivityManager is not null,
             MainSurface.RecurringPlannedActivities => RecurringPlannedActivityManager is not null,
+            MainSurface.Synchronization => SyncManager is not null,
             _ => false,
         };
     }
@@ -648,6 +670,7 @@ public partial class MainViewModel:ViewModelBase {
         OnPropertyChanged(nameof(IsActivityEditorVisible));
         OnPropertyChanged(nameof(IsPlannedActivityManagerVisible));
         OnPropertyChanged(nameof(IsRecurringPlannedActivityManagerVisible));
+        OnPropertyChanged(nameof(IsSyncManagerVisible));
     }
 
     partial void OnRecurringPlannedActivityManagerChanged(
@@ -717,6 +740,23 @@ public partial class MainViewModel:ViewModelBase {
             onClosed: CloseFridge,
             mealPlanService: mealPlanService
         );
+    }
+
+    [RelayCommand]
+    private void OpenSynchronization() {
+        SyncManager = new SyncManagerViewModel(
+            syncSnapshotService: syncSnapshotService,
+            onClosed: CloseSynchronization
+        );
+    }
+
+    private void CloseSynchronization() {
+        SyncManager = null;
+    }
+
+    partial void OnSyncManagerChanged(SyncManagerViewModel? value) {
+        OnPropertyChanged(nameof(IsSyncManagerOpen));
+        UpdateSurface(MainSurface.Synchronization, value is not null);
     }
 
     [RelayCommand]
